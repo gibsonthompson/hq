@@ -240,15 +240,17 @@ var DR={0:{theme:"RESET / PLAN",color:"#5a7a8f"},1:{theme:"DISTRIBUTE / POST",co
 var NC=[{bg:"rgba(61,79,47,0.12)",border:"#8fa776",text:"#c8cfc2"},{bg:"rgba(90,122,143,0.12)",border:"#5a7a8f",text:"#c8cfc2"},{bg:"rgba(196,163,90,0.12)",border:"#c4a35a",text:"#c8cfc2"},{bg:"rgba(107,143,88,0.12)",border:"#6b8f58",text:"#c8cfc2"},{bg:"rgba(122,111,143,0.12)",border:"#7a6f8f",text:"#c8cfc2"},{bg:"rgba(166,93,78,0.12)",border:"#a65d4e",text:"#c8cfc2"}];
 var BT=[{name:"VOICEAI",color:"#5a7a8f"},{name:"JUNK LINE",color:"#c4a35a"},{name:"BLASTING BINS",color:"#6b8f58"},{name:"RELIABLE SOL",color:"#7a6f8f"},{name:"PERSONAL",color:"#8fa776"}];
 var S={rhythm:JSON.parse(JSON.stringify(DR)),tasks:[],notes:[],images:[],needleMovers:[],contentIdeas:[],expDay:null,selTag:null,ciTag:null,nci:0};
-var SUPABASE_URL="https://oschjeuhejqibymdaqxw.supabase.co";
-var SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZHJwZGp5b3JkdnF0a3V1YXpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4MDAxMzgsImV4cCI6MjA4MjM3NjEzOH0.7rHx3HXaqe1h7q3y79nMwuXbOR9CcmWrY3WKXFjk8yM";
-var sb=null;var saveTimer=null;
-try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){console.log("Supabase init failed")}
+var SUPABASE_URL="REPLACE_WITH_SUPABASE_URL";
+var SUPABASE_ANON_KEY="REPLACE_WITH_ANON_KEY";
+var sb=null;var saveTimer=null;var syncing=false;
+try{var _sb=window.supabase;if(_sb&&_sb.createClient)sb=_sb.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);console.log(sb?"Supabase connected":"Supabase not found")}catch(e){console.log("Supabase init error:",e)}
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);S.rhythm=p.rhythm||S.rhythm;S.tasks=p.tasks||[];S.notes=p.notes||[];S.needleMovers=p.needleMovers||[];S.contentIdeas=p.contentIdeas||[];S.nci=p.nci||0}var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){console.log(e)}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,tasks:S.tasks,notes:S.notes,needleMovers:S.needleMovers,contentIdeas:S.contentIdeas,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
-function load(){loadLocal();R();if(!sb)return;sb.from("hq_data").select("*").eq("user_key","gibson").single().then(function(res){if(res.data){var d=res.data;var remote_ts=new Date(d.updated_at).getTime();var local_ts=parseInt(localStorage.getItem("hq_ts")||"0");if(remote_ts>local_ts){if(d.rhythm&&Object.keys(d.rhythm).length)S.rhythm=d.rhythm;if(d.tasks)S.tasks=d.tasks;if(d.notes)S.notes=d.notes;if(d.needle_movers)S.needleMovers=d.needle_movers;if(d.content_ideas)S.contentIdeas=d.content_ideas;if(d.images)S.images=d.images;if(d.nci)S.nci=d.nci;saveLocal();localStorage.setItem("hq_ts",String(remote_ts));R();console.log("Synced from Supabase")}}}).catch(function(e){console.log("Supabase load failed, using local")})}
-function saveToSupabase(){if(!sb)return;sb.from("hq_data").upsert({user_key:"gibson",rhythm:S.rhythm,tasks:S.tasks,notes:S.notes,needle_movers:S.needleMovers,content_ideas:S.contentIdeas,images:S.images,nci:S.nci},{onConflict:"user_key"}).then(function(res){if(!res.error){localStorage.setItem("hq_ts",String(Date.now()));console.log("Saved to Supabase")}}).catch(function(e){console.log("Supabase save failed")})}
-function save(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveToSupabase,1500)}
+function pullFromCloud(){if(!sb||syncing)return;syncing=true;sb.from("hq_data").select("*").eq("user_key","gibson").single().then(function(res){syncing=false;if(res.error||!res.data){console.log("Pull error:",res.error);return}var d=res.data;S.rhythm=d.rhythm||S.rhythm;S.tasks=d.tasks||[];S.notes=d.notes||[];S.needleMovers=d.needle_movers||[];S.contentIdeas=d.content_ideas||[];S.images=d.images||[];S.nci=d.nci||0;saveLocal();R();console.log("Pulled from Supabase")}).catch(function(e){syncing=false;console.log("Pull failed:",e)})}
+function pushToCloud(){if(!sb)return;sb.from("hq_data").upsert({user_key:"gibson",rhythm:S.rhythm,tasks:S.tasks,notes:S.notes,needle_movers:S.needleMovers,content_ideas:S.contentIdeas,images:S.images,nci:S.nci},{onConflict:"user_key"}).then(function(res){if(res.error)console.log("Push error:",res.error);else console.log("Pushed to Supabase")}).catch(function(e){console.log("Push failed:",e)})}
+function load(){loadLocal();R();pullFromCloud()}
+function save(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(pushToCloud,1500)}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)pullFromCloud()});
 function mid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
 function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function td(){return new Date().getDay()}
