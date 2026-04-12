@@ -127,9 +127,11 @@ body{background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',sans-serif
 .wcal-range{font-family:'Share Tech Mono',monospace;font-size:15px;letter-spacing:3px;color:var(--th);text-transform:uppercase;min-width:260px;text-align:center}
 .wcal-today-btn{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;background:rgba(164,196,138,0.1);border:1px solid var(--bd);color:var(--ac);padding:7px 16px;cursor:pointer;text-transform:uppercase}.wcal-today-btn:hover{background:rgba(164,196,138,0.2)}
 .wcal-grid-wrap{flex:1;overflow-y:auto;overflow-x:auto;position:relative}
-.wcal-grid{display:grid;grid-template-columns:60px repeat(7,1fr);position:relative;min-width:700px}
-.wcal-corner{position:sticky;top:0;z-index:6;background:var(--bg);border-bottom:1px solid var(--bl);border-right:1px solid var(--bl)}
-.wcal-day-hdr{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--bl);padding:8px 6px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--dm);text-transform:uppercase;cursor:pointer}
+.wcal-grid{display:flex;min-width:700px;position:relative}
+.wcal-time-col{width:60px;flex-shrink:0}
+.wcal-time-hdr{position:sticky;top:0;z-index:6;background:var(--bg);border-bottom:1px solid var(--bl);border-right:1px solid var(--bl);height:58px}
+.wcal-day-col{flex:1;position:relative;min-width:0;border-right:1px solid rgba(100,130,75,0.08)}
+.wcal-day-hdr{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--bl);padding:8px 6px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--dm);text-transform:uppercase;cursor:pointer;height:58px}
 .wcal-day-hdr:hover{background:rgba(70,90,55,0.06)}
 .wcal-day-hdr.is-today{color:var(--ah);border-bottom-color:var(--ac)}
 .wcal-day-hdr-date{font-size:18px;font-weight:700;display:block;margin-top:2px;color:var(--th)}
@@ -137,17 +139,17 @@ body{background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',sans-serif
 .wcal-day-hdr-theme{font-size:9px;letter-spacing:1px;color:var(--dr);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wcal-time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dm);padding:2px 8px 0 0;text-align:right;border-right:1px solid var(--bl);height:30px}
 .wcal-time.on-hour{color:var(--tx)}
-.wcal-cell{height:30px;border-bottom:1px solid rgba(100,130,75,0.06);border-right:1px solid rgba(100,130,75,0.05);cursor:pointer;position:relative}
+.wcal-cell{height:30px;border-bottom:1px solid rgba(100,130,75,0.06);cursor:pointer}
 .wcal-cell:hover{background:rgba(164,196,138,0.04)}
 .wcal-cell.on-hour{border-bottom-color:rgba(100,130,75,0.15)}
-.wcal-cell.is-today{background:rgba(164,196,138,0.03)}
+.wcal-day-col.is-today .wcal-cell{background:rgba(164,196,138,0.03)}
 .wcal-evt{position:absolute;left:2px;right:2px;border-left:3px solid var(--gd);background:rgba(219,185,106,0.12);padding:2px 6px;z-index:3;overflow:hidden;cursor:pointer;font-size:11px;color:var(--th);font-weight:500}
 .wcal-evt:hover{filter:brightness(1.2)}
 .wcal-evt-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcal-evt-recur{font-size:9px;color:var(--gd)}
 .wcal-blk{position:absolute;left:2px;right:2px;border-left:3px solid;padding:2px 6px;z-index:2;overflow:hidden;font-size:11px;color:var(--th)}
 .wcal-blk-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-.wcal-now-line{position:absolute;left:60px;right:0;height:2px;background:var(--rd);z-index:8;pointer-events:none}
+.wcal-now-line{position:absolute;left:0;right:0;height:2px;background:var(--rd);z-index:8;pointer-events:none}
 .wcal-now-dot{position:absolute;left:-5px;top:-4px;width:10px;height:10px;background:var(--rd);border-radius:50%;box-shadow:0 0 10px rgba(196,112,96,0.5)}
 /* week cal sidebar */
 .wcal-side{width:260px;display:flex;flex-direction:column;gap:12px;flex-shrink:0;overflow-y:auto}
@@ -268,51 +270,49 @@ var m1=days[0].toLocaleDateString("en-US",{month:"short",day:"numeric"}).toUpper
 var m2=days[6].toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}).toUpperCase();
 document.getElementById("wcalRange").textContent=m1+" \u2014 "+m2;
 var grid=document.getElementById("wcalGrid");grid.innerHTML="";
-var rowH=30,totalSlots=(SHE-SHS+1)*2;
-// headers
-grid.innerHTML+="<div class=\"wcal-corner\"></div>";
-days.forEach(function(d){
-var ds=dStr(d),isT=ds===today;
-grid.innerHTML+="<div class=\"wcal-day-hdr"+(isT?" is-today":"")+"\" ondblclick=\"editDayTheme("+d.getDay()+")\">"+DSH[d.getDay()]+"<span class=\"wcal-day-hdr-date\">"+d.getDate()+"</span><span class=\"wcal-day-hdr-theme\">"+esc(S.rhythm[d.getDay()].theme)+"</span></div>"});
-// time rows
-for(var s=0;s<totalSlots;s++){
-var h=SHS+s*0.5;var isHour=s%2===0;
-grid.innerHTML+="<div class=\"wcal-time"+(isHour?" on-hour":"")+"\">"+(isHour?fmtHS(h):"")+"</div>";
-for(var di=0;di<7;di++){
-var ds=dStr(days[di]),isT=ds===today;
-grid.innerHTML+="<div class=\"wcal-cell"+(isHour?" on-hour":"")+(isT?" is-today":"")+"\" data-day=\""+di+"\" data-hour=\""+h+"\"></div>"}}
-// render weekly blocks
+var rowH=30,totalSlots=(SHE-SHS+1)*2,hdrH=58;
+// time column
+var tcol=document.createElement("div");tcol.className="wcal-time-col";
+tcol.innerHTML="<div class=\"wcal-time-hdr\"></div>";
+for(var s=0;s<totalSlots;s++){var h=SHS+s*0.5;var isHour=s%2===0;tcol.innerHTML+="<div class=\"wcal-time"+(isHour?" on-hour":"")+"\">"+(isHour?fmtHS(h):"")+"</div>"}
+grid.appendChild(tcol);
+// day columns
+var dayCols=[];
 days.forEach(function(d,di){
-var dow=d.getDay();
+var ds=dStr(d),isT=ds===today,dow=d.getDay();
+var col=document.createElement("div");col.className="wcal-day-col"+(isT?" is-today":"");
+col.innerHTML="<div class=\"wcal-day-hdr"+(isT?" is-today":"")+"\" ondblclick=\"editDayTheme("+dow+")\">"+DSH[dow]+"<span class=\"wcal-day-hdr-date\">"+d.getDate()+"</span><span class=\"wcal-day-hdr-theme\">"+esc(S.rhythm[dow].theme)+"</span></div>";
+for(var s=0;s<totalSlots;s++){var h=SHS+s*0.5;var isHour=s%2===0;col.innerHTML+="<div class=\"wcal-cell"+(isHour?" on-hour":"")+"\"></div>"}
+// weekly blocks for this day
 S.weeklyBlocks.filter(function(b){return b.day===dow}).forEach(function(b){
 var cat=getCats().find(function(c){return c.name===b.category})||{color:"#888"};
-var topPx=(b.startHour-SHS)*2*rowH+rowH+1;// +rowH for header
+var topPx=(b.startHour-SHS)*2*rowH+hdrH;
 var hPx=b.duration*2*rowH-1;
 var el=document.createElement("div");el.className="wcal-blk";
-el.style.cssText="top:"+topPx+"px;height:"+hPx+"px;grid-column:"+(di+2)+";background:"+catBg(cat.color)+";border-left-color:"+cat.color;
+el.style.cssText="top:"+topPx+"px;height:"+hPx+"px;background:"+catBg(cat.color)+";border-left-color:"+cat.color;
 el.innerHTML="<div class=\"wcal-blk-title\">"+esc(b.title)+"</div>";
 el.onclick=function(){openBlockPopup(b.id)};
-grid.appendChild(el)})});
-// render calendar events
-days.forEach(function(d,di){
-var ds=dStr(d),dow=d.getDay();
+col.appendChild(el)});
+// calendar events for this day
 S.calendarEvents.filter(function(e){return e.date===ds||(e.recurring&&e.recurDay===dow)}).forEach(function(e){
 if(e.allDay)return;
-var topPx=(e.startHour-SHS)*2*rowH+rowH+1;
+var topPx=(e.startHour-SHS)*2*rowH+hdrH;
 var hPx=e.duration*2*rowH-1;
 var el=document.createElement("div");el.className="wcal-evt";
-el.style.cssText="top:"+topPx+"px;height:"+Math.max(hPx,rowH-1)+"px;grid-column:"+(di+2);
+el.style.cssText="top:"+topPx+"px;height:"+Math.max(hPx,rowH-1)+"px";
 el.innerHTML="<div class=\"wcal-evt-title\">"+esc(e.title)+"</div>"+(e.recurring?"<span class=\"wcal-evt-recur\">\u21BB</span>":"");
-grid.appendChild(el)})});
-// now line
-var todayIdx=-1;days.forEach(function(d,i){if(dStr(d)===today)todayIdx=i});
-if(todayIdx>=0&&nowHr>=SHS&&nowHr<=SHE+1){
-var topPx=(nowHr-SHS)*2*rowH+rowH;
+col.appendChild(el)});
+// now line for today
+if(isT&&nowHr>=SHS&&nowHr<=SHE+1){
+var topPx=(nowHr-SHS)*2*rowH+hdrH;
 var line=document.createElement("div");line.className="wcal-now-line";line.style.top=topPx+"px";
 line.innerHTML="<div class=\"wcal-now-dot\"></div>";
-grid.appendChild(line)}
+col.appendChild(line)}
+grid.appendChild(col);
+dayCols.push(col)});
 // scroll
 var wrap=document.getElementById("wcalGridWrap");
+var todayIdx=-1;days.forEach(function(d,i){if(dStr(d)===today)todayIdx=i});
 setTimeout(function(){wrap.scrollTop=Math.max(0,((todayIdx>=0?nowHr:8)-SHS-2)*2*rowH)},50);
 renderWcalForm();renderWcalEvtList();
 if(typeof lucide!=="undefined")lucide.createIcons()}
