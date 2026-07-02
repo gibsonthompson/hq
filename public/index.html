@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>HQ</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0f1210"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="HQ"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+<script src="/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -651,7 +651,7 @@ function dStr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0
 function fmtH(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60),s=mn>0?String(mn).padStart(2,"0"):"00";if(hr===0)return"12:"+s+" AM";if(hr<12)return hr+":"+s+" AM";if(hr===12)return"12:"+s+" PM";return(hr-12)+":"+s+" PM"}
 function fmtHS(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60);if(hr===0)return"12"+(mn?":30":"")+"a";if(hr<12)return hr+(mn?":30":"")+"a";if(hr===12)return"12"+(mn?":30":"")+"p";return(hr-12)+(mn?":30":"")+"p"}
 function getWeekStart(d){var dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()-dt.getDay());return dt}
-function icons(){try{lucide.createIcons()}catch(e){}}
+function icons(){try{if(window.lucide&&lucide.createIcons)lucide.createIcons()}catch(e){}}
 
 /* ===== PERSISTENCE ===== */
 var SUPABASE_URL="REPLACE_WITH_SUPABASE_URL",SUPABASE_ANON_KEY="REPLACE_WITH_ANON_KEY";
@@ -1015,6 +1015,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 
 /* ===== BOOT ===== */
 load();
+window.addEventListener("load",function(){icons()});
 if(SUPABASE_URL.indexOf("REPLACE")===0){setTimeout(function(){toast("Tap the gear to connect sync","settings")},1200)}
 setInterval(function(){if(document.getElementById("tab-calendar").classList.contains("active"))renderCal()},60000);
 icons();
