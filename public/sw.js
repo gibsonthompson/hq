@@ -1,12 +1,13 @@
 /* HQ service worker — bump CACHE to force an update after a deploy */
-const CACHE = 'hq-v1';
+const CACHE = 'hq-v2';
 const SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/lucide.min.js'
 ];
 
 self.addEventListener('install', function (e) {
