@@ -1,5 +1,5 @@
 /* HQ service worker — bump CACHE to force an update after a deploy */
-const CACHE = 'hq-v2';
+const CACHE = 'hq-v4';
 const SHELL = [
   '/',
   '/index.html',
