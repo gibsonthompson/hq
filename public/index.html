@@ -718,15 +718,18 @@ function mergeState(d,preferRemote){
   S.goals=mergeGoals(S.goals,normalizeGoals(d.goals),preferRemote);
   if(preferRemote){if(d.rhythm&&Object.keys(d.rhythm).length)S.rhythm=d.rhythm;if(d.last_review)S.lastReview=d.last_review;if(d.nci)S.nci=d.nci}
   else{if(d.last_review&&!S.lastReview)S.lastReview=d.last_review}
+  if(d.weekly_blocks&&(!S.weeklyBlocks||!S.weeklyBlocks.length))S.weeklyBlocks=d.weekly_blocks;
+  if(d.content_ideas&&(!S.contentIdeas||!S.contentIdeas.length))S.contentIdeas=d.content_ideas;
+  if(d.sched_cats&&!S.schedCats)S.schedCats=d.sched_cats;
 }
 function buildRow(){return{user_key:"gibson",rhythm:S.rhythm,goals:S.goals,needle_movers:S.needleMovers,notes:S.notes,projects:S.projects,calendar_events:S.calendarEvents,weekly_blocks:S.weeklyBlocks,content_ideas:S.contentIdeas,captures:S.captures,last_review:S.lastReview,sched_cats:S.schedCats,images:S.images,nci:S.nci}}
 function pullRemote(){if(!sb){remoteLoaded=true;setSync("local");return}
   sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(res){
+    if(res.error){remoteLoaded=true;setSync("err");return}
     var d=(res.data&&res.data[0]);
     if(d){var rt=new Date(d.updated_at).getTime(),lt=parseInt(localStorage.getItem("hq_ts")||"0"),rc=remoteCount(d);
       if(rc>0)everHadData=true;
       backupLocal("prepull");
-      var before=JSON.stringify([dataCount(S)]);
       mergeState(d,rt>lt);/* union merge — never drops anything from either side */
       saveLocal();localStorage.setItem("hq_ts",String(Math.max(rt,lt)));everHadData=dataCount(S)>0;R();
       remoteLoaded=true;lastSynced=Date.now();setSync("ok");
@@ -777,7 +780,7 @@ function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
 function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].steps.find(function(x){return x.id===stepId});if(s){s.onToday=true;s.ord=topOrd();save();R();toast("Pulled to Today","arrow-up");return}}}
 
 /* ===== RENDER ===== */
-function R(){renderSys();renderSuggest();renderPrime();renderDeck();renderToday();renderGoals();renderVision();renderNotes();renderProjects();renderCalForm();updateInboxCount();icons()}
+function R(){renderSys();renderSuggest();renderPrime();renderDeck();renderToday();renderGoals();renderVision();renderNotes();renderProjects();renderCalForm();updateInboxCount();var ct=document.getElementById("tab-calendar");if(ct&&ct.classList.contains("active"))renderCal();icons()}
 
 function renderSys(){
   var d=new Date();
