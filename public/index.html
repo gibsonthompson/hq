@@ -683,7 +683,7 @@ function icons(){try{if(window.lucide&&lucide.createIcons)lucide.createIcons()}c
 var SUPABASE_URL="https://szdrpdjyordvqtkuuazh.supabase.co",SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZHJwZGp5b3JkdnF0a3V1YXpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4MDAxMzgsImV4cCI6MjA4MjM3NjEzOH0.7rHx3HXaqe1h7q3y79nMwuXbOR9CcmWrY3WKXFjk8yM";
 /* If the file still has placeholders, use creds saved in this browser (entered once via Sync Settings). */
 try{if(SUPABASE_URL.indexOf("REPLACE")===0){var _su=localStorage.getItem("hq_sb_url"),_sk=localStorage.getItem("hq_sb_key");if(_su)SUPABASE_URL=_su;if(_sk)SUPABASE_ANON_KEY=_sk}}catch(e){}
-var sb=null,saveTimer=null;
+var sb=null,saveTimer=null,pendingSave=false;
 try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
 function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),ord:Date.now(),duration:1};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),ord:(x.ord!=null?x.ord:(x.ts||Date.now())),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ord:(s.ord!=null?s.ord:Date.now()),date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
@@ -699,38 +699,55 @@ function remoteCount(d){var n=0;["goals","needle_movers","notes","projects","cal
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var baks=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(baks.length>3)localStorage.removeItem(baks.shift())}catch(e){}}
 function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--dim2)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"Local only — no cloud connection",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
 function forceSync(){var m={ok:"Synced",saving:"Saving…",err:"Sync error — saved on this device only",local:"Local only (no connection)",skip:"Protected: skipped empty write"}[syncState]||"Idle";toast(m,"refresh-cw");if(sb&&remoteLoaded&&dataCount(S)>0)saveToSupabase()}
-function load(){loadLocal();everHadData=dataCount(S)>0;R();if(!sb){setSync("local");remoteLoaded=true;return}
-  sb.from("hq_data").select("*").eq("user_key","gibson").single().then(function(res){
-    if(res.data){var d=res.data,rt=new Date(d.updated_at).getTime(),lt=parseInt(localStorage.getItem("hq_ts")||"0"),rc=remoteCount(d),lc=dataCount(S);
+var BUILD="v4-merge";
+function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[];
+  (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}});
+  (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
+  return order.map(function(id){return byId[id]})}
+function mergeGoals(localG,remoteG,preferRemote){var byId={},order=[];
+  (localG||[]).forEach(function(g){byId[g.id]=g;order.push(g.id)});
+  (remoteG||[]).forEach(function(g){if(!(g.id in byId)){byId[g.id]=g;order.push(g.id)}else{var lg=byId[g.id];lg.steps=mergeArr(lg.steps,g.steps,preferRemote);if(preferRemote){lg.title=g.title;lg.why=g.why;lg.cat=g.cat;lg.target=g.target;lg.archived=g.archived}}});
+  return order.map(function(id){return byId[id]})}
+function mergeState(d,preferRemote){
+  S.needleMovers=mergeArr(S.needleMovers,normalizeNM(d.needle_movers),preferRemote);
+  S.notes=mergeArr(S.notes,d.notes,preferRemote);
+  S.projects=mergeArr(S.projects,d.projects,preferRemote);
+  S.calendarEvents=mergeArr(S.calendarEvents,d.calendar_events,preferRemote);
+  S.captures=mergeArr(S.captures,d.captures,preferRemote);
+  S.images=mergeArr(S.images,d.images,preferRemote);
+  S.goals=mergeGoals(S.goals,normalizeGoals(d.goals),preferRemote);
+  if(preferRemote){if(d.rhythm&&Object.keys(d.rhythm).length)S.rhythm=d.rhythm;if(d.last_review)S.lastReview=d.last_review;if(d.nci)S.nci=d.nci}
+  else{if(d.last_review&&!S.lastReview)S.lastReview=d.last_review}
+}
+function buildRow(){return{user_key:"gibson",rhythm:S.rhythm,goals:S.goals,needle_movers:S.needleMovers,notes:S.notes,projects:S.projects,calendar_events:S.calendarEvents,weekly_blocks:S.weeklyBlocks,content_ideas:S.contentIdeas,captures:S.captures,last_review:S.lastReview,sched_cats:S.schedCats,images:S.images,nci:S.nci}}
+function pullRemote(){if(!sb){remoteLoaded=true;setSync("local");return}
+  sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(res){
+    var d=(res.data&&res.data[0]);
+    if(d){var rt=new Date(d.updated_at).getTime(),lt=parseInt(localStorage.getItem("hq_ts")||"0"),rc=remoteCount(d);
       if(rc>0)everHadData=true;
-      if(rt>lt&&(rc>0||lc===0)){
-        backupLocal("prepull");
-        if(d.rhythm&&Object.keys(d.rhythm).length)S.rhythm=d.rhythm;
-        if(d.goals)S.goals=normalizeGoals(d.goals);
-        if(d.needle_movers)S.needleMovers=normalizeNM(d.needle_movers);
-        if(d.notes)S.notes=d.notes;
-        if(d.projects)S.projects=d.projects;
-        if(d.calendar_events)S.calendarEvents=d.calendar_events;
-        if(d.weekly_blocks)S.weeklyBlocks=d.weekly_blocks;
-        if(d.content_ideas)S.contentIdeas=d.content_ideas;
-        if(d.captures)S.captures=d.captures;
-        if(d.last_review)S.lastReview=d.last_review;
-        if(d.sched_cats)S.schedCats=d.sched_cats;
-        if(d.images)S.images=d.images;
-        if(d.nci)S.nci=d.nci;
-        saveLocal();localStorage.setItem("hq_ts",String(rt));everHadData=dataCount(S)>0;R();
-      }
+      backupLocal("prepull");
+      var before=JSON.stringify([dataCount(S)]);
+      mergeState(d,rt>lt);/* union merge — never drops anything from either side */
+      saveLocal();localStorage.setItem("hq_ts",String(Math.max(rt,lt)));everHadData=dataCount(S)>0;R();
       remoteLoaded=true;lastSynced=Date.now();setSync("ok");
-      if(rc===0&&lc>0)saveToSupabase();
+      saveToSupabase();/* push merged superset so cloud gets any local-only items */
     }else{remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(dataCount(S)>0)saveToSupabase();}
   }).catch(function(e){remoteLoaded=true;setSync("err")})}
+function load(){loadLocal();everHadData=dataCount(S)>0;R();pullRemote()}
 function saveToSupabase(){if(!sb){setSync("local");return}
   if(!remoteLoaded)return;
   if(dataCount(S)===0&&everHadData){setSync("skip");return}
   if(dataCount(S)>0)everHadData=true;
-  setSync("saving");
-  sb.from("hq_data").upsert({user_key:"gibson",rhythm:S.rhythm,goals:S.goals,needle_movers:S.needleMovers,notes:S.notes,projects:S.projects,calendar_events:S.calendarEvents,weekly_blocks:S.weeklyBlocks,content_ideas:S.contentIdeas,captures:S.captures,last_review:S.lastReview,sched_cats:S.schedCats,images:S.images,nci:S.nci},{onConflict:"user_key"}).then(function(res){if(!res.error){localStorage.setItem("hq_ts",String(Date.now()));lastSynced=Date.now();setSync("ok")}else setSync("err")}).catch(function(e){setSync("err")})}
-function save(){saveLocal();if(dataCount(S)>0)everHadData=true;clearTimeout(saveTimer);saveTimer=setTimeout(saveToSupabase,1500)}
+  pendingSave=false;setSync("saving");
+  sb.from("hq_data").upsert(buildRow(),{onConflict:"user_key"}).select("updated_at").then(function(res){
+    if(!res.error){var row=(res.data&&res.data[0]);var ts=(row&&row.updated_at)?new Date(row.updated_at).getTime():Date.now();localStorage.setItem("hq_ts",String(ts));lastSynced=Date.now();setSync("ok")}
+    else setSync("err")}).catch(function(e){setSync("err")})}
+function flushSave(){if(!pendingSave||!sb||!remoteLoaded)return;if(dataCount(S)===0&&everHadData)return;pendingSave=false;
+  try{fetch(SUPABASE_URL+"/rest/v1/hq_data?on_conflict=user_key",{method:"POST",keepalive:true,headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(buildRow())})}catch(e){}}
+function save(){saveLocal();if(dataCount(S)>0)everHadData=true;pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(saveToSupabase,700)}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flushSave();else if(remoteLoaded)pullRemote()});
+window.addEventListener("pagehide",flushSave);
+window.addEventListener("focus",function(){if(remoteLoaded)pullRemote()});
 
 /* ===== TODAY LIST (movers + goal steps pulled to today) ===== */
 function todayItems(){var out=[];
@@ -767,7 +784,7 @@ function renderSys(){
   document.getElementById("tbDate").textContent=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
   var act=todayItems().length,goalsActive=S.goals.filter(function(g){return !g.archived}).length;
   document.getElementById("sysHello").textContent=act===0?"Clear slate. Pull in what matters.":"Move the needle today.";
-  document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" active goals";
+  document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" active goals &middot; <span style=\"color:var(--dim2)\">"+BUILD+"</span>";
   var ago=document.getElementById("reviewAgo");
   if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";
 }
@@ -1071,7 +1088,7 @@ function burst(){var n=54,cx=innerWidth/2,cy=innerHeight*0.42,cols=["#46d187","#
 function tick(){ctx.clearRect(0,0,cvs.width,cvs.height);for(var i=parts.length-1;i>=0;i--){var p=parts[i];p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.life-=0.012;p.rot+=0.2;if(p.life<=0){parts.splice(i,1);continue}ctx.save();ctx.globalAlpha=Math.max(0,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz*1.6);ctx.restore()}if(parts.length)raf=requestAnimationFrame(tick);else{raf=null;ctx.clearRect(0,0,cvs.width,cvs.height)}}
 
 /* ===== NATIVE / PWA ===== */
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}
+if('serviceWorker' in navigator){var _hadCtrl=!!navigator.serviceWorker.controller,_swReloaded=false;window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});navigator.serviceWorker.addEventListener('controllerchange',function(){if(_hadCtrl&&!_swReloaded){_swReloaded=true;location.reload()}})}
 /* block iOS pinch-zoom so it feels like an app (touch-action:manipulation handles double-tap) */
 ['gesturestart','gesturechange','gestureend'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
 
