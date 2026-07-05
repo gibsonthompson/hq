@@ -25,7 +25,7 @@ h1,h2,h3,.disp{font-family:'Sora',sans-serif}
 button{font-family:inherit}input,textarea,select{font-family:inherit}
 
 /* TOP BAR */
-.topbar{position:relative;z-index:5;padding:calc(12px + env(safe-area-inset-top)) 22px 12px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-shrink:0;border-bottom:1px solid var(--line);background:rgba(21,22,29,0.6);backdrop-filter:blur(12px)}
+.topbar{position:relative;z-index:5;padding:calc(12px + env(safe-area-inset-top)) 22px 12px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-shrink:0;border-bottom:1px solid var(--line);background:rgba(23,27,24,0.72);backdrop-filter:blur(12px)}
 .brand{display:flex;align-items:baseline;gap:11px}
 .logo{font-family:'Sora';font-weight:800;font-size:24px;letter-spacing:1px;background:linear-gradient(120deg,#fff,var(--vio2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .tagline{font-size:11px;color:var(--dim2);letter-spacing:3px;text-transform:uppercase;font-weight:500}
@@ -36,7 +36,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .date-chip{font-size:12px;color:var(--dim);letter-spacing:.5px;font-weight:500}
 
 /* NAV */
-.tab-nav{position:relative;z-index:5;display:flex;padding:0 16px;gap:2px;flex-shrink:0;border-bottom:1px solid var(--line);background:rgba(21,22,29,0.35);overflow-x:auto}
+.tab-nav{position:relative;z-index:5;display:flex;padding:0 16px;gap:2px;flex-shrink:0;border-bottom:1px solid var(--line);background:rgba(23,27,24,0.42);overflow-x:auto}
 .tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:12px 15px;cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;gap:7px;white-space:nowrap;transition:color .18s}
 .tab-btn i{width:16px;height:16px}
 .tab-btn:hover{color:var(--tx)}
@@ -357,20 +357,25 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 input,textarea,select{font-size:16px}
 .topbar{padding:calc(11px + env(safe-area-inset-top)) 16px 11px}.logo{font-size:21px}.tagline{display:none}.date-chip{display:none}
 .tab-nav{display:none}
-.content{padding:16px 15px 96px}
-.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(21,22,29,0.94);backdrop-filter:blur(14px);border-top:1px solid var(--line2);padding:8px 6px calc(8px + var(--saf));justify-content:space-around}
-.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;cursor:pointer;flex:1;padding:4px 0;letter-spacing:.3px}
-.bn-btn i{width:22px;height:22px}
+.content{padding:16px 15px calc(90px + var(--saf))}
+.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(17,20,18,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:7px 6px calc(6px + var(--saf));justify-content:space-around}
+.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:600;cursor:pointer;flex:1;padding:3px 0;letter-spacing:.2px}
+.bn-btn i{width:21px;height:21px}
 .bn-btn.active{color:var(--vio2)}
-.prime-grid{grid-template-columns:1fr;gap:10px}
+.prime-grid{grid-template-columns:1fr;gap:9px}
 .prime{min-height:auto;flex-direction:row;align-items:flex-start;gap:13px;padding:15px}
-.prime .check{margin-bottom:0}.prime .rank{display:none}.prime .ptext{font-size:16px}
+.prime .check{margin-bottom:0}.prime .rank{display:none}.prime .ptext{font-size:15.5px}
 .prime .px{position:static;opacity:.6;margin-left:auto;align-self:center}.prime .pfoot{margin-top:8px}
-.prime.empty{flex-direction:column}
-.sysbar{flex-direction:column;align-items:flex-start;gap:12px}
-.sys-right{align-items:flex-start;flex-direction:row;align-items:center;gap:12px}
+.prime.empty{flex-direction:row;justify-content:center;align-items:center;min-height:52px;padding:12px;gap:8px}
+.prime.empty .eicon{margin-bottom:0;width:17px;height:17px}
+.prime.empty span{font-size:13px}
+.sysbar{flex-direction:column;align-items:flex-start;gap:10px;padding:15px 16px}
+.sys-hello{font-size:17px;line-height:1.25}
+.sys-sub{font-size:11.5px;line-height:1.4}
+.sys-right{flex-direction:row;align-items:center;gap:11px}
+.sec-head{margin:20px 0 11px}
 .cal-wrap{height:auto;min-height:0;padding:11px}.cal-body{flex-direction:column}.cal-detail-wrap{height:calc(100dvh - 300px);min-height:260px;flex:none}.cal-side{width:100%}
-.fab{width:54px;height:54px;bottom:calc(78px + var(--saf))}
+.fab{width:54px;height:54px;bottom:calc(80px + var(--saf))}
 .vgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));grid-auto-rows:150px}
 .note-grid,.proj-grid{grid-template-columns:1fr 1fr;gap:10px}
 }
@@ -438,7 +443,7 @@ input,textarea,select{font-size:16px}
     </div>
     <div class="prime-grid" id="primeGrid"></div>
     <div class="add-prime">
-      <input class="add-input" id="nmInput" placeholder="Add a needle mover (goes to the top)..." maxlength="180">
+      <input class="add-input" id="nmInput" placeholder="Add a needle mover…" maxlength="180">
       <button class="add-btn" onclick="addNM()"><i data-lucide="plus"></i> Add</button>
     </div>
 
@@ -787,7 +792,7 @@ function renderSys(){
   document.getElementById("tbDate").textContent=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
   var act=todayItems().length,goalsActive=S.goals.filter(function(g){return !g.archived}).length;
   document.getElementById("sysHello").textContent=act===0?"Clear slate. Pull in what matters.":"Move the needle today.";
-  document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" active goals &middot; <span style=\"color:var(--dim2)\">"+BUILD+"</span>";
+  document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" goals &middot; <span style=\"color:var(--dim2)\">"+BUILD+"</span>";
   var ago=document.getElementById("reviewAgo");
   if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";
 }
@@ -847,7 +852,7 @@ function renderToday(){
   S.needleMovers.forEach(function(m){if(!m.done&&m.date===t)items.push({time:m.startHour!=null?m.startHour:99,label:m.startHour!=null?fmtH(m.startHour):"Today",title:m.text,type:"task"})});
   S.goals.forEach(function(g){g.steps.forEach(function(s){if(!s.done&&s.date===t)items.push({time:s.startHour!=null?s.startHour:99,label:s.startHour!=null?fmtH(s.startHour):"Today",title:s.text,type:"task"})})});
   items.sort(function(a,b){return a.time-b.time});
-  if(!items.length){c.innerHTML='<div class="empty-note">Nothing scheduled today. Schedule a needle mover or goal step to time-block it.</div>';return}
+  if(!items.length){c.innerHTML='<div class="empty-note">Nothing scheduled today.</div>';return}
   items.forEach(function(it){c.innerHTML+='<div class="trow '+(it.type==="task"?"task":"")+'"><span class="ttime">'+esc(it.label)+'</span><span class="ttitle">'+esc(it.title)+'</span><span class="ttag">'+(it.type==="task"?"Action":"Event")+'</span></div>'})}
 
 /* ===== GOALS ===== */
@@ -957,7 +962,7 @@ function renderCal(){
   S.goals.forEach(function(g){g.steps.forEach(function(s){if(!s.done&&s.date===selDs&&s.startHour!=null)items.push({kind:"task",h:s.startHour,dur:s.duration||1,title:s.text,id:s.id})})});
   document.getElementById("calDetailHead").innerHTML='<span class="cdh-date">'+sel.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+'</span><span class="cdh-count">'+(items.length?items.length+" scheduled":"Nothing scheduled")+'</span>';
   var grid=document.getElementById("calDetailGrid");grid.innerHTML="";
-  if(!items.length){grid.innerHTML='<div class="cal-detail-empty">Nothing scheduled this day. Use “Schedule” on a needle mover or add an event to time-block it here.</div>';renderCalForm();renderEvtList();icons();return}
+  if(!items.length){grid.innerHTML='<div class="cal-detail-empty">Nothing scheduled. Schedule a mover or add an event.</div>';renderCalForm();renderEvtList();icons();return}
   function pctTop(h){return Math.max(0,Math.min(100,(h-SHS)/span*100))}
   function pctH(h,dur){var t=(h-SHS)/span*100,ht=(dur||1)/span*100;if(t<0){ht+=t;t=0}if(t+ht>100)ht=100-t;return Math.max(5,ht)}
   var tcol=document.createElement("div");tcol.className="cal-time-col";var th='<div class="cal-time-body">';
