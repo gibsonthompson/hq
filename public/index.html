@@ -397,6 +397,34 @@ input,textarea,select{font-size:16px}
 .vfeed-btn i{width:20px;height:20px}
 .vfeed-close{right:16px}.vfeed-shuffle{right:66px}
 .vfeed-count{position:fixed;top:calc(22px + env(safe-area-inset-top,0px));left:20px;z-index:92;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;font-family:'JetBrains Mono'}
+@media(max-width:760px){
+/* goals: readable titles, step rows that don't crush the text */
+.goal-head{padding:14px}
+.goal-title{font-size:15px}
+.goal-why{font-size:12px}
+.goal-steps{padding:2px 14px 14px}
+.step-row{flex-wrap:wrap;gap:8px 9px}
+.step-text{flex:1 1 62%;min-width:0;font-size:14px}
+.step-act{padding:4px}.step-act i{width:15px;height:15px}
+.step-add input{font-size:16px}
+.cat-pill{padding:8px 14px;font-size:13px}
+/* suggestions: goal label + button on top, full text below */
+.suggest{flex-wrap:wrap;gap:8px 10px}
+.suggest .sg-text{flex:1 1 100%;order:3;font-size:13.5px}
+/* weekly review: give the next-action text its own line */
+.rv-next{flex-wrap:wrap;gap:7px 9px}
+.rv-next .txt{flex:1 1 100%;order:3}
+.rv-goal-title{font-size:14px}
+/* modals sit comfortably on small screens */
+.modal{padding:14px}
+.modal-box{padding:18px;border-radius:16px}
+.modal-title{font-size:16px}
+/* calendar week strip a touch tighter */
+.cal-day-pill{padding:8px 1px 6px}
+.cal-day-pill .pnum{font-size:15px}
+.cal-detail-head{padding:11px 13px}
+.cal-detail-head .cdh-date{font-size:14px}
+}
 .hidden{display:none!important}
 </style></head>
 <body>
@@ -594,7 +622,7 @@ input,textarea,select{font-size:16px}
 <!-- GOAL MODAL -->
 <div class="modal" id="goalModal"><div class="modal-box">
   <div class="modal-title"><i data-lucide="flag"></i> New Goal</div>
-  <input class="m-in" id="goalTitle" placeholder="What's the outcome? (e.g. Grow RSA to 20 jobs/mo)">
+  <input class="m-in" id="goalTitle" placeholder="What's the outcome?">
   <textarea class="m-ta" id="goalWhy" rows="2" placeholder="Why it matters (optional)" style="margin-bottom:11px"></textarea>
   <div class="m-label">Category</div>
   <div class="m-catrow">
