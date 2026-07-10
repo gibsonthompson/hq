@@ -2,7 +2,7 @@
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0f1210"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="HQ"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase.min.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -717,7 +717,8 @@ var SUPABASE_URL="https://szdrpdjyordvqtkuuazh.supabase.co",SUPABASE_ANON_KEY="e
 /* If the file still has placeholders, use creds saved in this browser (entered once via Sync Settings). */
 try{if(SUPABASE_URL.indexOf("REPLACE")===0){var _su=localStorage.getItem("hq_sb_url"),_sk=localStorage.getItem("hq_sb_key");if(_su)SUPABASE_URL=_su;if(_sk)SUPABASE_ANON_KEY=_sk}}catch(e){}
 var sb=null,saveTimer=null,pendingSave=false;
-try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
+var sbLibLoaded=(typeof supabase!=="undefined"&&supabase&&typeof supabase.createClient==="function");
+try{if(sbLibLoaded)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
 function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),ord:Date.now(),duration:1};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),ord:(x.ord!=null?x.ord:(x.ts||Date.now())),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ord:(s.ord!=null?s.ord:Date.now()),date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
@@ -730,9 +731,10 @@ var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
 function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(k){if(Array.isArray(o[k]))n+=o[k].length});return n}
 function remoteCount(d){var n=0;["goals","needle_movers","notes","projects","calendar_events","captures","images"].forEach(function(k){if(Array.isArray(d[k]))n+=d[k].length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var baks=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(baks.length>3)localStorage.removeItem(baks.shift())}catch(e){}}
-function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--dim2)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"Local only — no cloud connection",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
-function forceSync(){var m={ok:"Synced",saving:"Saving…",err:"Sync error — saved on this device only",local:"Local only (no connection)",skip:"Protected: skipped empty write"}[syncState]||"Idle";toast(m,"refresh-cw");if(sb&&remoteLoaded&&dataCount(S)>0)saveToSupabase()}
-var BUILD="v4-merge";
+function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"NOT SYNCING — cloud library didn't load on this device",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
+function forceSync(){if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library failed to load here","alert-triangle");return}
+  toast("Syncing…","refresh-cw");pullRemote();}
+var BUILD="v5-sync";
 function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[];
   (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}});
   (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
