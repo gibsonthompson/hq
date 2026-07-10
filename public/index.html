@@ -734,7 +734,7 @@ function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)ret
 function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"NOT SYNCING — cloud library didn't load on this device",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
 function forceSync(){if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library failed to load here","alert-triangle");return}
   toast("Syncing…","refresh-cw");pullRemote();}
-var BUILD="v5-sync";
+var BUILD="v6-poll";
 function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[];
   (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}});
   (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
@@ -762,13 +762,13 @@ function pullRemote(){if(!sb){remoteLoaded=true;setSync("local");return}
   sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(res){
     if(res.error){remoteLoaded=true;setSync("err");return}
     var d=(res.data&&res.data[0]);
-    if(d){var rt=new Date(d.updated_at).getTime(),lt=parseInt(localStorage.getItem("hq_ts")||"0"),rc=remoteCount(d);
+    if(d){var rt=new Date(d.updated_at).getTime(),lt=parseInt(localStorage.getItem("hq_ts")||"0"),rc=remoteCount(d),beforeCnt=dataCount(S);
       if(rc>0)everHadData=true;
-      backupLocal("prepull");
       mergeState(d,rt>lt);/* union merge — never drops anything from either side */
-      saveLocal();localStorage.setItem("hq_ts",String(Math.max(rt,lt)));everHadData=dataCount(S)>0;R();
+      var changed=(dataCount(S)!==beforeCnt)||(rt>lt);
+      if(changed){if(rt>lt)backupLocal("prepull");saveLocal();localStorage.setItem("hq_ts",String(Math.max(rt,lt)));everHadData=dataCount(S)>0;R();}
       remoteLoaded=true;lastSynced=Date.now();setSync("ok");
-      saveToSupabase();/* push merged superset so cloud gets any local-only items */
+      if(dataCount(S)>rc)saveToSupabase();/* only push if we hold items the cloud lacks */
     }else{remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(dataCount(S)>0)saveToSupabase();}
   }).catch(function(e){remoteLoaded=true;setSync("err")})}
 function load(){loadLocal();everHadData=dataCount(S)>0;R();pullRemote()}
@@ -782,7 +782,7 @@ function saveToSupabase(){if(!sb){setSync("local");return}
     else setSync("err")}).catch(function(e){setSync("err")})}
 function flushSave(){if(!pendingSave||!sb||!remoteLoaded)return;if(dataCount(S)===0&&everHadData)return;pendingSave=false;
   try{fetch(SUPABASE_URL+"/rest/v1/hq_data?on_conflict=user_key",{method:"POST",keepalive:true,headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(buildRow())})}catch(e){}}
-function save(){saveLocal();if(dataCount(S)>0)everHadData=true;pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(saveToSupabase,700)}
+function save(){saveLocal();if(dataCount(S)>0)everHadData=true;pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(saveToSupabase,500)}
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flushSave();else if(remoteLoaded)pullRemote()});
 window.addEventListener("pagehide",flushSave);
 window.addEventListener("focus",function(){if(remoteLoaded)pullRemote()});
@@ -1132,6 +1132,8 @@ if('serviceWorker' in navigator){var _hadCtrl=!!navigator.serviceWorker.controll
 
 /* ===== BOOT ===== */
 load();
+/* poll the cloud so a change on one device shows on the other within seconds, no reload needed */
+setInterval(function(){if(sb&&remoteLoaded&&document.visibilityState==="visible")pullRemote()},4000);
 window.addEventListener("load",function(){icons()});
 if(SUPABASE_URL.indexOf("REPLACE")===0){setTimeout(function(){toast("Tap the gear to connect sync","settings")},1200)}
 setInterval(function(){if(document.getElementById("tab-calendar").classList.contains("active"))renderCal()},60000);
