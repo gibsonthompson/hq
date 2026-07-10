@@ -1,5 +1,5 @@
 /* HQ service worker — bump CACHE to force an update after a deploy */
-const CACHE = 'hq-v4';
+const CACHE = 'hq-v5';
 const SHELL = [
   '/',
   '/index.html',
@@ -7,7 +7,8 @@ const SHELL = [
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
-  '/lucide.min.js'
+  '/lucide.min.js',
+  '/supabase.min.js'
 ];
 
 self.addEventListener('install', function (e) {
