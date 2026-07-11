@@ -217,6 +217,21 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .proj .pdesc{font-size:13px;color:var(--dim);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .proj .popen{margin-top:12px;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--vio2)}
 .proj .popen i{width:13px;height:13px}
+.proj-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.proj-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--vio2);background:rgba(70,209,135,0.12);border:1px solid rgba(70,209,135,0.35);border-radius:8px;padding:5px 9px;cursor:pointer}
+.proj-link:hover{background:rgba(70,209,135,0.22)}
+.proj-link i{width:12px;height:12px}
+.proj .pedit{position:absolute;top:9px;right:34px;background:none;border:none;color:var(--dim2);cursor:pointer;opacity:0;display:flex}
+.proj .pedit i{width:14px;height:14px}
+.proj:hover .pedit{opacity:.6}.proj .pedit:hover{color:var(--vio2);opacity:1}
+.pl-row{display:flex;gap:6px;margin-bottom:7px}
+.pl-row input{background:var(--surface);border:1px solid var(--line2);border-radius:9px;color:var(--tx);padding:9px 11px;font-size:14px;outline:none;min-width:0}
+.pl-row input.pl-label{flex:0 0 34%}.pl-row input.pl-url{flex:1}
+.pl-row input:focus{border-color:var(--vio)}
+.pl-rm{background:none;border:none;color:var(--dim2);cursor:pointer;font-size:17px;padding:0 4px;flex-shrink:0}
+.pl-rm:hover{color:var(--red)}
+.pl-add{width:100%;text-align:center;background:var(--surface);border:1px dashed var(--line2);color:var(--vio2);border-radius:9px;padding:9px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:4px}
+.pl-add:hover{background:var(--elev)}
 .proj .pjx{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--dim2);cursor:pointer;font-size:15px;opacity:0}
 .proj:hover .pjx{opacity:.6}.proj .pjx:hover{color:var(--red);opacity:1}
 
@@ -650,13 +665,15 @@ input,textarea,select{font-size:16px}
 
 <!-- PROJECT MODAL -->
 <div class="modal" id="projModal"><div class="modal-box">
-  <div class="modal-title"><i data-lucide="folder-plus"></i> New Project</div>
+  <div class="modal-title"><i data-lucide="folder-plus"></i> <span id="projModalTitle">New Project</span></div>
   <input class="m-in" id="projTitle" placeholder="Project name">
-  <textarea class="m-ta" id="projDesc" rows="2" placeholder="Short description" style="margin-bottom:9px"></textarea>
-  <input class="m-in" id="projLink" placeholder="Link (Claude project, repo, etc.)">
+  <textarea class="m-ta" id="projDesc" rows="2" placeholder="Short description" style="margin-bottom:11px"></textarea>
+  <div class="m-label">Links</div>
+  <div id="projLinks"></div>
+  <div class="pl-add" onclick="addProjLinkRow('','')">+ Add link</div>
   <div class="m-actions">
     <button class="m-btn" onclick="closeModal('projModal')">Cancel</button>
-    <button class="m-btn primary" onclick="saveProj()">Add Project</button>
+    <button class="m-btn primary" onclick="saveProj()">Save</button>
   </div>
 </div></div>
 
@@ -723,9 +740,10 @@ var sbLibLoaded=(typeof supabase!=="undefined"&&supabase&&typeof supabase.create
 try{if(sbLibLoaded)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
 function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),ord:Date.now(),duration:1};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),ord:(x.ord!=null?x.ord:(x.ts||Date.now())),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ord:(s.ord!=null?s.ord:Date.now()),date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
+function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];return{id:p.id||mid(),title:p.title||"",desc:p.desc||"",links:links,ca:p.ca||Date.now()}})}
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
-  S.notes=p.notes||[];S.projects=p.projects||[];S.calendarEvents=p.calendarEvents||[];S.weeklyBlocks=p.weeklyBlocks||[];
+  S.notes=p.notes||[];S.projects=normalizeProjects(p.projects);S.calendarEvents=p.calendarEvents||[];S.weeklyBlocks=p.weeklyBlocks||[];
   S.contentIdeas=p.contentIdeas||[];S.captures=p.captures||[];S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0;S.deleted=p.deleted||{}}
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
@@ -736,7 +754,7 @@ function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)ret
 function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"NOT SYNCING — cloud library didn't load on this device",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
 function forceSync(){if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library failed to load here","alert-triangle");return}
   toast("Syncing…","refresh-cw");pullRemote();}
-var BUILD="v7-del";
+var BUILD="v8-proj";
 function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[],del=S.deleted||{};
   (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}});
   (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
@@ -749,7 +767,7 @@ function mergeState(d,preferRemote){
   if(d.deleted){for(var dk in d.deleted){if(!S.deleted[dk]||d.deleted[dk]>S.deleted[dk])S.deleted[dk]=d.deleted[dk]}}
   S.needleMovers=mergeArr(S.needleMovers,normalizeNM(d.needle_movers),preferRemote);
   S.notes=mergeArr(S.notes,d.notes,preferRemote);
-  S.projects=mergeArr(S.projects,d.projects,preferRemote);
+  S.projects=mergeArr(S.projects,normalizeProjects(d.projects),preferRemote);
   S.calendarEvents=mergeArr(S.calendarEvents,d.calendar_events,preferRemote);
   S.captures=mergeArr(S.captures,d.captures,preferRemote);
   S.images=mergeArr(S.images,d.images,preferRemote);
@@ -1055,11 +1073,31 @@ function rmNote(id){tomb(id);S.notes=S.notes.filter(function(x){return x.id!==id
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
   if(!S.projects.length){c.innerHTML='<div class="empty-note" style="grid-column:1/-1">No projects yet.</div>';return}
   S.projects.forEach(function(p){var el=document.createElement("div");el.className="proj";
-    if(p.link)el.onclick=function(){window.open(p.link,"_blank")};
-    el.innerHTML='<div class="ptitle">'+esc(p.title)+'</div><div class="pdesc">'+esc(p.desc||"")+'</div>'+(p.link?'<span class="popen"><i data-lucide="external-link"></i>Open</span>':'')+'<button class="pjx" onclick="event.stopPropagation();rmProj(\''+p.id+'\')">&times;</button>';
-    c.appendChild(el)})}
-function openProjModal(){openModal("projModal");setTimeout(function(){document.getElementById("projTitle").focus()},100)}
-function saveProj(){var t=document.getElementById("projTitle").value.trim();if(!t)return;S.projects.push({id:mid(),title:t,desc:document.getElementById("projDesc").value.trim(),link:document.getElementById("projLink").value.trim(),ca:Date.now()});document.getElementById("projTitle").value="";document.getElementById("projDesc").value="";document.getElementById("projLink").value="";save();closeModal("projModal");renderProjects();icons()}
+    el.onclick=function(){openProjModal(p.id)};
+    var head=document.createElement("div");head.innerHTML='<div class="ptitle">'+esc(p.title)+'</div>'+(p.desc?'<div class="pdesc">'+esc(p.desc)+'</div>':'');
+    el.appendChild(head);
+    if(p.links&&p.links.length){var lw=document.createElement("div");lw.className="proj-links";
+      p.links.forEach(function(l){var b=document.createElement("button");b.className="proj-link";b.innerHTML='<i data-lucide="external-link"></i>'+esc(l.label||l.url);
+        b.onclick=function(ev){ev.stopPropagation();if(l.url)window.open(l.url,"_blank")};lw.appendChild(b)});
+      el.appendChild(lw);}
+    var ed=document.createElement("button");ed.className="pedit";ed.innerHTML='<i data-lucide="pencil"></i>';ed.onclick=function(ev){ev.stopPropagation();openProjModal(p.id)};el.appendChild(ed);
+    var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
+    c.appendChild(el)});icons()}
+var editingProjId=null;
+function addProjLinkRow(label,url){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
+  row.innerHTML='<input class="pl-label" placeholder="Label" value="'+esc(label||"")+'"><input class="pl-url" placeholder="https://…" value="'+esc(url||"")+'"><button class="pl-rm" onclick="this.parentNode.remove()">&times;</button>';
+  wrap.appendChild(row)}
+function openProjModal(id){editingProjId=id||null;
+  document.getElementById("projModalTitle").textContent=id?"Edit Project":"New Project";
+  document.getElementById("projLinks").innerHTML="";
+  if(id){var p=S.projects.find(function(x){return x.id===id});if(p){document.getElementById("projTitle").value=p.title||"";document.getElementById("projDesc").value=p.desc||"";(p.links||[]).forEach(function(l){addProjLinkRow(l.label,l.url)});if(!(p.links&&p.links.length))addProjLinkRow("","")}}
+  else{document.getElementById("projTitle").value="";document.getElementById("projDesc").value="";addProjLinkRow("","")}
+  openModal("projModal");setTimeout(function(){document.getElementById("projTitle").focus()},100)}
+function saveProj(){var t=document.getElementById("projTitle").value.trim();if(!t)return;var desc=document.getElementById("projDesc").value.trim();var links=[];
+  document.querySelectorAll("#projLinks .pl-row").forEach(function(row){var label=row.querySelector(".pl-label").value.trim();var url=row.querySelector(".pl-url").value.trim();if(url){if(!/^https?:\/\//i.test(url))url="https://"+url;links.push({id:mid(),label:label||url,url:url})}});
+  if(editingProjId){var p=S.projects.find(function(x){return x.id===editingProjId});if(p){p.title=t;p.desc=desc;p.links=links}}
+  else{S.projects.push({id:mid(),title:t,desc:desc,links:links,ca:Date.now()})}
+  editingProjId=null;save();closeModal("projModal");renderProjects();icons()}
 function rmProj(id){tomb(id);S.projects=S.projects.filter(function(x){return x.id!==id});save();renderProjects();icons()}
 
 /* ===== QUICK CAPTURE / INBOX ===== */
