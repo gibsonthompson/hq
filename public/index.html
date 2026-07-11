@@ -696,7 +696,7 @@ var S={
   goals:[],          // {id,title,why,cat,target,steps:[{id,text,done,doneTs,onToday,ord,date,startHour,duration}],created,archived}
   needleMovers:[],   // standalone {id,text,done,ts,doneTs,ord,date,startHour,duration}
   notes:[],images:[],projects:[],calendarEvents:[],weeklyBlocks:[],contentIdeas:[],captures:[],
-  lastReview:null,
+  lastReview:null,deleted:{},
   schedCats:null,nci:0,wcalWeekStart:null
 };
 var calRecur=false,activeSchedId=null,schedPickedDay=null,goalFilter="all",goalCatPick="business",suggestOpen=true;
@@ -711,6 +711,8 @@ function fmtH(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60),s=mn>0?String(mn)
 function fmtHS(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60);if(hr===0)return"12"+(mn?":30":"")+"a";if(hr<12)return hr+(mn?":30":"")+"a";if(hr===12)return"12"+(mn?":30":"")+"p";return(hr-12)+(mn?":30":"")+"p"}
 function getWeekStart(d){var dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()-dt.getDay());return dt}
 function icons(){try{if(window.lucide&&lucide.createIcons)lucide.createIcons()}catch(e){}}
+function tomb(id){if(id)S.deleted[id]=Date.now()}
+function pruneTombs(){try{var now=Date.now(),cut=2592000000;for(var k in S.deleted){if(now-(S.deleted[k]||0)>cut)delete S.deleted[k]}}catch(e){}}
 
 /* ===== PERSISTENCE ===== */
 var SUPABASE_URL="https://szdrpdjyordvqtkuuazh.supabase.co",SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZHJwZGp5b3JkdnF0a3V1YXpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4MDAxMzgsImV4cCI6MjA4MjM3NjEzOH0.7rHx3HXaqe1h7q3y79nMwuXbOR9CcmWrY3WKXFjk8yM";
@@ -724,9 +726,9 @@ function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(func
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=p.notes||[];S.projects=p.projects||[];S.calendarEvents=p.calendarEvents||[];S.weeklyBlocks=p.weeklyBlocks||[];
-  S.contentIdeas=p.contentIdeas||[];S.captures=p.captures||[];S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.contentIdeas=p.contentIdeas||[];S.captures=p.captures||[];S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0;S.deleted=p.deleted||{}}
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
-function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
+function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
 function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(k){if(Array.isArray(o[k]))n+=o[k].length});return n}
 function remoteCount(d){var n=0;["goals","needle_movers","notes","projects","calendar_events","captures","images"].forEach(function(k){if(Array.isArray(d[k]))n+=d[k].length});return n}
@@ -734,16 +736,17 @@ function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)ret
 function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"NOT SYNCING — cloud library didn't load on this device",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
 function forceSync(){if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library failed to load here","alert-triangle");return}
   toast("Syncing…","refresh-cw");pullRemote();}
-var BUILD="v6-poll";
-function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[];
-  (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}});
-  (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
+var BUILD="v7-del";
+function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[],del=S.deleted||{};
+  (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}});
+  (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
   return order.map(function(id){return byId[id]})}
-function mergeGoals(localG,remoteG,preferRemote){var byId={},order=[];
-  (localG||[]).forEach(function(g){byId[g.id]=g;order.push(g.id)});
-  (remoteG||[]).forEach(function(g){if(!(g.id in byId)){byId[g.id]=g;order.push(g.id)}else{var lg=byId[g.id];lg.steps=mergeArr(lg.steps,g.steps,preferRemote);if(preferRemote){lg.title=g.title;lg.why=g.why;lg.cat=g.cat;lg.target=g.target;lg.archived=g.archived}}});
+function mergeGoals(localG,remoteG,preferRemote){var byId={},order=[],del=S.deleted||{};
+  (localG||[]).forEach(function(g){if(del[g.id])return;byId[g.id]=g;order.push(g.id)});
+  (remoteG||[]).forEach(function(g){if(del[g.id])return;if(!(g.id in byId)){byId[g.id]=g;order.push(g.id)}else{var lg=byId[g.id];lg.steps=mergeArr(lg.steps,g.steps,preferRemote);if(preferRemote){lg.title=g.title;lg.why=g.why;lg.cat=g.cat;lg.target=g.target;lg.archived=g.archived}}});
   return order.map(function(id){return byId[id]})}
 function mergeState(d,preferRemote){
+  if(d.deleted){for(var dk in d.deleted){if(!S.deleted[dk]||d.deleted[dk]>S.deleted[dk])S.deleted[dk]=d.deleted[dk]}}
   S.needleMovers=mergeArr(S.needleMovers,normalizeNM(d.needle_movers),preferRemote);
   S.notes=mergeArr(S.notes,d.notes,preferRemote);
   S.projects=mergeArr(S.projects,d.projects,preferRemote);
@@ -757,7 +760,7 @@ function mergeState(d,preferRemote){
   if(d.content_ideas&&(!S.contentIdeas||!S.contentIdeas.length))S.contentIdeas=d.content_ideas;
   if(d.sched_cats&&!S.schedCats)S.schedCats=d.sched_cats;
 }
-function buildRow(){return{user_key:"gibson",rhythm:S.rhythm,goals:S.goals,needle_movers:S.needleMovers,notes:S.notes,projects:S.projects,calendar_events:S.calendarEvents,weekly_blocks:S.weeklyBlocks,content_ideas:S.contentIdeas,captures:S.captures,last_review:S.lastReview,sched_cats:S.schedCats,images:S.images,nci:S.nci}}
+function buildRow(){return{user_key:"gibson",rhythm:S.rhythm,goals:S.goals,needle_movers:S.needleMovers,notes:S.notes,projects:S.projects,calendar_events:S.calendarEvents,weekly_blocks:S.weeklyBlocks,content_ideas:S.contentIdeas,captures:S.captures,last_review:S.lastReview,sched_cats:S.schedCats,images:S.images,nci:S.nci,deleted:S.deleted}}
 function pullRemote(){if(!sb){remoteLoaded=true;setSync("local");return}
   sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(res){
     if(res.error){remoteLoaded=true;setSync("err");return}
@@ -768,10 +771,10 @@ function pullRemote(){if(!sb){remoteLoaded=true;setSync("local");return}
       var changed=(dataCount(S)!==beforeCnt)||(rt>lt);
       if(changed){if(rt>lt)backupLocal("prepull");saveLocal();localStorage.setItem("hq_ts",String(Math.max(rt,lt)));everHadData=dataCount(S)>0;R();}
       remoteLoaded=true;lastSynced=Date.now();setSync("ok");
-      if(dataCount(S)>rc)saveToSupabase();/* only push if we hold items the cloud lacks */
+      if(dataCount(S)!==rc)saveToSupabase();/* push if we hold extra items OR removed tombstoned ones */
     }else{remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(dataCount(S)>0)saveToSupabase();}
   }).catch(function(e){remoteLoaded=true;setSync("err")})}
-function load(){loadLocal();everHadData=dataCount(S)>0;R();pullRemote()}
+function load(){loadLocal();pruneTombs();everHadData=dataCount(S)>0;R();pullRemote()}
 function saveToSupabase(){if(!sb){setSync("local");return}
   if(!remoteLoaded)return;
   if(dataCount(S)===0&&everHadData){setSync("skip");return}
@@ -801,8 +804,8 @@ function findRef(id){var m=S.needleMovers.find(function(x){return x.id===id});if
 
 /* ===== NEEDLE MOVERS / COMPLETION ===== */
 function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim();if(!v)return;S.needleMovers.push({id:mid(),text:v,done:false,ts:Date.now(),ord:topOrd(),duration:1});inp.value="";save();R()}
-function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover")S.needleMovers=S.needleMovers.filter(function(x){return x.id!==id});else f.ref.onToday=false;save();R()}
-function deleteMover(id){S.needleMovers=S.needleMovers.filter(function(x){return x.id!==id});save();R()}
+function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){tomb(id);S.needleMovers=S.needleMovers.filter(function(x){return x.id!==id})}else f.ref.onToday=false;save();R()}
+function deleteMover(id){tomb(id);S.needleMovers=S.needleMovers.filter(function(x){return x.id!==id});save();R()}
 function promote(id){var f=findRef(id);if(!f)return;f.ref.ord=topOrd();save();R()}
 function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
   if(el){el.classList.add("completing");if(el.classList.contains("prime"))el.classList.add("done-anim")}
@@ -930,13 +933,13 @@ function toggleGoal(id){openGoals[id]=!openGoals[id];renderGoals()}
 function openGoalModal(){goalCatPick="business";document.querySelectorAll("#goalModal .m-cat").forEach(function(c){c.classList.toggle("on",c.dataset.gc==="business")});document.getElementById("goalTitle").value="";document.getElementById("goalWhy").value="";document.getElementById("goalTarget").value="";openModal("goalModal");setTimeout(function(){document.getElementById("goalTitle").focus()},100)}
 function pickGoalCat(c){goalCatPick=c;document.querySelectorAll("#goalModal .m-cat").forEach(function(x){x.classList.toggle("on",x.dataset.gc===c)})}
 function saveGoal(){var t=document.getElementById("goalTitle").value.trim();if(!t)return;var g={id:mid(),title:t,why:document.getElementById("goalWhy").value.trim(),cat:goalCatPick,target:document.getElementById("goalTarget").value||null,created:Date.now(),archived:false,steps:[]};S.goals.push(g);openGoals[g.id]=true;save();closeModal("goalModal");switchTab("goals");R()}
-function deleteGoal(id){if(!confirm("Delete this goal and its steps?"))return;S.goals=S.goals.filter(function(g){return g.id!==id});save();R()}
+function deleteGoal(id){if(!confirm("Delete this goal and its steps?"))return;var g=S.goals.find(function(x){return x.id===id});if(g&&g.steps)g.steps.forEach(function(s){tomb(s.id)});tomb(id);S.goals=S.goals.filter(function(g){return g.id!==id});save();R()}
 function addStep(goalId,inp){var v=inp.value.trim();if(!v)return;var g=S.goals.find(function(x){return x.id===goalId});if(!g)return;g.steps.push({id:mid(),text:v,done:false,onToday:false,ord:Date.now(),duration:1});inp.value="";save();renderGoals();renderSuggest()}
 function toggleStep(goalId,stepId,el){var g=S.goals.find(function(x){return x.id===goalId});if(!g)return;var s=g.steps.find(function(x){return x.id===stepId});if(!s)return;
   if(!s.done){s.done=true;s.doneTs=Date.now();s.onToday=false;s.date=null;s.startHour=null;if(el){var row=el.closest(".step-row");if(row)row.classList.add("done")}toast("Step done.","check-circle")}
   else{s.done=false;s.doneTs=null}
   save();setTimeout(function(){R()},s.done?200:0)}
-function deleteStep(goalId,stepId){var g=S.goals.find(function(x){return x.id===goalId});if(!g)return;g.steps=g.steps.filter(function(s){return s.id!==stepId});save();R()}
+function deleteStep(goalId,stepId){var g=S.goals.find(function(x){return x.id===goalId});if(!g)return;tomb(stepId);g.steps=g.steps.filter(function(s){return s.id!==stepId});save();R()}
 
 /* ===== SCHEDULE ===== */
 function openSchedule(id){activeSchedId=id;var f=findRef(id);if(!f)return;
@@ -1016,14 +1019,14 @@ function renderEvtList(){var c=document.getElementById("evtList");if(!c)return;c
   days.forEach(function(d){var ds=dStr(d),dow=d.getDay();S.calendarEvents.forEach(function(e){if((e.date===ds||(e.recurring&&e.recurDay===dow))&&shown.indexOf(e.id)<0){shown.push(e.id);c.innerHTML+='<div class="evt-item"><div><div class="ei-t">'+esc(e.title)+(e.recurring?" ↻":"")+'</div><div class="ei-s">'+DSH[e.recurring?e.recurDay:d.getDay()]+" "+(e.allDay?"all day":fmtHS(e.startHour))+'</div></div><button class="ei-x" onclick="rmEvt(\''+e.id+'\')">&times;</button></div>'}})});
   if(!shown.length)c.innerHTML='<div style="color:var(--dim2);font-size:13px">No events this week.</div>'}
 function addEvt(){var t=document.getElementById("calTitle").value.trim();if(!t)return;var di=parseInt(document.getElementById("calDay").value);var d=getCalDays()[di];var sh=parseFloat(document.getElementById("calStart").value);var dur=parseFloat(document.getElementById("calDur").value);S.calendarEvents.push({id:mid(),date:dStr(d),startHour:sh,duration:dur,title:t,allDay:false,recurring:calRecur,recurDay:calRecur?d.getDay():null,notes:""});document.getElementById("calTitle").value="";save();renderCal()}
-function rmEvt(id){S.calendarEvents=S.calendarEvents.filter(function(x){return x.id!==id});save();renderCal()}
+function rmEvt(id){tomb(id);S.calendarEvents=S.calendarEvents.filter(function(x){return x.id!==id});save();renderCal()}
 function editTheme(dow){var cur=S.rhythm[dow]?S.rhythm[dow].theme:"";var v=prompt("Theme for "+DS[dow]+":",cur);if(v!=null){if(!S.rhythm[dow])S.rhythm[dow]={theme:"",color:"#46d187"};S.rhythm[dow].theme=v.trim().toUpperCase();save();renderCal();renderSys()}}
 
 /* ===== VISION ===== */
 function renderVision(){var b=document.getElementById("visionBody");if(!b)return;
   if(!S.images.length){b.innerHTML='<div class="vempty" onclick="document.getElementById(\'vUpload\').click()"><i data-lucide="image-plus"></i><div>Add images that represent where you\'re headed</div></div>';icons();return}
   var h='<div class="vgrid">';S.images.forEach(function(im){h+='<div class="vitem"><img src="'+im.src+'" onclick="openVisionFeed(\''+im.id+'\')"><button class="vcap-edit" onclick="editCaption(\''+im.id+'\')" title="Edit caption"><i data-lucide="pencil"></i></button><button class="vx" onclick="rmImg(\''+im.id+'\')">&times;</button><div class="vcap" onclick="editCaption(\''+im.id+'\')">'+(im.cap?esc(im.cap):'<span style="opacity:.55">+ caption</span>')+'</div></div>'});h+='</div>';b.innerHTML=h}
-function rmImg(id){S.images=S.images.filter(function(x){return x.id!==id});save();renderVision();if(document.getElementById("visionFeed").classList.contains("show")){feedOrder=feedOrder.filter(function(x){return x!==id});if(!feedOrder.length)closeVisionFeed();else renderFeed()}}
+function rmImg(id){tomb(id);S.images=S.images.filter(function(x){return x.id!==id});save();renderVision();if(document.getElementById("visionFeed").classList.contains("show")){feedOrder=feedOrder.filter(function(x){return x!==id});if(!feedOrder.length)closeVisionFeed();else renderFeed()}}
 function editCaption(id){var im=S.images.find(function(x){return x.id===id});if(!im)return;var v=prompt("Caption for this vision image:",im.cap||"");if(v!=null){im.cap=v.trim();save();renderVision();if(document.getElementById("visionFeed").classList.contains("show")){var sc=document.getElementById("vfeedScroll").scrollTop;renderFeed();document.getElementById("vfeedScroll").scrollTop=sc}}}
 var feedOrder=[];
 function openVisionFeed(startId){if(!S.images.length){toast("Add vision photos first","image");return}
@@ -1046,7 +1049,7 @@ function renderNotes(){var c=document.getElementById("noteGrid");if(!c)return;c.
     c.appendChild(el)})}
 function addNote(){var inp=document.getElementById("noteInput");var v=inp.value.trim();if(!v)return;S.notes.push({id:mid(),text:v,time:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),color:NOTE_COLORS[S.notes.length%NOTE_COLORS.length]});inp.value="";save();renderNotes();icons()}
 function editNote(id,txt){var n=S.notes.find(function(x){return x.id===id});if(n){n.text=txt;save()}}
-function rmNote(id){S.notes=S.notes.filter(function(x){return x.id!==id});save();renderNotes();icons()}
+function rmNote(id){tomb(id);S.notes=S.notes.filter(function(x){return x.id!==id});save();renderNotes();icons()}
 
 /* ===== PROJECTS ===== */
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
@@ -1057,7 +1060,7 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
     c.appendChild(el)})}
 function openProjModal(){openModal("projModal");setTimeout(function(){document.getElementById("projTitle").focus()},100)}
 function saveProj(){var t=document.getElementById("projTitle").value.trim();if(!t)return;S.projects.push({id:mid(),title:t,desc:document.getElementById("projDesc").value.trim(),link:document.getElementById("projLink").value.trim(),ca:Date.now()});document.getElementById("projTitle").value="";document.getElementById("projDesc").value="";document.getElementById("projLink").value="";save();closeModal("projModal");renderProjects();icons()}
-function rmProj(id){S.projects=S.projects.filter(function(x){return x.id!==id});save();renderProjects();icons()}
+function rmProj(id){tomb(id);S.projects=S.projects.filter(function(x){return x.id!==id});save();renderProjects();icons()}
 
 /* ===== QUICK CAPTURE / INBOX ===== */
 function openCapture(){openModal("captureModal");setTimeout(function(){document.getElementById("captureInput").focus()},100)}
@@ -1072,7 +1075,7 @@ function capToGoalStep(id){var cap=S.captures.find(function(x){return x.id===id}
   var names=active.map(function(g,i){return(i+1)+". "+g.title}).join("\n");var pick=prompt("Add \""+cap.text+"\" as a step under which goal?\n\n"+names+"\n\nEnter number:");if(pick==null)return;var idx=parseInt(pick)-1;if(isNaN(idx)||!active[idx]){toast("Invalid choice","x");return}
   active[idx].steps.push({id:mid(),text:cap.text,done:false,onToday:false,ord:Date.now(),duration:1});capDel(id,true);save();R();toast("Added as goal step","flag")}
 function capToNote(id){var cap=S.captures.find(function(x){return x.id===id});if(!cap)return;S.notes.push({id:mid(),text:cap.text,time:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),color:NOTE_COLORS[S.notes.length%NOTE_COLORS.length]});capDel(id,true);save();renderNotes();toast("Saved to notes","sticky-note")}
-function capDel(id,silent){S.captures=S.captures.filter(function(x){return x.id!==id});save();updateInboxCount();renderInbox();if(!silent)icons()}
+function capDel(id,silent){tomb(id);S.captures=S.captures.filter(function(x){return x.id!==id});save();updateInboxCount();renderInbox();if(!silent)icons()}
 
 /* ===== WEEKLY REVIEW ===== */
 function openReview(){renderReview();openModal("reviewModal")}
