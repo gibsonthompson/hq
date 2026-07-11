@@ -447,7 +447,7 @@ input,textarea,select{font-size:16px}
 <div class="topbar">
   <div class="brand"><span class="logo">HQ</span><span class="tagline">System</span></div>
   <div class="tb-right">
-    <span id="syncDot" onclick="forceSync()" title="Local only" style="width:9px;height:9px;border-radius:50%;background:var(--dim2);display:inline-block;cursor:pointer;flex-shrink:0"></span>
+    <button class="tb-icon" id="syncBtn" onclick="forceSync()" title="Sync now" style="position:relative"><i data-lucide="refresh-cw"></i><span id="syncDot" style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--dim2);border:1.5px solid var(--elev)"></span></button>
     <button class="tb-icon" onclick="switchTab('projects')" title="Projects"><i data-lucide="folder"></i></button>
     <button class="tb-icon" onclick="openReview()" title="Weekly Review"><i data-lucide="clipboard-check"></i></button>
     <button class="tb-icon" onclick="openSbSettings()" title="Sync settings"><i data-lucide="settings"></i></button>
@@ -752,9 +752,24 @@ function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calend
 function remoteCount(d){var n=0;["goals","needle_movers","notes","projects","calendar_events","captures","images"].forEach(function(k){if(Array.isArray(d[k]))n+=d[k].length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var baks=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(baks.length>3)localStorage.removeItem(baks.shift())}catch(e){}}
 function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)",skip:"var(--amb)"}[state]||"var(--dim2)";el.style.background=c;var t={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Saving…",err:"Sync error — your data is safe on this device",local:"NOT SYNCING — cloud library didn't load on this device",skip:"Protected: skipped an empty write so your data isn't wiped"}[state]||"";el.title=t}
-function forceSync(){if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library failed to load here","alert-triangle");return}
-  toast("Syncing…","refresh-cw");pullRemote();}
-var BUILD="v8-proj";
+function forceSync(){
+  if(!sb){toast(sbLibLoaded?"No cloud connection":"Cloud library didn't load on this device","alert-triangle");return}
+  var btn=document.getElementById("syncBtn");if(btn)btn.style.opacity="0.5";
+  setSync("saving");toast("Syncing…","refresh-cw");
+  sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(r){
+    if(r.error){if(btn)btn.style.opacity="1";setSync("err");toast("Sync failed reading cloud: "+((r.error&&r.error.message)||"error"),"alert-triangle");return}
+    var d=r.data&&r.data[0];
+    if(d){var rt=new Date(d.updated_at).getTime();backupLocal("presync");mergeState(d,true);saveLocal();localStorage.setItem("hq_ts",String(rt));everHadData=dataCount(S)>0;R();}
+    remoteLoaded=true;
+    sb.from("hq_data").upsert(buildRow(),{onConflict:"user_key"}).select("updated_at").then(function(r2){
+      if(btn)btn.style.opacity="1";
+      if(r2.error){setSync("err");toast("Sync failed writing: "+((r2.error&&r2.error.message)||"error"),"alert-triangle");return}
+      var row=r2.data&&r2.data[0];if(row&&row.updated_at)localStorage.setItem("hq_ts",String(new Date(row.updated_at).getTime()));
+      lastSynced=Date.now();setSync("ok");toast("Synced · "+dataCount(S)+" items · "+BUILD,"check-circle");
+    }).catch(function(e){if(btn)btn.style.opacity="1";setSync("err");toast("Sync failed writing (network)","alert-triangle")});
+  }).catch(function(e){if(btn)btn.style.opacity="1";setSync("err");toast("Sync failed reading (network)","alert-triangle")});
+}
+var BUILD="v9-syncbtn";
 function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[],del=S.deleted||{};
   (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}});
   (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
