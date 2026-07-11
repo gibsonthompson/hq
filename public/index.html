@@ -15,7 +15,10 @@
 }
 html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
-body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;display:flex;flex-direction:column;font-size:15px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;display:flex;flex-direction:column;font-size:15px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
+/* text is selectable/copyable everywhere; only buttons and nav chrome are not */
+button,.tab-btn,.bn-btn,.tb-icon,.fab,.cal-day-pill,.cat-pill,.m-cat,.sday,.check,.step-check,.recur-tog,.pdot,.goal-caret,.sec-title i,.bn-btn i{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.ptext,.dtext,.step-text,.ntext,.ptitle,.pdesc,.goal-title,.goal-why,.ctext,.sg-text,.rv-next .txt,.trow .ttitle,.cal-block .bt,.vcapbar,.vcap,.sys-hello,.sys-sub,.cdh-date{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;cursor:text}
 input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 body::before{content:"";position:fixed;inset:0;background:radial-gradient(1100px 600px at 85% -10%,rgba(70,209,135,0.10),transparent 60%),radial-gradient(900px 500px at 0% 110%,rgba(70,209,135,0.05),transparent 55%);pointer-events:none;z-index:0}
 ::selection{background:rgba(70,209,135,0.35)}
@@ -728,6 +731,7 @@ function fmtH(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60),s=mn>0?String(mn)
 function fmtHS(h){var hr=Math.floor(h),mn=Math.round((h-hr)*60);if(hr===0)return"12"+(mn?":30":"")+"a";if(hr<12)return hr+(mn?":30":"")+"a";if(hr===12)return"12"+(mn?":30":"")+"p";return(hr-12)+(mn?":30":"")+"p"}
 function getWeekStart(d){var dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()-dt.getDay());return dt}
 function icons(){try{if(window.lucide&&lucide.createIcons)lucide.createIcons()}catch(e){}}
+function hasSelection(){try{var s=window.getSelection();return !!(s&&String(s).trim().length>0)}catch(e){return false}}
 function tomb(id){if(id)S.deleted[id]=Date.now()}
 function pruneTombs(){try{var now=Date.now(),cut=2592000000;for(var k in S.deleted){if(now-(S.deleted[k]||0)>cut)delete S.deleted[k]}}catch(e){}}
 
@@ -769,7 +773,7 @@ function forceSync(){
     }).catch(function(e){if(btn)btn.style.opacity="1";setSync("err");toast("Sync failed writing (network)","alert-triangle")});
   }).catch(function(e){if(btn)btn.style.opacity="1";setSync("err");toast("Sync failed reading (network)","alert-triangle")});
 }
-var BUILD="v9-syncbtn";
+var BUILD="v10-copy";
 function mergeArr(localArr,remoteArr,preferRemote){var byId={},order=[],del=S.deleted||{};
   (localArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}});
   (remoteArr||[]).forEach(function(x){var id=x&&x.id?x.id:JSON.stringify(x);if(del[id])return;if(!(id in byId)){byId[id]=x;order.push(id)}else if(preferRemote){byId[id]=x}});
@@ -890,7 +894,7 @@ function renderPrime(){
       if(it.kind==="step")chips+='<span class="pchip goal"><i data-lucide="flag"></i>'+esc(it.goalTitle.slice(0,16))+(it.goalTitle.length>16?"…":"")+'</span>';
       chips+=sl?'<span class="pchip sched" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'<span class="pchip" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="calendar-plus"></i>Schedule</span>';
       var el=document.createElement("div");el.className="prime";
-      el.onclick=(function(id){return function(){completeItem(id,this)}})(it.id);
+      el.onclick=(function(id){return function(){if(hasSelection())return;completeItem(id,this)}})(it.id);
       el.innerHTML='<span class="rank">'+(i+1)+'</span><div class="check"><i data-lucide="check"></i></div><div class="ptext">'+esc(it.text)+'</div><div class="pfoot">'+chips+'</div><button class="px" onclick="event.stopPropagation();rmItem(\''+it.id+'\')">&times;</button>';
       g.appendChild(el);
     }else{var e=document.createElement("div");e.className="prime empty";e.innerHTML='<i data-lucide="plus-circle" class="eicon"></i><span style="font-size:13px">Open slot — what matters?</span>';g.appendChild(e)}
@@ -1088,7 +1092,7 @@ function rmNote(id){tomb(id);S.notes=S.notes.filter(function(x){return x.id!==id
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
   if(!S.projects.length){c.innerHTML='<div class="empty-note" style="grid-column:1/-1">No projects yet.</div>';return}
   S.projects.forEach(function(p){var el=document.createElement("div");el.className="proj";
-    el.onclick=function(){openProjModal(p.id)};
+    el.onclick=function(){if(hasSelection())return;openProjModal(p.id)};
     var head=document.createElement("div");head.innerHTML='<div class="ptitle">'+esc(p.title)+'</div>'+(p.desc?'<div class="pdesc">'+esc(p.desc)+'</div>':'');
     el.appendChild(head);
     if(p.links&&p.links.length){var lw=document.createElement("div");lw.className="proj-links";
