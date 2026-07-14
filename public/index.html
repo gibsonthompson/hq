@@ -448,7 +448,7 @@ input,textarea,select{font-size:16px}
 <body>
 
 <div class="topbar">
-  <div class="brand"><span class="logo">HQ</span><span class="tagline">System</span></div>
+  <div class="brand"><span class="logo">HQ</span><span class="tagline" id="buildTag">…</span></div>
   <div class="tb-right">
     <button class="tb-icon" id="syncBtn" onclick="forceSync()" title="Sync now" style="position:relative"><i data-lucide="refresh-cw"></i><span id="syncDot" style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--dim2);border:1.5px solid var(--elev)"></span></button>
     <button class="tb-icon" onclick="switchTab('projects')" title="Projects"><i data-lucide="folder"></i></button>
@@ -757,7 +757,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
-var BUILD="v13-rows";
+var BUILD="v14";
 /* ============================================================
    SYNC v13 — one database row per item.
    Each mover/note/goal/step/project/event/capture/image is its own row.
@@ -924,6 +924,7 @@ function R(){renderSys();renderSuggest();renderPrime();renderDeck();renderToday(
 
 function renderSys(){
   var d=new Date();
+  var bt=document.getElementById("buildTag");if(bt)bt.textContent=BUILD;
   document.getElementById("tbDate").textContent=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
   var act=todayItems().length,goalsActive=live(S.goals).filter(function(g){return !g.archived}).length;
   document.getElementById("sysHello").textContent=act===0?"Clear slate. Pull in what matters.":"Move the needle today.";
@@ -1260,7 +1261,16 @@ function burst(){var n=54,cx=innerWidth/2,cy=innerHeight*0.42,cols=["#46d187","#
 function tick(){ctx.clearRect(0,0,cvs.width,cvs.height);for(var i=parts.length-1;i>=0;i--){var p=parts[i];p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.life-=0.012;p.rot+=0.2;if(p.life<=0){parts.splice(i,1);continue}ctx.save();ctx.globalAlpha=Math.max(0,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz*1.6);ctx.restore()}if(parts.length)raf=requestAnimationFrame(tick);else{raf=null;ctx.clearRect(0,0,cvs.width,cvs.height)}}
 
 /* ===== NATIVE / PWA ===== */
-if('serviceWorker' in navigator){var _hadCtrl=!!navigator.serviceWorker.controller,_swReloaded=false;window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});navigator.serviceWorker.addEventListener('controllerchange',function(){if(_hadCtrl&&!_swReloaded){_swReloaded=true;location.reload()}})}
+/* NO SERVICE WORKER. It was caching old versions of this app and serving them
+   after deploys, which made fixes invisible. Actively remove any that exist. */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    var had=regs.length>0;
+    regs.forEach(function(r){r.unregister()});
+    if(window.caches&&caches.keys)caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k)})});
+    if(had){setTimeout(function(){location.reload(true)},400)}
+  }).catch(function(){});
+}
 /* block iOS pinch-zoom so it feels like an app (touch-action:manipulation handles double-tap) */
 ['gesturestart','gesturechange','gestureend'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
 
