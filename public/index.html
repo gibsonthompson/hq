@@ -691,7 +691,7 @@ input,textarea,select{font-size:16px}
 <!-- SYNC SETTINGS -->
 <div class="modal" id="sbModal"><div class="modal-box">
   <div class="modal-title"><i data-lucide="database"></i> Sync Settings</div>
-  <div class="rv-intro">Your data syncs to Supabase (table <b>hq_data</b>, key <b>gibson</b>) and is cached in this browser. Enter your project URL and anon key once — they're saved on this device so you never have to edit the file again. Your existing data loads automatically.</div>
+  <div class="rv-intro">Your data lives in Supabase, one row per item (table <b>hq_items</b>). Every device reads and writes the same rows, so nothing can overwrite anything else.</div>
   <div class="m-label">Supabase URL</div>
   <input class="m-in" id="sbUrl" placeholder="https://xxxxxxxx.supabase.co">
   <div class="m-label">Anon key</div>
@@ -757,7 +757,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
-var BUILD="v14";
+var BUILD="v15";
 /* ============================================================
    SYNC v13 — one database row per item.
    Each mover/note/goal/step/project/event/capture/image is its own row.
@@ -845,29 +845,14 @@ function save(id){saveLocal();if(id)pushItem(id);else pushAll()}
 function saveLocalOnly(){saveLocal()}
 
 /* one-time migration from the old single-blob table */
-function migrateFromBlob(cb){if(!sb){if(cb)cb();return}
-  sb.from("hq_data").select("*").eq("user_key","gibson").limit(1).then(function(r){
-    var d=r.data&&r.data[0];if(!d){if(cb)cb();return}
-    var had=dataCount(S);
-    if(!had){ /* take blob into local state, then push as rows */
-      S.needleMovers=normalizeNM(d.needle_movers);S.notes=d.notes||[];S.projects=normalizeProjects(d.projects);
-      S.calendarEvents=d.calendar_events||[];S.captures=d.captures||[];S.images=d.images||[];S.goals=normalizeGoals(d.goals);
-      if(d.rhythm&&Object.keys(d.rhythm).length)S.rhythm=d.rhythm;S.lastReview=d.last_review||null;
-      migrateItems();saveLocal();R();
-    }
-    pushAll(function(){if(cb)cb()});
-  }).catch(function(){if(cb)cb()})}
+/* migrateFromBlob removed: data now lives only in hq_items (one row per item). */
 function migrateItems(){function fix(a){(a||[]).forEach(function(x){if(!x)return;if(x.mtime==null)x.mtime=x.ts||x.ca||1;if(x.del==null)x.del=false})}
   fix(S.needleMovers);fix(S.notes);fix(S.projects);fix(S.calendarEvents);fix(S.captures);fix(S.images);fix(S.goals);
   (S.goals||[]).forEach(function(g){fix(g.steps)})}
 
 function load(){loadLocal();migrateItems();S.deleted={};R();
   if(!sb){setSync("local");remoteLoaded=true;return}
-  sb.from("hq_items").select("id").eq("user_key","gibson").limit(1).then(function(r){
-    if(r.error){setSync("err");remoteLoaded=true;return}
-    if((r.data||[]).length===0){migrateFromBlob(function(){pullRemote();startRealtime()})}
-    else{pullRemote(function(){startRealtime()})}
-  }).catch(function(){setSync("err");remoteLoaded=true})}
+  pullRemote(function(){startRealtime()});}
 
 /* soft delete = flag the row; every device learns about it */
 function tomb(id){var f=findAny(id);if(!f)return;f.item.del=true;f.item.mtime=Date.now();
@@ -1229,11 +1214,11 @@ function closeModal(id){document.getElementById(id).classList.remove("show")}
 function openSbSettings(){try{document.getElementById("sbUrl").value=(SUPABASE_URL.indexOf("REPLACE")===0?"":SUPABASE_URL);document.getElementById("sbKey").value=(SUPABASE_ANON_KEY.indexOf("REPLACE")===0?"":SUPABASE_ANON_KEY)}catch(e){}
   var el=document.getElementById("sbDiag");
   if(el){el.innerHTML="Build <b>"+BUILD+"</b><br>This device: <b>"+live(S.needleMovers).length+"</b> movers, "+live(S.goals).length+" goals, "+live(S.notes).length+" notes, "+live(S.projects).length+" projects<br>Cloud library loaded: <b>"+(sbLibLoaded?"yes":"NO")+"</b><br>Cloud: checking\u2026";
-    if(sb)sb.from("hq_data").select("needle_movers,updated_at").eq("user_key","gibson").limit(1).then(function(r){var d=r.data&&r.data[0];
-      if(d){var cm=(d.needle_movers||[]).filter(function(m){return m&&!m.del&&!m.done}).length;
-        el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Cloud: <b>"+cm+"</b> movers \u00b7 updated "+new Date(d.updated_at).toLocaleTimeString());}
-      else el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Cloud: <b style=\"color:var(--red)\">no row found</b>");
-    }).catch(function(){el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Cloud: <b style=\"color:var(--red)\">UNREACHABLE</b>");});
+    if(sb)sb.from("hq_items").select("kind,deleted,data").eq("user_key","gibson").then(function(r){
+      if(!r.error&&r.data){var cm=r.data.filter(function(x){return x.kind==="mover"&&!x.deleted&&!(x.data||{}).done}).length;
+        el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Database: <b>"+cm+"</b> movers \u00b7 "+r.data.length+" rows");}
+      else el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Database: <b style=\"color:var(--red)\">ERROR</b>");
+    }).catch(function(){el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Database: <b style=\"color:var(--red)\">UNREACHABLE</b>");});
   }
   openModal("sbModal")}
 function saveSbSettings(){var u=document.getElementById("sbUrl").value.trim(),k=document.getElementById("sbKey").value.trim();try{if(u)localStorage.setItem("hq_sb_url",u);if(k)localStorage.setItem("hq_sb_key",k)}catch(e){}location.reload()}
@@ -1261,15 +1246,22 @@ function burst(){var n=54,cx=innerWidth/2,cy=innerHeight*0.42,cols=["#46d187","#
 function tick(){ctx.clearRect(0,0,cvs.width,cvs.height);for(var i=parts.length-1;i>=0;i--){var p=parts[i];p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.life-=0.012;p.rot+=0.2;if(p.life<=0){parts.splice(i,1);continue}ctx.save();ctx.globalAlpha=Math.max(0,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz*1.6);ctx.restore()}if(parts.length)raf=requestAnimationFrame(tick);else{raf=null;ctx.clearRect(0,0,cvs.width,cvs.height)}}
 
 /* ===== NATIVE / PWA ===== */
-/* NO SERVICE WORKER. It was caching old versions of this app and serving them
-   after deploys, which made fixes invisible. Actively remove any that exist. */
+/* Service worker: kept, so the app stays installable, fast, and works offline.
+   It NEVER caches the app's HTML (see sw.js) — only icons/fonts/libraries —
+   so a deploy always takes effect immediately. On first run of this version we
+   purge every old cache, which is what was serving stale copies of the app. */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    var had=regs.length>0;
-    regs.forEach(function(r){r.unregister()});
-    if(window.caches&&caches.keys)caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k)})});
-    if(had){setTimeout(function(){location.reload(true)},400)}
-  }).catch(function(){});
+  try{
+    if(localStorage.getItem("hq_cache_purge")!=="v14"){
+      localStorage.setItem("hq_cache_purge","v14");
+      if(window.caches&&caches.keys)caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k)})});
+      navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})}).then(function(){
+        setTimeout(function(){navigator.serviceWorker.register('/sw.js').catch(function(){})},300);
+      }).catch(function(){});
+    }else{
+      window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});
+    }
+  }catch(e){}
 }
 /* block iOS pinch-zoom so it feels like an app (touch-action:manipulation handles double-tap) */
 ['gesturestart','gesturechange','gestureend'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
