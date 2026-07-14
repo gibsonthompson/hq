@@ -1,8 +1,12 @@
-/* HQ service worker — bump CACHE to force an update after a deploy */
-const CACHE = 'hq-v5';
-const SHELL = [
-  '/',
-  '/index.html',
+/* HQ service worker.
+   RULE: the app's HTML is NEVER served from cache — it is always fetched fresh,
+   so a deploy takes effect immediately. Only static assets (icons, libs, fonts)
+   are cached, which is what makes cold starts fast and offline work.
+   Bump CACHE to invalidate assets. */
+const CACHE = 'hq-assets-v14';
+
+/* Only these get cached. Note: index.html is deliberately NOT in this list. */
+const ASSETS = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -13,47 +17,57 @@ const SHELL = [
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
-  // cache each item individually so one missing file can't break the rest
   e.waitUntil(caches.open(CACHE).then(function (c) {
-    return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); }));
+    return Promise.all(ASSETS.map(function (u) { return c.add(u).catch(function () {}); }));
   }));
 });
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
-    }).then(function () { return self.clients.claim(); })
+    caches.keys()
+      .then(function (keys) {
+        return Promise.all(keys.filter(function (k) { return k !== CACHE; })
+                               .map(function (k) { return caches.delete(k); }));
+      })
+      .then(function () { return self.clients.claim(); })
   );
 });
 
 self.addEventListener('fetch', function (e) {
-  var req = e.request;
+  const req = e.request;
   if (req.method !== 'GET') return;
-  var url = new URL(req.url);
 
-  // Network-first for the app page so new deploys show up; offline falls back to cache.
-  if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+  const url = new URL(req.url);
+  const isAppPage = req.mode === 'navigate' ||
+                    url.pathname === '/' ||
+                    url.pathname.endsWith('.html');
+
+  /* THE APP ITSELF: always network. Never cache it. Never serve a stale copy.
+     If (and only if) the network is completely unavailable, fall back to the
+     last page we saw so the app still opens offline. */
+  if (isAppPage) {
     e.respondWith(
-      fetch(req).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); });
-        return res;
-      }).catch(function () {
-        return caches.match(req).then(function (r) { return r || caches.match('/index.html') || caches.match('/'); });
-      })
+      fetch(req, { cache: 'no-store' })
+        .then(function (res) {
+          const copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put('offline-fallback', copy); });
+          return res;
+        })
+        .catch(function () {
+          return caches.match('offline-fallback');
+        })
     );
     return;
   }
 
-  // Cache-first for everything else (icons, fonts, CDN libraries).
+  /* STATIC ASSETS: cache-first (fast, offline-capable). */
   e.respondWith(
     caches.match(req).then(function (cached) {
       return cached || fetch(req).then(function (res) {
-        var copy = res.clone();
+        const copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy).catch(function () {}); });
         return res;
-      }).catch(function () { return cached; });
+      });
     })
   );
 });
