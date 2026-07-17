@@ -217,7 +217,11 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .proj{border-radius:13px;padding:16px;background:var(--surface);border:1px solid var(--line);cursor:pointer;transition:transform .16s,border-color .16s;display:flex;flex-direction:column;min-height:120px;position:relative}
 .proj:hover{transform:translateY(-2px);border-color:rgba(70,209,135,0.5)}
 .proj .ptitle{font-family:'Sora';font-weight:600;font-size:15.5px;margin-bottom:7px}
-.proj .pdesc{font-size:13px;color:var(--dim);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.proj .pdesc{font-size:13px;color:var(--dim);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.proj .pdesc.expanded{display:block;-webkit-line-clamp:none;overflow:visible;white-space:pre-wrap;-webkit-user-select:text;user-select:text;cursor:text}
+.proj .pmore{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:11.5px;font-weight:600;color:var(--vio2);cursor:pointer;letter-spacing:.2px}
+.proj .pmore i{width:12px;height:12px}
+.proj.open{cursor:default}
 .proj .popen{margin-top:12px;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--vio2)}
 .proj .popen i{width:13px;height:13px}
 .proj-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
@@ -794,7 +798,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
-var BUILD="v17";
+var BUILD="v18-proj";
 /* ============================================================
    SYNC v13 — one database row per item.
    Each mover/note/goal/step/project/event/capture/image is its own row.
@@ -1268,9 +1272,18 @@ function rmNote(id){tomb(id);renderNotes();icons()}
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
   if(!live(S.projects).length){c.innerHTML='<div class="empty-note" style="grid-column:1/-1">No projects yet.</div>';return}
   live(S.projects).forEach(function(p){var el=document.createElement("div");el.className="proj";
-    el.onclick=function(){if(hasSelection())return;openProjModal(p.id)};
-    var head=document.createElement("div");head.innerHTML='<div class="ptitle">'+esc(p.title)+'</div>'+(p.desc?'<div class="pdesc">'+esc(p.desc)+'</div>':'');
+    var expanded=!!projOpen[p.id];
+    if(expanded)el.classList.add("open");
+    el.onclick=function(){if(hasSelection()||projOpen[p.id])return;openProjModal(p.id)};
+    var head=document.createElement("div");
+    head.innerHTML='<div class="ptitle">'+esc(p.title)+'</div>'+(p.desc?'<div class="pdesc'+(expanded?' expanded':'')+'">'+esc(p.desc)+'</div>':'');
     el.appendChild(head);
+    if(p.desc&&(expanded||p.desc.length>110||p.desc.indexOf("\n")>=0)){
+      var more=document.createElement("div");more.className="pmore";
+      more.innerHTML=expanded?'<i data-lucide="chevrons-up"></i>Show less':'<i data-lucide="chevrons-down"></i>Show more';
+      more.onclick=function(ev){ev.stopPropagation();projOpen[p.id]=!projOpen[p.id];renderProjects()};
+      el.appendChild(more);
+    }
     if(p.links&&p.links.length){var lw=document.createElement("div");lw.className="proj-links";
       p.links.forEach(function(l){var b=document.createElement("button");b.className="proj-link";b.innerHTML='<i data-lucide="external-link"></i>'+esc(l.label||l.url);
         b.onclick=function(ev){ev.stopPropagation();if(l.url)window.open(l.url,"_blank")};lw.appendChild(b)});
@@ -1278,7 +1291,7 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
     var ed=document.createElement("button");ed.className="pedit";ed.innerHTML='<i data-lucide="pencil"></i>';ed.onclick=function(ev){ev.stopPropagation();openProjModal(p.id)};el.appendChild(ed);
     var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
     c.appendChild(el)});icons()}
-var editingProjId=null;
+var editingProjId=null,projOpen={};
 function addProjLinkRow(label,url){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
   row.innerHTML='<input class="pl-label" placeholder="Label" value="'+esc(label||"")+'"><input class="pl-url" placeholder="https://…" value="'+esc(url||"")+'"><button class="pl-rm" onclick="this.parentNode.remove()">&times;</button>';
   wrap.appendChild(row)}
