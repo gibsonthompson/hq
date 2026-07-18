@@ -233,11 +233,11 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .proj:hover .pedit{opacity:.6}.proj .pedit:hover{color:var(--vio2);opacity:1}
 .pl-row{display:flex;gap:6px;margin-bottom:7px}
 .pl-row input{background:var(--surface);border:1px solid var(--line2);border-radius:9px;color:var(--tx);padding:9px 11px;font-size:14px;outline:none;min-width:0}
-.pl-row input.pl-label{flex:0 0 34%}.pl-row input.pl-url{flex:1}
+.pl-row input.pl-url{flex:1 1 58%}.pl-row input.pl-label{flex:1 1 30%}
 .pl-row input:focus{border-color:var(--vio)}
 .pl-rm{background:none;border:none;color:var(--dim2);cursor:pointer;font-size:17px;padding:0 4px;flex-shrink:0}
 .pl-rm:hover{color:var(--red)}
-.pl-add{width:100%;text-align:center;background:var(--surface);border:1px dashed var(--line2);color:var(--vio2);border-radius:9px;padding:9px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:4px}
+.pl-add{display:block;width:100%;text-align:center;background:var(--surface);border:1px dashed var(--line2);color:var(--vio2);border-radius:9px;padding:11px;cursor:pointer;font-size:13.5px;font-weight:600;margin-bottom:4px;font-family:inherit;-webkit-user-select:none;user-select:none}
 .pl-add:hover{background:var(--elev)}
 .proj .pjx{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--dim2);cursor:pointer;font-size:15px;opacity:0}
 .proj:hover .pjx{opacity:.6}.proj .pjx:hover{color:var(--red);opacity:1}
@@ -703,9 +703,9 @@ input,textarea,select{font-size:16px}
   <div class="modal-title"><i data-lucide="folder-plus"></i> <span id="projModalTitle">New Project</span></div>
   <input class="m-in" id="projTitle" placeholder="Project name">
   <textarea class="m-ta" id="projDesc" rows="2" placeholder="Short description" style="margin-bottom:11px"></textarea>
-  <div class="m-label">Links</div>
+  <div class="m-label">Links <span id="projLinkCount" style="color:var(--dim2)"></span></div>
   <div id="projLinks"></div>
-  <div class="pl-add" onclick="addProjLinkRow('','')">+ Add link</div>
+  <button type="button" class="pl-add" onclick="addProjLinkRow('','',true)">+ Add link</button>
   <div class="m-actions">
     <button class="m-btn" onclick="closeModal('projModal')">Cancel</button>
     <button class="m-btn primary" onclick="saveProj()">Save</button>
@@ -798,7 +798,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
-var BUILD="v18-proj";
+var BUILD="v19-links";
 /* ============================================================
    SYNC v13 — one database row per item.
    Each mover/note/goal/step/project/event/capture/image is its own row.
@@ -1292,17 +1292,33 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
     var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
     c.appendChild(el)});icons()}
 var editingProjId=null,projOpen={};
-function addProjLinkRow(label,url){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
-  row.innerHTML='<input class="pl-label" placeholder="Label" value="'+esc(label||"")+'"><input class="pl-url" placeholder="https://…" value="'+esc(url||"")+'"><button class="pl-rm" onclick="this.parentNode.remove()">&times;</button>';
-  wrap.appendChild(row)}
+function addProjLinkRow(label,url,focus){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
+  row.innerHTML='<input class="pl-url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste link (required)" value="'+esc(url||"")+'"><input class="pl-label" placeholder="Name (optional)" value="'+esc(label||"")+'"><button type="button" class="pl-rm" title="Remove" onclick="this.parentNode.remove();updateLinkCount()">&times;</button>';
+  wrap.appendChild(row);updateLinkCount();
+  if(focus){var u=row.querySelector(".pl-url");try{u.focus();row.scrollIntoView({block:"nearest"})}catch(e){}}
+  return row}
+function updateLinkCount(){var el=document.getElementById("projLinkCount");if(!el)return;var n=document.querySelectorAll("#projLinks .pl-row").length;el.textContent=n?"("+n+")":""}
 function openProjModal(id){editingProjId=id||null;
   document.getElementById("projModalTitle").textContent=id?"Edit Project":"New Project";
   document.getElementById("projLinks").innerHTML="";
   if(id){var p=S.projects.find(function(x){return x.id===id});if(p){document.getElementById("projTitle").value=p.title||"";document.getElementById("projDesc").value=p.desc||"";(p.links||[]).forEach(function(l){addProjLinkRow(l.label,l.url)});if(!(p.links&&p.links.length))addProjLinkRow("","")}}
   else{document.getElementById("projTitle").value="";document.getElementById("projDesc").value="";addProjLinkRow("","")}
+  updateLinkCount();
   openModal("projModal");setTimeout(function(){document.getElementById("projTitle").focus()},100)}
-function saveProj(){var t=document.getElementById("projTitle").value.trim();if(!t)return;var desc=document.getElementById("projDesc").value.trim();var links=[];
-  document.querySelectorAll("#projLinks .pl-row").forEach(function(row){var label=row.querySelector(".pl-label").value.trim();var url=row.querySelector(".pl-url").value.trim();if(url){if(!/^https?:\/\//i.test(url))url="https://"+url;links.push({id:mid(),label:label||url,url:url})}});
+function looksLikeUrl(v){return /^https?:\/\//i.test(v)||/^[\w-]+(\.[\w-]+)+([\/?#].*)?$/i.test(v)}
+function saveProj(){var t=document.getElementById("projTitle").value.trim();
+  if(!t){toast("Give the project a name","alert-triangle");try{document.getElementById("projTitle").focus()}catch(e){}return}
+  var desc=document.getElementById("projDesc").value.trim();var links=[],bad=null;
+  document.querySelectorAll("#projLinks .pl-row").forEach(function(row){
+    var url=row.querySelector(".pl-url").value.trim();
+    var label=row.querySelector(".pl-label").value.trim();
+    /* forgiving: if the URL box is empty but the name box holds a link, use that */
+    if(!url&&looksLikeUrl(label)){url=label;label=""}
+    if(!url){ if(label&&!bad)bad=row; return }          /* typed a name but no link -> flag it */
+    if(!/^https?:\/\//i.test(url))url="https://"+url;
+    links.push({id:mid(),label:label||url.replace(/^https?:\/\//i,"").replace(/\/$/,""),url:url});
+  });
+  if(bad){toast("That link needs a URL","alert-triangle");try{bad.querySelector(".pl-url").focus();bad.scrollIntoView({block:"nearest"})}catch(e){}return}
   if(editingProjId){var p=S.projects.find(function(x){return x.id===editingProjId});if(p){p.title=t;p.desc=desc;p.links=links;touch(p)}}
   else{var pid=mid();S.projects.push({id:pid,title:t,desc:desc,links:links,del:false,ca:Date.now(),mtime:Date.now()});editingProjId=pid}
   var savedPid=editingProjId;editingProjId=null;save(savedPid);closeModal("projModal");renderProjects();icons()}
