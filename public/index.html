@@ -798,7 +798,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   var i=localStorage.getItem("hq_i");if(i)S.images=JSON.parse(i)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,weeklyBlocks:S.weeklyBlocks,contentIdeas:S.contentIdeas,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci,deleted:S.deleted}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 var remoteLoaded=false,everHadData=false,lastSynced=0,syncState="idle";
-var BUILD="v19-links";
+var BUILD="v20-safe";
 /* ============================================================
    SYNC v13 — one database row per item.
    Each mover/note/goal/step/project/event/capture/image is its own row.
@@ -822,17 +822,21 @@ function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","
 function touch(x){if(x)x.mtime=Date.now();return x}
 
 /* ---------- push a SINGLE item (this is the whole write path) ---------- */
-var pushQueue={};
+var pushQueue={},pendingIds={};
 function pushItem(id){if(!id)return;var f=findAny(id);if(!f)return;
-  var payload={id:id,user_key:"gibson",kind:f.kind,parent:f.parent,deleted:!!f.item.del,data:f.item};
+  var payload={id:id,user_key:"gibson",kind:f.kind,parent:f.parent,deleted:!!f.item.del,data:JSON.parse(JSON.stringify(f.item))};
+  pendingIds[id]=true;                    /* protect this item from being overwritten by a pull */
   pushQueue[id]=payload;flushQueue()}
-var flushTimer=null;
+var flushTimer=null,retryTimer=null;
+function requeue(rows){rows.forEach(function(x){if(!pushQueue[x.id])pushQueue[x.id]=x});
+  clearTimeout(retryTimer);retryTimer=setTimeout(function(){flushQueue()},3000)}
 function flushQueue(){clearTimeout(flushTimer);flushTimer=setTimeout(function(){
   if(!sb)return;var rows=Object.keys(pushQueue).map(function(k){return pushQueue[k]});if(!rows.length)return;
   pushQueue={};setSync("saving");
   sb.from("hq_items").upsert(rows,{onConflict:"id"}).then(function(r){
-    if(r.error){setSync("err")}else{lastSynced=Date.now();setSync("ok")}
-  }).catch(function(){setSync("err")});
+    if(r.error){setSync("err");requeue(rows)}
+    else{rows.forEach(function(x){delete pendingIds[x.id]});lastSynced=Date.now();setSync("ok")}
+  }).catch(function(){setSync("err");requeue(rows)});
 },350)}
 /* rewrite every item to the cloud (used by Sync button + first migration) */
 function pushAll(cb){if(!sb){if(cb)cb(false);return}
@@ -851,20 +855,42 @@ function pushAll(cb){if(!sb){if(cb)cb(false);return}
 
 /* ---------- pull ALL items and rebuild state (server is the truth) ---------- */
 function applyRows(rows){
-  var goals={},steps=[];
+  /* Rules, so a background sync can never eat an edit:
+     1. an item still waiting to upload  -> keep the local copy
+     2. local copy modified more recently -> keep the local copy
+     3. item exists here but has no row yet -> keep it (it was never uploaded) */
+  var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],goals:S.goals||[]};
+  var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
+  var goals={},steps=[],seen={};
   var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[]};
-  rows.forEach(function(r){
+  function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
+    var lh=findAny(r.id);
+    if(lh&&(pendingIds[r.id]||((lh.item.mtime||0)>(d.mtime||0))))return lh.item;   /* rules 1 + 2 */
+    return d;
+  }
+  rows.forEach(function(r){
+    seen[r.id]=true;
+    var d=choose(r);
     if(r.kind==="goal"){d.steps=[];goals[r.id]=d}
     else if(r.kind==="step"){d.__parent=r.parent;steps.push(d)}
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
+  /* rule 3: anything local the server has never seen stays, and gets uploaded */
+  var reupload=[];
+  ["needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(L){
+    (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
+  (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;reupload.push(g.id)}});
+  Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
+
   steps.forEach(function(st){var g=goals[st.__parent];if(g)g.steps.push(st)});
   S.needleMovers=normalizeNM(next.needleMovers);
   S.notes=next.notes;S.projects=normalizeProjects(next.projects);
   S.calendarEvents=next.calendarEvents;S.captures=next.captures;S.images=next.images;
   S.goals=normalizeGoals(Object.keys(goals).map(function(k){return goals[k]}));
   saveLocal();
+  reupload.forEach(function(id){pushItem(id)});
 }
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
   sb.from("hq_items").select("*").eq("user_key","gibson").then(function(res){
