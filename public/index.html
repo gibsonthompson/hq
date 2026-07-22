@@ -1389,7 +1389,7 @@ if(!S.wcalWeekStart)S.wcalWeekStart=getWeekStart(new Date()).toISOString();
 var calSelIdx=new Date().getDay();
 function calNav(dir){var ws=new Date(S.wcalWeekStart);ws.setDate(ws.getDate()+dir*7);S.wcalWeekStart=ws.toISOString();renderCal()}
 function calToday(){S.wcalWeekStart=getWeekStart(new Date()).toISOString();calSelIdx=new Date().getDay();renderCal()}
-function selectDay(idx){calSelIdx=idx;renderCal()}
+function selectDay(idx){calSelIdx=idx;var ds=document.getElementById("calDay");if(ds)ds.value="";renderCal()}
 function getCalDays(){var ws=new Date(S.wcalWeekStart);var a=[];for(var i=0;i<7;i++){var d=new Date(ws);d.setDate(ws.getDate()+i);a.push(d)}return a}
 function dayHasItems(ds,dow){var has=false;
   live(S.calendarEvents).forEach(function(e){if(e.date===ds||(e.recurring&&e.recurDay===dow))has=true});
@@ -1397,7 +1397,10 @@ function dayHasItems(ds,dow){var has=false;
   live(S.goals).forEach(function(g){live(g.steps).forEach(function(s){if(!s.done&&s.date===ds)has=true})});
   return has}
 function renderCalForm(){
-  var ds=document.getElementById("calDay");if(ds){var cv=ds.value;ds.innerHTML="";for(var i=0;i<7;i++)ds.innerHTML+='<option value="'+i+'">'+DS[i]+'</option>';ds.value=cv||new Date().getDay()}
+  var ds=document.getElementById("calDay");if(ds){var cv=ds.value;ds.innerHTML="";for(var i=0;i<7;i++)ds.innerHTML+='<option value="'+i+'">'+DS[i]+'</option>';
+    /* default to the day you are actually looking at. cv can be "" and the day
+       index can be 0 (Sunday), so a plain || fallback is wrong here. */
+    ds.value=(cv!==""&&cv!=null)?cv:String(calSelIdx)}
   var ss=document.getElementById("calStart");if(ss){var sv=ss.value;ss.innerHTML="";for(var h=SHS;h<=SHE;h++){ss.innerHTML+='<option value="'+h+'">'+fmtH(h)+'</option>';ss.innerHTML+='<option value="'+(h+0.5)+'">'+fmtH(h+0.5)+'</option>'}ss.value=sv||9}
   var rb=document.getElementById("calRecurBox");if(rb)rb.classList.toggle("on",calRecur)}
 function renderCal(){
@@ -1443,7 +1446,47 @@ function renderCal(){
 function renderEvtList(){var c=document.getElementById("evtList");if(!c)return;c.innerHTML="";var days=getCalDays(),shown=[],h="";
   days.forEach(function(d){var ds=dStr(d),dow=d.getDay();live(S.calendarEvents).forEach(function(e){if((e.date===ds||(e.recurring&&e.recurDay===dow))&&shown.indexOf(e.id)<0){shown.push(e.id);h+='<div class="evt-item"><div><div class="ei-t">'+esc(e.title)+(e.recurring?" ↻":"")+'</div><div class="ei-s">'+DSH[e.recurring?e.recurDay:d.getDay()]+" "+(e.allDay?"all day":fmtHS(e.startHour))+'</div></div><button class="ei-x" onclick="rmEvt(\''+e.id+'\')">&times;</button></div>'}})});
   c.innerHTML=shown.length?h:'<div style="color:var(--dim2);font-size:13px">No events this week.</div>'}
-function addEvt(){var t=document.getElementById("calTitle").value.trim();if(!t)return;var di=parseInt(document.getElementById("calDay").value);var d=getCalDays()[di];var sh=parseFloat(document.getElementById("calStart").value);var dur=parseFloat(document.getElementById("calDur").value);var eid=mid();S.calendarEvents.push({id:eid,del:false,ts:Date.now(),mtime:Date.now(),date:dStr(d),startHour:sh,duration:dur,title:t,allDay:false,recurring:calRecur,recurDay:calRecur?d.getDay():null,notes:""});document.getElementById("calTitle").value="";save(eid);renderCal();lastSig=stateSignature()}
+/* every occupied [start,end) range on a given date. covers fixed events on
+   that date, recurring events landing on that weekday, and scheduled tasks and
+   goal steps that carry a start hour. used to keep new events from colliding. */
+function occupiedRanges(ds,dow,ignoreId){
+  var out=[];
+  live(S.calendarEvents).forEach(function(e){
+    if(e.id===ignoreId||e.allDay||e.startHour==null)return;
+    if(e.date===ds||(e.recurring&&e.recurDay===dow))out.push([e.startHour,e.startHour+(e.duration||1)]);
+  });
+  live(S.needleMovers).forEach(function(m){if(!m.done&&m.date===ds&&m.startHour!=null)out.push([m.startHour,m.startHour+(m.duration||1)])});
+  live(S.goals).forEach(function(g){live(g.steps).forEach(function(s){if(!s.done&&s.date===ds&&s.startHour!=null)out.push([s.startHour,s.startHour+(s.duration||1)])})});
+  return out;
+}
+/* find the first start at or after `start` where a `dur` long block does not
+   overlap anything. on a conflict, jump to 15 min after the latest range it
+   hits, then re-check, since the new slot can collide with something else.
+   returns null if it would run past the calendar's end hour. */
+function findFreeSlot(start,dur,ranges){
+  var STEP=0.25,guard=0;
+  var s=start;
+  while(guard++<400){
+    if(s+dur>SHE+1)return null;
+    var latestEnd=null;
+    ranges.forEach(function(r){ if(s<r[1]&&s+dur>r[0]){ if(latestEnd==null||r[1]>latestEnd)latestEnd=r[1]; } });
+    if(latestEnd==null)return s;      /* clear */
+    var nudged=latestEnd+STEP;         /* 15 min after the blocking event ends */
+    s=(nudged>s)?nudged:s+STEP;
+  }
+  return null;
+}
+function addEvt(){var t=document.getElementById("calTitle").value.trim();if(!t)return;
+  var di=parseInt(document.getElementById("calDay").value);var d=getCalDays()[di];
+  var reqStart=parseFloat(document.getElementById("calStart").value);var dur=parseFloat(document.getElementById("calDur").value);
+  var ds=dStr(d),dow=d.getDay();
+  var slot=findFreeSlot(reqStart,dur,occupiedRanges(ds,dow,null));
+  if(slot==null){toast("No open "+dur+"h slot that day before "+fmtH(SHE+1),"alert-triangle");return}
+  var eid=mid();
+  S.calendarEvents.push({id:eid,del:false,ts:Date.now(),mtime:Date.now(),date:ds,startHour:slot,duration:dur,title:t,allDay:false,recurring:calRecur,recurDay:calRecur?dow:null,notes:""});
+  document.getElementById("calTitle").value="";save(eid);renderCal();lastSig=stateSignature();
+  if(Math.abs(slot-reqStart)>0.001)toast("That slot was taken, moved to "+fmtH(slot),"clock");
+}
 function rmEvt(id){tomb(id);renderCal();lastSig=stateSignature()}
 
 /* ===== VISION ===== */
