@@ -106,7 +106,13 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .prime.done-anim{animation:primePop .4s ease}
 @keyframes primePop{40%{transform:scale(1.04);border-color:var(--grn)}100%{transform:scale(1)}}
 
-.add-prime{display:flex;gap:9px;margin-top:12px}
+/* the add box now sits directly under the Tasks header, which is where the
+   hand goes first. search is behind an icon so it cannot be hit by mistake. */
+.add-prime{display:flex;gap:9px;margin:0 0 12px}
+.sec-tools{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.sweep-btn.icon-only{padding:7px 9px}
+.sweep-btn.icon-only i{width:15px;height:15px}
+.sweep-btn.on{color:var(--vio2);border-color:rgba(70,209,135,0.45);background:rgba(70,209,135,0.12)}
 .add-input{flex:1;background:var(--elev);border:1px solid var(--line2);border-radius:12px;color:var(--tx);padding:13px 15px;font-size:15px;outline:none;transition:border-color .18s}
 .add-input:focus{border-color:var(--vio)}
 .add-input::placeholder{color:var(--dim2)}
@@ -519,15 +525,18 @@ input,textarea,select{font-size:16px}
 
     <div class="sec-head">
       <div class="sec-title"><i data-lucide="crosshair"></i> Tasks <span class="count" id="primeCount"></span></div>
-      <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
+      <div class="sec-tools">
+        <button class="sweep-btn icon-only" id="searchToggle" onclick="toggleSearch()" title="Search tasks"><i data-lucide="search"></i></button>
+        <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
+      </div>
     </div>
-    <div class="task-tools"><input class="task-search" id="taskSearch" placeholder="Search tasks…" oninput="taskQuery=this.value;renderTaskViews()"></div>
-    <div class="tag-row hidden" id="tagPills"></div>
-    <div class="prime-grid" id="primeGrid"></div>
     <div class="add-prime">
       <input class="add-input" id="nmInput" placeholder="Add a task…" maxlength="180">
       <button class="add-btn" onclick="addNM()"><i data-lucide="plus"></i> Add</button>
     </div>
+    <div class="task-tools hidden" id="taskTools"><input class="task-search" id="taskSearch" placeholder="Search tasks…" oninput="taskQuery=this.value;renderTaskViews()"></div>
+    <div class="tag-row hidden" id="tagPills"></div>
+    <div class="prime-grid" id="primeGrid"></div>
 
     <div class="sec-head" id="deckHead">
       <div class="sec-title"><i data-lucide="layers"></i> On Deck <span class="count" id="deckCount"></span></div>
@@ -1133,6 +1142,19 @@ function taskMatches(it){
   return true}
 function visibleItems(){return todayItems().filter(taskMatches)}
 function renderTaskViews(){renderTags();renderPrime();renderDeck();renderDone();icons()}
+/* Search is opt-in now. Hiding it always clears the query, otherwise the list
+   could stay silently filtered with no visible control explaining why. */
+function toggleSearch(){
+  var row=document.getElementById("taskTools"),inp=document.getElementById("taskSearch"),btn=document.getElementById("searchToggle");
+  if(!row||!inp)return;
+  var opening=row.classList.contains("hidden");
+  if(opening){row.classList.remove("hidden");setTimeout(function(){try{inp.focus()}catch(e){}},60)}
+  else{
+    row.classList.add("hidden");inp.value="";
+    if(taskQuery){taskQuery="";renderTaskViews();lastSig=stateSignature()}
+  }
+  if(btn)btn.classList.toggle("on",opening);
+}
 function findRef(id){var m=S.needleMovers.find(function(x){return x.id===id});if(m)return{kind:"mover",ref:m};
   for(var i=0;i<S.goals.length;i++){var s=S.goals[i].steps.find(function(x){return x.id===id});if(s)return{kind:"step",ref:s,goal:S.goals[i]}}return null}
 
