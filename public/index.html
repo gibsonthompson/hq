@@ -73,8 +73,17 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .sec-title .count{font-family:'JetBrains Mono';font-size:12px;color:var(--dim2);font-weight:500}
 .sec-sub{font-size:12px;color:var(--dim2)}
 
-/* SUGGESTED FROM GOALS */
-.suggest-wrap{margin-bottom:6px}
+/* STANDING REMINDERS (visible cues, not tasks) */
+.reminder-strip{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.rem-chip{display:inline-flex;align-items:center;gap:7px;background:rgba(232,192,106,0.10);border:1px solid rgba(232,192,106,0.32);color:var(--amb);border-radius:11px;padding:8px 11px;font-size:13px;font-weight:600;line-height:1.25;max-width:100%}
+.rem-chip .rem-dot{width:6px;height:6px;border-radius:50%;background:var(--amb);flex-shrink:0}
+.rem-chip .rem-txt{white-space:pre-wrap;word-break:break-word;cursor:text;-webkit-user-select:text;user-select:text}
+.rem-chip .rem-x{background:none;border:none;color:var(--amb);opacity:0;cursor:pointer;font-size:15px;line-height:1;padding:0 1px;margin-left:1px;flex-shrink:0;transition:opacity .15s}
+.rem-chip:hover .rem-x{opacity:.7}.rem-chip .rem-x:hover{opacity:1}
+.rem-add{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--line2);color:var(--dim2);border-radius:11px;padding:8px 11px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.rem-add:hover{border-color:rgba(232,192,106,0.4);color:var(--amb)}
+.rem-add i{width:13px;height:13px}
+@media(max-width:760px){.reminder-strip{margin-bottom:12px}.rem-chip .rem-x{opacity:.55}}
 .suggest-strip{display:flex;flex-direction:column;gap:7px}
 .suggest{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px dashed var(--line2);border-radius:11px;padding:10px 13px}
 .suggest .sg-goal{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--dim2);flex-shrink:0}
@@ -531,6 +540,7 @@ input,textarea,select{font-size:16px}
 <div class="content">
   <!-- HOME -->
   <div class="tab active wrap" id="tab-home">
+    <div class="reminder-strip" id="reminderStrip"></div>
     <div class="sysbar">
       <div>
         <div class="sys-hello" id="sysHello">Execute today.</div>
@@ -810,7 +820,7 @@ var S={
   rhythm:JSON.parse(JSON.stringify(DR)),
   goals:[],          // {id,title,why,cat,target,steps:[...],created,archived}
   needleMovers:[],   // standalone {id,text,done,ts,doneTs,date,startHour,duration}
-  notes:[],images:[],projects:[],calendarEvents:[],captures:[],
+  notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],
   lastReview:null,
   schedCats:null,nci:0,wcalWeekStart:null
 };
@@ -854,13 +864,14 @@ function parseNoteTime(str){if(!str)return null;try{var y=new Date().getFullYear
 function normalizeImages(arr){if(!Array.isArray(arr))return[];return arr.map(function(i){var ts=(i.ts!=null?i.ts:(i.mtime||1));return{id:i.id||mid(),src:i.src||"",cap:i.cap||"",ts:ts,mtime:(i.mtime!=null?i.mtime:ts),del:!!i.del}})}
 function normalizeEvents(arr){if(!Array.isArray(arr))return[];return arr.map(function(e){var ts=(e.ts!=null?e.ts:(e.mtime||1));return{id:e.id||mid(),date:e.date||null,startHour:(e.startHour!=null?e.startHour:null),duration:e.duration||1,title:e.title||"",allDay:!!e.allDay,recurring:!!e.recurring,recurDay:(e.recurDay!=null?e.recurDay:null),notes:e.notes||"",ts:ts,mtime:(e.mtime!=null?e.mtime:ts),del:!!e.del}})}
 function normalizeCaptures(arr){if(!Array.isArray(arr))return[];return arr.map(function(c){var ts=(c.ts!=null?c.ts:(c.mtime||1));return{id:c.id||mid(),text:c.text||"",ts:ts,mtime:(c.mtime!=null?c.mtime:ts),del:!!c.del}})}
+function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(function(r){var ts=(r.ts!=null?r.ts:(r.mtime||1));return{id:r.id||mid(),text:r.text||"",ts:ts,mtime:(r.mtime!=null?r.mtime:ts),del:!!r.del}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
-  S.captures=normalizeCaptures(p.captures);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
-function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
+function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
 var BUILD="v21";
@@ -876,7 +887,7 @@ var BUILD="v21";
      - a local snapshot is kept automatically, once per day
    ============================================================ */
 function live(arr){return (arr||[]).filter(function(x){return x&&!x.del})}
-function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
+function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var b=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(b.length>4)localStorage.removeItem(b.shift())}catch(e){}}
 /* automatic daily snapshot, so there is always a restore path */
 function autoBackup(){try{var k="hq_bak_day_"+todayStr();if(!localStorage.getItem(k)&&dataCount(S)>0)backupLocal("day_"+todayStr())}catch(e){}}
@@ -894,9 +905,9 @@ function setSync(state){syncState=state;var el=document.getElementById("syncDot"
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
-function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals"}[kind]}
-function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal"}[listName]}
-function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","goals"];
+function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders"}[kind]}
+function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder"}[listName]}
+function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","goals"];
   for(var i=0;i<L.length;i++){var a=S[L[i]]||[];for(var j=0;j<a.length;j++){if(a[j]&&a[j].id===id)return{item:a[j],kind:kindOf(L[i]),parent:null}}}
   for(var g=0;g<(S.goals||[]).length;g++){var st=S.goals[g].steps||[];for(var k=0;k<st.length;k++){if(st[k].id===id)return{item:st[k],kind:"step",parent:S.goals[g].id}}}
   return null}
@@ -935,7 +946,7 @@ function pushNewer(remoteRows,cb){
     if(r&&!((item.mtime||0)>rm))return;      /* cloud is same or newer, leave it */
     rows.push({id:item.id,user_key:"gibson",kind:kind,parent:parent,deleted:!!item.del,data:JSON.parse(JSON.stringify(item))});
   }
-  ["needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders"].forEach(function(L){
     (S[L]||[]).forEach(function(x){consider(x,kindOf(L),null)})});
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;
     consider({id:g.id,title:g.title,why:g.why,cat:g.cat,target:g.target,created:g.created,archived:g.archived,mtime:g.mtime,del:g.del},"goal",null);
@@ -961,7 +972,7 @@ var lastSig="";
 function stateSignature(){
   var parts=[];
   function add(a){(a||[]).forEach(function(x){if(x&&x.id)parts.push(x.id+":"+(x.mtime||0)+":"+(x.del?1:0))})}
-  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);
+  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;parts.push(g.id+":"+(g.mtime||0)+":"+(g.del?1:0));add(g.steps)});
   parts.sort();
   return parts.join("|");
@@ -973,10 +984,10 @@ function applyRows(rows){
      2. local copy modified more recently -> keep the local copy
      3. item exists here but has no row   -> keep it and upload it */
   var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
-            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],goals:S.goals||[]};
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],goals:S.goals||[]};
   var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
   var goals={},goalOrder=[],steps=[],seen={};
-  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[]};
+  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[]};
   function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
     var lh=findAny(r.id);
@@ -991,7 +1002,7 @@ function applyRows(rows){
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
   var reupload=[];
-  ["needleMovers","notes","projects","calendarEvents","captures","images"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders"].forEach(function(L){
     (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
   (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;goalOrder.push(g.id);reupload.push(g.id)}});
   Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
@@ -1002,6 +1013,7 @@ function applyRows(rows){
   S.projects=normalizeProjects(next.projects);
   S.calendarEvents=normalizeEvents(next.calendarEvents);
   S.captures=normalizeCaptures(next.captures);
+  S.reminders=normalizeReminders(next.reminders);
   S.images=normalizeImages(next.images);
   S.goals=normalizeGoals(goalOrder.map(function(k){return goals[k]}));
   /* backfill: anything that arrived without a ts now has one, and it is
@@ -1106,7 +1118,7 @@ function startRealtime(){if(!sb||rtChan)return;
 function save(id){saveLocal();if(id)pushItem(id)}
 
 function migrateItems(){function fix(a){(a||[]).forEach(function(x){if(!x)return;if(x.mtime==null)x.mtime=x.ts||x.ca||1;if(x.del==null)x.del=false})}
-  fix(S.needleMovers);fix(S.notes);fix(S.projects);fix(S.calendarEvents);fix(S.captures);fix(S.images);fix(S.goals);
+  fix(S.needleMovers);fix(S.notes);fix(S.projects);fix(S.calendarEvents);fix(S.captures);fix(S.images);fix(S.reminders);fix(S.goals);
   (S.goals||[]).forEach(function(g){fix(g.steps)})}
 
 function load(){loadLocal();migrateItems();forceRender();
@@ -1144,7 +1156,7 @@ function forcePullFromCloud(){
   pendingIds={};
   pullRemote(function(ok){forceRender();toast(ok?("Pulled · "+live(S.needleMovers).filter(function(m){return !m.done}).length+" tasks"):"Pull failed",ok?"check-circle":"alert-triangle")})}
 function downloadBackup(){
-  var data={exported:new Date().toISOString(),build:BUILD,tasks:S.needleMovers,goals:S.goals,notes:S.notes,projects:S.projects,events:S.calendarEvents,captures:S.captures,images:S.images,lastReview:S.lastReview};
+  var data={exported:new Date().toISOString(),build:BUILD,tasks:S.needleMovers,goals:S.goals,notes:S.notes,projects:S.projects,events:S.calendarEvents,captures:S.captures,images:S.images,reminders:S.reminders,lastReview:S.lastReview};
   try{var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="hq-backup-"+todayStr()+".json";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},600);toast("Backup downloaded","download")}catch(e){toast("Backup failed","alert-triangle")}}
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")requestPull("visible")});
 window.addEventListener("focus",function(){requestPull("focus")});
@@ -1200,7 +1212,7 @@ function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].ste
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderSuggest();renderTags();renderPrime();renderDeck();renderDone();renderToday()}
+  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderPrime();renderDeck();renderDone();renderToday()}
   else if(activeTab==="goals")renderGoals();
   else if(activeTab==="calendar"){renderCalForm();renderCal()}
   else if(activeTab==="vision")renderVision();
@@ -1219,6 +1231,44 @@ function renderSys(){
   document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" goals";
   var ago=document.getElementById("reviewAgo");
   if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";
+}
+
+/* ===== STANDING REMINDERS =====
+   Visible cues that sit at the top of Home. Not tasks: they are never
+   completed, never sorted into the deck, and carry no schedule. They just
+   stay put until you remove them. Own sync kind, so they sync like anything. */
+function remindersSorted(){return live(S.reminders).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
+function renderReminders(){
+  var strip=document.getElementById("reminderStrip");if(!strip)return;strip.innerHTML="";
+  remindersSorted().forEach(function(r){
+    var chip=document.createElement("div");chip.className="rem-chip";
+    chip.innerHTML='<span class="rem-dot"></span><span class="rem-txt">'+esc(r.text)+'</span><button class="rem-x" title="Remove">&times;</button>';
+    chip.querySelector(".rem-x").onclick=function(ev){ev.stopPropagation();rmReminder(r.id)};
+    chip.querySelector(".rem-txt").onclick=function(){if(hasSelection())return;editReminder(r.id)};
+    strip.appendChild(chip);
+  });
+  var add=document.createElement("button");add.className="rem-add";
+  add.innerHTML='<i data-lucide="plus"></i>'+(live(S.reminders).length?"Reminder":"Add a reminder");
+  add.onclick=addReminder;
+  strip.appendChild(add);
+  icons();
+}
+function addReminder(){
+  var v=prompt("Standing reminder (e.g. Posture, stand up straight):","");
+  if(v==null)return;v=v.trim();if(!v)return;
+  var rid=mid();
+  S.reminders.push({id:rid,text:v,del:false,ts:Date.now(),mtime:Date.now()});
+  save(rid);renderReminders();lastSig=stateSignature();
+}
+function editReminder(id){
+  var r=S.reminders.find(function(x){return x.id===id});if(!r)return;
+  var v=prompt("Edit reminder:",r.text||"");
+  if(v==null)return;v=v.trim();if(!v){rmReminder(id);return}
+  r.text=v;touch(r);save(id);renderReminders();lastSig=stateSignature();
+}
+function rmReminder(id){
+  tomb(id);renderReminders();lastSig=stateSignature();
+  toast("Reminder removed · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderReminders();lastSig=stateSignature();toast("Restored","rotate-ccw")}});
 }
 
 function renderSuggest(){
