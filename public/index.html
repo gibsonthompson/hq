@@ -56,14 +56,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .wrap{max-width:1080px;margin:0 auto}
 
 /* SYSTEM HEADER */
-.sysbar{position:relative;display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(70,209,135,0.10),rgba(99,102,241,0.03));border:1px solid var(--line2);overflow:hidden}
-.sysbar.has-vision{min-height:132px;align-items:flex-end;border-color:rgba(70,209,135,0.3)}
-.sysbar .sys-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
-.sysbar .sys-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,18,16,0.35) 0%,rgba(15,18,16,0.82) 78%)}
-.sysbar.has-vision>div{position:relative;z-index:1}
-.sysbar .sys-visioncap{position:absolute;top:12px;left:18px;z-index:1;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.82);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
-.sysbar.has-vision .sys-hello{text-shadow:0 1px 6px rgba(0,0,0,0.7)}
-.sysbar.has-vision .sys-sub{color:rgba(233,237,233,0.9);text-shadow:0 1px 5px rgba(0,0,0,0.7)}
+.sysbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(70,209,135,0.10),rgba(99,102,241,0.03));border:1px solid var(--line2)}
 .sys-hello{font-family:'Sora';font-weight:700;font-size:19px;letter-spacing:-.2px}
 .sys-sub{font-size:12.5px;color:var(--dim);margin-top:3px}
 .sys-sub b{color:var(--vio2);font-weight:600}
@@ -241,6 +234,14 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .vitem .vmove{position:absolute;top:8px;left:8px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,0.6);border:1px solid var(--line2);color:#fff;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
 .vitem:hover .vmove{display:flex}
 .vitem .vmove i{width:14px;height:14px}
+/* drag-and-drop between sections */
+.vitem{cursor:grab}
+.vitem img{pointer-events:auto;-webkit-user-drag:none;user-drag:none}
+.vitem.vdragging{opacity:.35}
+.vghost{position:fixed;z-index:120;pointer-events:none;opacity:.9;transform:rotate(2deg);box-shadow:0 18px 44px -10px rgba(0,0,0,0.7);border-radius:13px;overflow:hidden}
+.vghost .vmove,.vghost .vgoal-btn,.vghost .vcap-edit,.vghost .vx,.vghost .vcap,.vghost .vgoal{display:none!important}
+.vsection.vdrop-hi{outline:2px dashed var(--vio);outline-offset:4px;border-radius:12px;background:rgba(70,209,135,0.06)}
+.vsection{border-radius:12px;transition:background .12s}
 .vitem .vgoal-btn{position:absolute;top:8px;left:42px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,0.6);border:1px solid var(--line2);color:var(--vio2);cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
 .vitem:hover .vgoal-btn{display:flex}
 .vitem .vgoal-btn i{width:14px;height:14px}
@@ -646,8 +647,6 @@ input,textarea,select{font-size:16px}
   <div class="tab active wrap" id="tab-home">
     <div class="reminder-strip" id="reminderStrip"></div>
     <div class="sysbar" id="sysbar">
-      <div class="sys-bg" id="sysBg" style="display:none"></div>
-      <div class="sys-visioncap" id="sysVisionCap" style="display:none"></div>
       <div>
         <div class="sys-hello" id="sysHello">Execute today.</div>
         <div class="sys-sub" id="sysSub"></div>
@@ -1023,7 +1022,7 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
 function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v25";
+var BUILD="v26";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1385,30 +1384,6 @@ function renderSys(){
   document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" goals";
   var ago=document.getElementById("reviewAgo");
   if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";
-  renderDailyVision();
-}
-/* one vision photo on the Home header, rotated daily so the board earns a daily
-   glance. Deterministic per day (same photo all day, next photo tomorrow).
-   Prefers photos with a goal attached; falls back to any photo. */
-function dailyVisionPick(){
-  var imgs=live(S.images);if(!imgs.length)return null;
-  var withGoal=imgs.filter(function(im){return im.goalId});
-  var pool=withGoal.length?withGoal:imgs;
-  pool=pool.slice().sort(function(a,b){return String(a.id).localeCompare(String(b.id))});
-  var epochDay=Math.floor(Date.now()/86400000);
-  return pool[epochDay%pool.length];
-}
-function renderDailyVision(){
-  var bar=document.getElementById("sysbar"),bg=document.getElementById("sysBg"),cap=document.getElementById("sysVisionCap");
-  if(!bar||!bg)return;
-  var im=dailyVisionPick();
-  if(!im){bar.classList.remove("has-vision");bg.style.display="none";cap.style.display="none";return}
-  bar.classList.add("has-vision");
-  bg.style.backgroundImage="url('"+im.src+"')";bg.style.display="block";
-  var label=im.cap||"";
-  var g=im.goalId?live(S.goals).find(function(x){return x.id===im.goalId}):null;
-  if(g)label=(label?label+" · ":"")+g.title;
-  if(label){cap.textContent=label;cap.style.display="block"}else cap.style.display="none";
 }
 
 /* ===== STANDING REMINDERS =====
@@ -1976,7 +1951,7 @@ function renderVision(){var b=document.getElementById("visionBody");if(!b)return
   var h="";
   areas.forEach(function(a){
     var imgs=imagesInArea(a.name);
-    h+='<div class="vsection">'+
+    h+='<div class="vsection vdrop" data-area="'+esc(a.name)+'">'+
       '<div class="vsection-head"><div class="vsection-title">'+esc(a.name)+' <span class="vcount">'+imgs.length+'</span></div>'+
       '<div class="vsection-acts">'+
         '<button class="vsec-btn" onclick="renameArea(\''+a.id+'\')" title="Rename"><i data-lucide="pencil"></i></button>'+
@@ -1984,7 +1959,7 @@ function renderVision(){var b=document.getElementById("visionBody");if(!b)return
         '<button class="vsec-btn add" onclick="uploadTo(\''+esc(a.name)+'\')"><i data-lucide="upload"></i> Add</button>'+
       '</div></div>';
     if(!imgs.length){
-      h+='<div class="vsec-empty" onclick="uploadTo(\''+esc(a.name)+'\')"><i data-lucide="image-plus"></i><div>Add photos to '+esc(a.name)+'</div></div>';
+      h+='<div class="vsec-empty" onclick="uploadTo(\''+esc(a.name)+'\')"><i data-lucide="image-plus"></i><div>Add photos to '+esc(a.name)+', or drag one here</div></div>';
     }else{
       h+='<div class="vgrid">';
       imgs.forEach(function(im){h+=vitemHtml(im)});
@@ -1993,12 +1968,95 @@ function renderVision(){var b=document.getElementById("visionBody");if(!b)return
     h+='</div>';
   });
   if(unsorted.length){
-    h+='<div class="vsection"><div class="vsection-head"><div class="vsection-title">Unsorted <span class="vcount">'+unsorted.length+'</span></div></div>';
+    h+='<div class="vsection vdrop" data-area=""><div class="vsection-head"><div class="vsection-title">Unsorted <span class="vcount">'+unsorted.length+'</span></div></div>';
     h+='<div class="vgrid">';unsorted.forEach(function(im){h+=vitemHtml(im)});h+='</div></div>';
   }
   h+='<button class="vadd-section" onclick="addArea()"><i data-lucide="folder-plus"></i> New section</button>';
-  b.innerHTML=h;icons();
+  b.innerHTML=h;
+  wireVisionDrag();
+  icons();
 }
+/* Drag a photo onto any section to move it there. Two mechanisms, because iOS
+   Safari does not fire HTML5 drag events on touch:
+   - desktop: native draggable + dragover/drop
+   - touch: long-press to lift, finger-move to a section, lift to drop */
+function wireVisionDrag(){
+  var body=document.getElementById("visionBody");if(!body)return;
+  var sections=body.querySelectorAll(".vdrop");
+  var items=body.querySelectorAll(".vitem");
+  /* desktop native DnD */
+  items.forEach(function(el){
+    el.setAttribute("draggable","true");
+    el.addEventListener("dragstart",function(e){_vdrag=el.dataset.id;el.classList.add("vdragging");try{e.dataTransfer.setData("text/plain",el.dataset.id);e.dataTransfer.effectAllowed="move"}catch(x){}});
+    el.addEventListener("dragend",function(){_vdrag=null;el.classList.remove("vdragging");clearDropHi()});
+  });
+  sections.forEach(function(sec){
+    sec.addEventListener("dragover",function(e){if(_vdrag){e.preventDefault();sec.classList.add("vdrop-hi")}});
+    sec.addEventListener("dragleave",function(e){if(!sec.contains(e.relatedTarget))sec.classList.remove("vdrop-hi")});
+    sec.addEventListener("drop",function(e){e.preventDefault();sec.classList.remove("vdrop-hi");if(_vdrag){var id=_vdrag;_vdrag=null;moveImageToArea(id,sec.dataset.area)}});
+  });
+  /* touch long-press drag */
+  items.forEach(function(el){wireTouchDrag(el)});
+}
+var _vdrag=null;
+function clearDropHi(){document.querySelectorAll(".vdrop-hi").forEach(function(s){s.classList.remove("vdrop-hi")})}
+function moveImageToArea(id,area){
+  var im=S.images.find(function(x){return x.id===id});if(!im)return;
+  if((im.area||"")===(area||""))return;
+  im.area=area||"";touch(im);save(id);renderVision();lastSig=stateSignature();
+  toast("Moved to "+(area||"Unsorted"),"folder-symlink");
+}
+/* touch: press and hold ~380ms to lift the photo, then drag it to a section */
+var _tDrag=null,_tGhost=null,_tTimer=null;
+function wireTouchDrag(el){
+  el.addEventListener("touchstart",function(e){
+    if(!e.touches||e.touches.length!==1)return;
+    var t=e.touches[0],sx=t.clientX,sy=t.clientY;
+    _tTimer=setTimeout(function(){
+      _tDrag={id:el.dataset.id,el:el};
+      el.classList.add("vdragging");
+      if(navigator.vibrate)try{navigator.vibrate(15)}catch(x){}
+      _tGhost=el.cloneNode(true);_tGhost.className="vitem vghost";
+      _tGhost.style.width=el.offsetWidth+"px";_tGhost.style.height=el.offsetHeight+"px";
+      document.body.appendChild(_tGhost);
+      moveGhost(sx,sy);
+    },380);
+    el._tsx=sx;el._tsy=sy;
+  },{passive:true});
+  el.addEventListener("touchmove",function(e){
+    if(!_tDrag){
+      /* if the finger moved before the hold fired, it's a scroll, cancel lift */
+      if(_tTimer&&e.touches&&e.touches[0]){
+        var t=e.touches[0];
+        if(Math.abs(t.clientX-el._tsx)>10||Math.abs(t.clientY-el._tsy)>10){clearTimeout(_tTimer);_tTimer=null}
+      }
+      return;
+    }
+    e.preventDefault();
+    var t=e.touches[0];moveGhost(t.clientX,t.clientY);
+    hiSectionAt(t.clientX,t.clientY);
+  },{passive:false});
+  el.addEventListener("touchend",function(e){
+    clearTimeout(_tTimer);_tTimer=null;
+    if(!_tDrag)return;
+    var pt=(e.changedTouches&&e.changedTouches[0])||null;
+    var sec=pt?sectionAt(pt.clientX,pt.clientY):null;
+    var id=_tDrag.id;_tDrag.el.classList.remove("vdragging");
+    if(_tGhost){_tGhost.remove();_tGhost=null}
+    clearDropHi();_tDrag=null;
+    if(sec)moveImageToArea(id,sec.dataset.area);
+  });
+  el.addEventListener("touchcancel",function(){clearTimeout(_tTimer);_tTimer=null;if(_tGhost){_tGhost.remove();_tGhost=null}if(_tDrag){_tDrag.el.classList.remove("vdragging");_tDrag=null}clearDropHi()});
+}
+function moveGhost(x,y){if(_tGhost){_tGhost.style.left=(x-_tGhost.offsetWidth/2)+"px";_tGhost.style.top=(y-_tGhost.offsetHeight/2)+"px"}}
+function sectionAt(x,y){
+  if(_tGhost)_tGhost.style.display="none";
+  var el=document.elementFromPoint(x,y);
+  if(_tGhost)_tGhost.style.display="";
+  while(el&&el!==document.body){if(el.classList&&el.classList.contains("vdrop"))return el;el=el.parentNode}
+  return null;
+}
+function hiSectionAt(x,y){clearDropHi();var s=sectionAt(x,y);if(s)s.classList.add("vdrop-hi")}
 function vitemHtml(im){
   var g=im.goalId?live(S.goals).find(function(x){return x.id===im.goalId}):null;
   var badge="";
@@ -2008,7 +2066,7 @@ function vitemHtml(im){
     if(im.target){var dd=new Date(im.target+"T12:00:00");if(!isNaN(dd)){var dl=Math.ceil((dd-new Date())/86400000);parts.push('<i data-lucide="target" style="width:11px;height:11px"></i>'+dd.toLocaleDateString("en-US",{month:"short",day:"numeric"})+(dl>=0?" ("+dl+"d)":" (past)"))}}
     badge='<div class="vgoal">'+parts.join('<span style="opacity:.5"> · </span>')+'</div>';
   }
-  return '<div class="vitem">'+
+  return '<div class="vitem" data-id="'+im.id+'">'+
     '<img src="'+im.src+'" onclick="openVisionFeed(\''+im.id+'\')">'+
     '<button class="vmove" onclick="moveImage(\''+im.id+'\')" title="Move to section"><i data-lucide="folder-symlink"></i></button>'+
     '<button class="vgoal-btn" onclick="attachGoal(\''+im.id+'\')" title="Link a goal"><i data-lucide="flag"></i></button>'+
@@ -2443,8 +2501,8 @@ function tick(){ctx.clearRect(0,0,cvs.width,cvs.height);for(var i=parts.length-1
    each build so any stale cache from an older version is cleared once. */
 if('serviceWorker' in navigator){
   try{
-    if(localStorage.getItem("hq_cache_purge")!=="v25"){
-      localStorage.setItem("hq_cache_purge","v25");
+    if(localStorage.getItem("hq_cache_purge")!=="v26"){
+      localStorage.setItem("hq_cache_purge","v26");
       if(window.caches&&caches.keys)caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k)})});
       navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})}).then(function(){
         setTimeout(function(){navigator.serviceWorker.register('/sw.js').catch(function(){})},300);
