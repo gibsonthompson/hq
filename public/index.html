@@ -1381,7 +1381,7 @@ function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].ste
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderPrime();renderDeck();renderDone();renderToday()}
+  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderPrime();renderDeck();renderDone();renderToday()}
   else if(activeTab==="goals")renderGoals();
   else if(activeTab==="calendar"){renderCalForm();renderCal()}
   else if(activeTab==="vision")renderVision();
