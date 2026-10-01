@@ -583,6 +583,7 @@ input,textarea,select{font-size:16px}
 .sweep-text{font-family:'Sora';font-weight:600;font-size:16px;line-height:1.4}
 .sweep-meta{margin-top:8px;font-size:12px;color:var(--dim2);font-family:'JetBrains Mono';display:flex;gap:10px;flex-wrap:wrap}
 .hidden{display:none!important}
+.mono-ta{font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap}
 
 /* ===== CUSTOM UI COMPONENTS (no native selects, alerts, or prompts) ===== */
 /* custom dropdown: a styled trigger that opens a themed option panel */
@@ -672,6 +673,7 @@ input,textarea,select{font-size:16px}
     </div>
     <div class="task-tools hidden" id="taskTools"><input class="task-search" id="taskSearch" placeholder="Search tasks…" oninput="taskQuery=this.value;renderTaskViews()"></div>
     <div class="tag-row hidden" id="tagPills"></div>
+    <div class="tag-row hidden" id="venturePills"></div>
     <div class="prime-grid" id="primeGrid"></div>
 
     <div class="sec-head" id="deckHead">
@@ -933,6 +935,17 @@ input,textarea,select{font-size:16px}
   </div>
 </div></div>
 
+<!-- CLAUDE PROMPT -->
+<div class="modal" id="cpModal"><div class="modal-box" style="max-width:560px">
+  <div class="modal-title"><i data-lucide="sparkles"></i> Claude prompt</div>
+  <div class="rv-intro" style="margin-bottom:10px">Drop-in prompt built from this task. Copy it into Claude as-is.</div>
+  <textarea class="m-ta mono-ta" id="cpText" rows="14" readonly></textarea>
+  <div class="m-actions">
+    <button class="m-btn" onclick="closeModal('cpModal')">Close</button>
+    <button class="m-btn primary" onclick="copyPrompt()"><i data-lucide="copy" style="width:15px;height:15px;vertical-align:-2px"></i> Copy prompt <span id="cpCopied" style="display:none;align-items:center;margin-left:6px"><i data-lucide="check" style="width:14px;height:14px"></i></span></button>
+  </div>
+</div></div>
+
 <!-- CUSTOM CONFIRM -->
 <div class="modal" id="uiConfirmModal"><div class="modal-box" style="max-width:400px">
   <div class="modal-title"><i data-lucide="help-circle"></i> <span id="uiConfirmTitle">Are you sure?</span></div>
@@ -967,12 +980,13 @@ var S={
   rhythm:JSON.parse(JSON.stringify(DR)),
   goals:[],          // {id,title,why,cat,target,steps:[...],created,archived}
   needleMovers:[],   // standalone {id,text,done,ts,doneTs,date,startHour,duration}
-  notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],visionAreas:[],
+  notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],visionAreas:[],ventures:[],
   lastReview:null,
   schedCats:null,nci:0,wcalWeekStart:null
 };
 var calRecur=false,activeSchedId=null,schedPickedDay=null,goalFilter="all",goalCatPick="business",suggestOpen=true;
 var taskFilter="all",taskQuery="",doneOpen=false,sweepIdx=0,sweepPending=false,sweepStats=null;
+var ventureFilter="all";
 var openGoals={};
 var activeTab="home";
 
@@ -995,7 +1009,7 @@ var sb=null;
 var sbLibLoaded=(typeof supabase!=="undefined"&&supabase&&typeof supabase.createClient==="function");
 try{if(sbLibLoaded)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
 
-function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1}})}
+function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1,venture:""};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1,venture:(x.venture||"")}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),mtime:(g.mtime!=null?g.mtime:(g.created||1)),del:!!g.del,archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ts:(s.ts||s.ord||Date.now()),pin:(s.pin!=null?s.pin:0),mtime:(s.mtime!=null?s.mtime:(s.ts||1)),del:!!s.del,date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
 /* ts is preserved, never regenerated, so ordering is stable across pulls */
 function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];
@@ -1013,13 +1027,14 @@ function normalizeEvents(arr){if(!Array.isArray(arr))return[];return arr.map(fun
 function normalizeCaptures(arr){if(!Array.isArray(arr))return[];return arr.map(function(c){var ts=(c.ts!=null?c.ts:(c.mtime||1));return{id:c.id||mid(),text:c.text||"",ts:ts,mtime:(c.mtime!=null?c.mtime:ts),del:!!c.del}})}
 function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(function(r){var ts=(r.ts!=null?r.ts:(r.mtime||1));return{id:r.id||mid(),text:r.text||"",ts:ts,mtime:(r.mtime!=null?r.mtime:ts),del:!!r.del}})}
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
+function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
-  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
-function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
+function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
 var BUILD="v26";
@@ -1055,9 +1070,9 @@ function setSync(state){syncState=state;var el=document.getElementById("syncDot"
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
-function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas"}[kind]}
-function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea"}[listName]}
-function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","goals"];
+function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures"}[kind]}
+function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture"}[listName]}
+function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","goals"];
   for(var i=0;i<L.length;i++){var a=S[L[i]]||[];for(var j=0;j<a.length;j++){if(a[j]&&a[j].id===id)return{item:a[j],kind:kindOf(L[i]),parent:null}}}
   for(var g=0;g<(S.goals||[]).length;g++){var st=S.goals[g].steps||[];for(var k=0;k<st.length;k++){if(st[k].id===id)return{item:st[k],kind:"step",parent:S.goals[g].id}}}
   return null}
@@ -1096,7 +1111,7 @@ function pushNewer(remoteRows,cb){
     if(r&&!((item.mtime||0)>rm))return;      /* cloud is same or newer, leave it */
     rows.push({id:item.id,user_key:"gibson",kind:kind,parent:parent,deleted:!!item.del,data:JSON.parse(JSON.stringify(item))});
   }
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures"].forEach(function(L){
     (S[L]||[]).forEach(function(x){consider(x,kindOf(L),null)})});
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;
     consider({id:g.id,title:g.title,why:g.why,cat:g.cat,target:g.target,created:g.created,archived:g.archived,mtime:g.mtime,del:g.del},"goal",null);
@@ -1134,10 +1149,10 @@ function applyRows(rows){
      2. local copy modified more recently -> keep the local copy
      3. item exists here but has no row   -> keep it and upload it */
   var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
-            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],goals:S.goals||[]};
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],goals:S.goals||[]};
   var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
   var goals={},goalOrder=[],steps=[],seen={};
-  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[]};
+  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[]};
   function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
     var lh=findAny(r.id);
@@ -1152,7 +1167,7 @@ function applyRows(rows){
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
   var reupload=[];
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures"].forEach(function(L){
     (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
   (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;goalOrder.push(g.id);reupload.push(g.id)}});
   Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
@@ -1164,7 +1179,7 @@ function applyRows(rows){
   S.calendarEvents=normalizeEvents(next.calendarEvents);
   S.captures=normalizeCaptures(next.captures);
   S.reminders=normalizeReminders(next.reminders);
-  S.visionAreas=normalizeVAreas(next.visionAreas);
+  S.visionAreas=normalizeVAreas(next.visionAreas);S.ventures=normalizeVentures(next.ventures);
   S.images=normalizeImages(next.images);
   S.goals=normalizeGoals(goalOrder.map(function(k){return goals[k]}));
   /* backfill: anything that arrived without a ts now has one, and it is
@@ -1309,7 +1324,7 @@ function forcePullFromCloud(){
     pullRemote(function(ok){forceRender();toast(ok?("Pulled · "+live(S.needleMovers).filter(function(m){return !m.done}).length+" tasks"):"Pull failed",ok?"check-circle":"alert-triangle")});
   });}
 function downloadBackup(){
-  var data={exported:new Date().toISOString(),build:BUILD,tasks:S.needleMovers,goals:S.goals,notes:S.notes,projects:S.projects,events:S.calendarEvents,captures:S.captures,images:S.images,reminders:S.reminders,visionAreas:S.visionAreas,lastReview:S.lastReview};
+  var data={exported:new Date().toISOString(),build:BUILD,tasks:S.needleMovers,goals:S.goals,notes:S.notes,projects:S.projects,events:S.calendarEvents,captures:S.captures,images:S.images,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview};
   try{var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="hq-backup-"+todayStr()+".json";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},600);toast("Backup downloaded","download")}catch(e){toast("Backup failed","alert-triangle")}}
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")requestPull("visible")});
 window.addEventListener("focus",function(){requestPull("focus")});
@@ -1324,10 +1339,11 @@ function todayItems(){var out=[];
   out.sort(cmpItems);return out}
 function taskMatches(it){
   if(taskFilter!=="all"){var tg=(it.ref.tags||[]);if(tg.indexOf(taskFilter)<0)return false}
+  if(ventureFilter!=="all"){var mv=(it.ref.venture||"");if(ventureFilter==="__gen__"){if(mv!=="")return false}else if(mv!==ventureFilter)return false}
   if(taskQuery){if(String(it.text||"").toLowerCase().indexOf(taskQuery.toLowerCase())<0)return false}
   return true}
 function visibleItems(){return todayItems().filter(taskMatches)}
-function renderTaskViews(){renderTags();renderPrime();renderDeck();renderDone();icons()}
+function renderTaskViews(){renderTags();renderVentures();renderPrime();renderDeck();renderDone();icons()}
 /* Search is opt-in now. Hiding it always clears the query, otherwise the list
    could stay silently filtered with no visible control explaining why. */
 function toggleSearch(){
@@ -1345,13 +1361,13 @@ function findRef(id){var m=S.needleMovers.find(function(x){return x.id===id});if
   for(var i=0;i<S.goals.length;i++){var s=S.goals[i].steps.find(function(x){return x.id===id});if(s)return{kind:"step",ref:s,goal:S.goals[i]}}return null}
 
 /* ===== TASKS / COMPLETION ===== */
-function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim();if(!v)return;var p=parseTags(v);var nid=mid();S.needleMovers.push({id:nid,text:(p.text||v),tags:p.tags,done:false,del:false,ts:Date.now(),pin:0,mtime:Date.now(),duration:1});inp.value="";save(nid);forceRender()}
+function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim();if(!v)return;var p=parseTags(v);var nid=mid();S.needleMovers.push({id:nid,text:(p.text||v),tags:p.tags,done:false,del:false,ts:Date.now(),pin:0,mtime:Date.now(),duration:1,venture:(ventureFilter!=="all"&&ventureFilter!=="__gen__"?ventureFilter:"")});inp.value="";save(nid);forceRender()}
 function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMover(id);return}f.ref.onToday=false;touch(f.ref);save(id);forceRender()}
 function deleteMover(id){tomb(id);forceRender();toast("Deleted · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);forceRender();toast("Restored","rotate-ccw")}})}
 function unpin(id){var f=findRef(id);if(!f)return;f.ref.pin=0;touch(f.ref);save(id);forceRender()}
 function uncomplete(id){var f=findRef(id);if(!f)return;f.ref.done=false;f.ref.doneTs=null;touch(f.ref);save(id);forceRender()}
 function promote(id){var f=findRef(id);if(!f)return;f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()}
-function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender()})}
+function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender();if(f.kind==="mover")assignVenture(id)})}
 function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
   if(el){el.classList.add("completing");if(el.classList.contains("prime"))el.classList.add("done-anim")}
   f.ref.done=true;f.ref.doneTs=Date.now();f.ref.date=null;f.ref.startHour=null;if(f.kind==="step")f.ref.onToday=false;touch(f.ref);save(id);
@@ -1452,6 +1468,7 @@ function renderPrime(){
     var chips="";
     if(it.kind==="step")chips+='<span class="pchip goal"><i data-lucide="flag"></i>'+esc(it.goalTitle.slice(0,16))+(it.goalTitle.length>16?"…":"")+'</span>';
     (it.ref.tags||[]).forEach(function(t){chips+='<span class="pchip tag">#'+esc(t)+'</span>'});
+    if(it.ref.venture)chips+='<span class="pchip" onclick="event.stopPropagation();assignVenture(\''+it.id+'\')"><i data-lucide="briefcase"></i>'+esc(it.ref.venture)+'</span>';
     chips+=sl?'<span class="pchip sched" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'<span class="pchip" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="calendar-plus"></i>Schedule</span>';
     chips+='<span class="pchip" onclick="event.stopPropagation();unpin(\''+it.id+'\')" title="Send back to the list"><i data-lucide="chevrons-down"></i>Unpin</span>';
     var el=document.createElement("div");el.className="prime";
@@ -1460,6 +1477,7 @@ function renderPrime(){
       '<div class="check"><i data-lucide="check"></i></div>'+
       '<div class="pbody"><div class="ptext">'+esc(it.text)+'</div><div class="pfoot">'+chips+'</div></div>'+
       '<div class="pacts">'+
+        '<button class="px" onclick="event.stopPropagation();genPrompt(\''+it.id+'\')" title="Generate Claude prompt"><i data-lucide="sparkles"></i></button>'+
         '<button class="px" onclick="event.stopPropagation();editTask(\''+it.id+'\')" title="Edit"><i data-lucide="pencil"></i></button>'+
         '<button class="px" onclick="event.stopPropagation();rmItem(\''+it.id+'\')" title="Remove">&times;</button>'+
       '</div>';
@@ -1477,17 +1495,65 @@ function renderDeck(){
   document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");
   rest.forEach(function(it){var sl=schedLabel(it.ref);
     var el=document.createElement("div");el.className="deck-item";
-    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});
+    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});if(it.ref.venture)tagsHtml+='<span class="dtag" onclick="assignVenture(\''+it.id+'\')">'+esc(it.ref.venture)+'</span>';
     el.innerHTML='<div class="check" onclick="completeFromDeck(\''+it.id+'\',this)"><i data-lucide="check"></i></div>'+
       (it.kind==="step"?'<span class="dgoal">'+esc(it.goalTitle.slice(0,14))+'</span>':'')+
       tagsHtml+
       '<div class="dtext">'+esc(it.text)+'</div>'+
       (sl?'<span class="dsched" onclick="openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
+      '<button class="promote" onclick="genPrompt(\''+it.id+'\')" title="Generate Claude prompt"><i data-lucide="sparkles"></i></button>'+
       '<button class="promote" onclick="editTask(\''+it.id+'\')" title="Edit"><i data-lucide="pencil"></i></button>'+
       '<button class="promote" onclick="promote(\''+it.id+'\')" title="Pin to top 3"><i data-lucide="chevrons-up"></i></button>'+
       '<button class="drm" onclick="rmItem(\''+it.id+'\')" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>';
     attachSwipe(el,it.id,it.kind);
     c.appendChild(el)})}
+/* ===== CLAUDE PROMPT FORMATTER =====
+   Turns a shorthand task into a drop-in, high-effectiveness prompt for Claude.
+   The rule block front-loads the standards that make output land right the
+   first time, plus the task's business (venture) context. */
+function buildClaudePrompt(text,venture){
+  var ctx=venture?("This task is for **"+venture+"**. Keep that business context in mind (its stack, users, and constraints) throughout.\n\n"):"";
+  var p=
+"# Task\n"+
+String(text||"").trim()+"\n\n"+
+ctx+
+"# How to approach this\n"+
+"DO NOT BE LAZY. Do the complete job, not a sketch of it.\n\n"+
+"- Be comprehensive and thorough. Fully solve the task end to end rather than outlining what could be done.\n"+
+"- Think critically. Question the premise if it is flawed, and say so plainly rather than building on a bad assumption.\n"+
+"- Work through the reasoning before landing on an answer. Show the key steps of your thinking where they matter.\n"+
+"- Actively hunt for edge cases, failure modes, and second-order effects. List the ones that matter and handle them, do not just mention them.\n"+
+"- State any assumptions you are making explicitly. If something is ambiguous and the answer hinges on it, ask one sharp clarifying question instead of guessing silently.\n"+
+"- Consider the simplest correct solution first. Avoid over-engineering, but do not cut corners that will break later.\n"+
+"- If this involves code: ask for the exact file(s) by name before editing, change only what needs to change, preserve everything else byte-for-byte, and verify your work (trace the logic or test it) before claiming it is done. Never claim something is fixed without checking.\n"+
+"- If you make a mistake, own it and fix it directly.\n\n"+
+"# Output\n"+
+"- Give me the actual finished result, not a plan to produce it.\n"+
+"- When delivering files, provide each updated file individually with a unique filename. Never package as a zip.\n"+
+"- No em dashes. Use commas, periods, or parentheses.\n"+
+"- Be direct and substantive. Take a clear position, no vague hedging.\n";
+  return p;
+}
+function genPrompt(id){
+  var f=findRef(id);if(!f)return;
+  var venture=(f.kind==="mover")?(f.ref.venture||""):"";
+  var goalCtx=(f.kind==="step"&&f.goal)?f.goal.title:"";
+  showPromptModal(buildClaudePrompt(f.ref.text,venture||goalCtx));
+}
+function showPromptModal(text){
+  var ta=document.getElementById("cpText");ta.value=text;
+  document.getElementById("cpCopied").style.display="none";
+  openModal("cpModal");
+}
+function copyPrompt(){
+  var ta=document.getElementById("cpText");
+  var done=function(){document.getElementById("cpCopied").style.display="inline-flex";toast("Prompt copied","copy")};
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ta.value).then(done,function(){ta.select();if(document.execCommand)document.execCommand("copy");done()})}
+    else{ta.select();if(document.execCommand)document.execCommand("copy");done()}
+  }catch(e){ta.select()}
+}
+/* ===== CLAUDE PROMPT FORMATTER end ===== */
 function renderTags(){
   var row=document.getElementById("tagPills");if(!row)return;
   var tags={};live(S.needleMovers).forEach(function(m){if(m.done)return;(m.tags||[]).forEach(function(t){tags[t]=(tags[t]||0)+1})});
@@ -1498,6 +1564,11 @@ function renderTags(){
   var h='<div class="tag-pill'+(taskFilter==="all"?" on":"")+'" onclick="taskFilter=\'all\';renderTaskViews()">All</div>';
   names.forEach(function(t){h+='<div class="tag-pill'+(taskFilter===t?" on":"")+'" onclick="taskFilter=\''+t+'\';renderTaskViews()">#'+esc(t)+' <span style="opacity:.6">'+tags[t]+'</span></div>'});
   row.innerHTML=h}
+function ventureList(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;var v=(m.venture||"");if(v)set[v]=(set[v]||0)+1});(S.ventures||[]).forEach(function(vr){if(vr&&vr.name&&set[vr.name]==null)set[vr.name]=0});return set}
+function ventureGeneralCount(){var n=0;live(S.needleMovers).forEach(function(m){if(!m.done&&!(m.venture||""))n++});return n}
+function renderVentures(){var row=document.getElementById("venturePills");if(!row)return;var counts=ventureList();var names=Object.keys(counts).sort();if(ventureFilter!=="all"&&ventureFilter!=="__gen__"&&names.indexOf(ventureFilter)<0)ventureFilter="all";row.classList.remove("hidden");var h='<div class="tag-pill'+(ventureFilter==="all"?" on":"")+'" onclick="ventureFilter=\'all\';renderTaskViews()">All</div>';names.forEach(function(n){h+='<div class="tag-pill'+(ventureFilter===n?" on":"")+'" data-v="'+esc(n)+'" onclick="ventureFilter=this.dataset.v;renderTaskViews()"><i data-lucide=\'briefcase\'></i> '+esc(n)+' <span style="opacity:.6">'+counts[n]+'</span></div>'});h+='<div class="tag-pill'+(ventureFilter==="__gen__"?" on":"")+'" onclick="ventureFilter=\'__gen__\';renderTaskViews()">General <span style="opacity:.6">'+ventureGeneralCount()+'</span></div>';h+='<div class="tag-pill" onclick="addVenture()"><i data-lucide=\'plus\'></i> Business</div>';row.innerHTML=h}
+function addVenture(){uiPrompt("New business","",{message:"Name a business to file tasks under, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=v.trim();if(!v||v.toLowerCase()==="general")return;var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}ventureFilter=v;renderTaskViews()})}
+function assignVenture(id){var f=findRef(id);if(!f)return;if(f.kind!=="mover"){toast("Businesses are for tasks","alert-triangle");return}var names=Object.keys(ventureList()).sort();var msg=names.length?("Businesses: "+names.join(", ")+". Type one, or leave blank for General."):"Type a business, or leave blank for General.";uiPrompt("File under business",(f.ref.venture||""),{message:msg}).then(function(v){if(v==null)return;v=v.trim();if(v.toLowerCase()==="general")v="";f.ref.venture=v;if(v){var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}}touch(f.ref);save(id);renderTaskViews()})}
 function renderDone(){
   var head=document.getElementById("doneHead"),list=document.getElementById("doneList");if(!head||!list)return;
   var t0=new Date();t0.setHours(0,0,0,0);var t0ms=t0.getTime();
@@ -2271,7 +2342,7 @@ function renderInbox(){var c=document.getElementById("capList");c.innerHTML="";u
   var h="";
   list.forEach(function(cap){h+='<div class="cap-item"><div class="ctext">'+esc(cap.text)+'</div><div class="cap-acts"><button class="to-nm" onclick="capToNM(\''+cap.id+'\')"><i data-lucide="target"></i>Task</button><button class="to-goal" onclick="capToGoalStep(\''+cap.id+'\')"><i data-lucide="flag"></i>Goal Step</button><button class="to-note" onclick="capToNote(\''+cap.id+'\')"><i data-lucide="sticky-note"></i>Note</button><button class="cdel" onclick="capDel(\''+cap.id+'\')"><i data-lucide="trash-2"></i></button></div></div>'});
   c.innerHTML=h;icons()}
-function capToNM(id){var cap=S.captures.find(function(x){return x.id===id});if(!cap)return;var p=parseTags(cap.text);var cmid=mid();S.needleMovers.push({id:cmid,text:(p.text||cap.text),tags:p.tags,done:false,del:false,ts:Date.now(),pin:0,mtime:Date.now(),duration:1});save(cmid);capDel(id,true);lastSig=stateSignature();toast("Added to tasks","target")}
+function capToNM(id){var cap=S.captures.find(function(x){return x.id===id});if(!cap)return;var p=parseTags(cap.text);var cmid=mid();S.needleMovers.push({id:cmid,text:(p.text||cap.text),tags:p.tags,done:false,del:false,ts:Date.now(),pin:0,mtime:Date.now(),duration:1,venture:""});save(cmid);capDel(id,true);lastSig=stateSignature();toast("Added to tasks","target")}
 function capToGoalStep(id){var cap=S.captures.find(function(x){return x.id===id});if(!cap)return;var active=live(S.goals).filter(function(g){return !g.archived});if(!active.length){toast("Create a goal first","flag");return}
   var items=active.map(function(g){return{value:g.id,label:g.title,sub:live(g.steps).length+" steps"}});
   uiPick("Add as a step under",items,{message:'"'+cap.text+'"'}).then(function(gid){
