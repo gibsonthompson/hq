@@ -1565,21 +1565,31 @@ function renderDeck(){
   var rest=visibleItems();
   c.innerHTML="";
   document.getElementById("deckCount").textContent=rest.length?rest.length:"";
-  if(!rest.length){document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>';return}
   document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");
-  rest.forEach(function(it){var sl=schedLabel(it.ref);
-    var pinned=(it.ref.pin||0)>0;var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");
-    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});if(it.ref.venture)tagsHtml+='<span class="dtag" onclick="assignVenture(\''+it.id+'\')">'+esc(it.ref.venture)+'</span>';
-    el.innerHTML='<div class="check" onclick="completeFromDeck(\''+it.id+'\',this)"><i data-lucide="check"></i></div>'+
+  if(!rest.length){c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>';return}
+  rest.forEach(function(it){
+    var sl=schedLabel(it.ref);var pinned=(it.ref.pin||0)>0;
+    var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");
+    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});
+    if(it.ref.venture)tagsHtml+='<span class="dtag dtag-venture">'+esc(it.ref.venture)+'</span>';
+    el.innerHTML='<div class="check"><i data-lucide="check"></i></div>'+
       (it.kind==="step"?'<span class="dgoal">'+esc(it.goalTitle.slice(0,14))+'</span>':'')+
       tagsHtml+
       '<div class="dtext">'+esc(it.text)+'</div>'+
-      (sl?'<span class="dsched" onclick="openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
-      '<button class="promote" onclick="genPrompt(\''+it.id+'\')" title="Generate Claude prompt"><i data-lucide="sparkles"></i></button>'+
-      '<button class="promote" onclick="editTask(\''+it.id+'\')" title="Edit"><i data-lucide="pencil"></i></button>'+
-      '<button class="promote" onclick="'+(pinned?'unpin':'promote')+'(\''+it.id+'\')" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>';
+      (sl?'<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
+      '<button class="promote act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
+      '<button class="promote act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
+      '<button class="promote act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>';
+    var chk=el.querySelector(".check");if(chk)chk.onclick=function(ev){ev.stopPropagation();completeItem(it.id,el)};
+    var vch=el.querySelector(".dtag-venture");if(vch)vch.onclick=function(ev){ev.stopPropagation();assignVenture(it.id)};
+    var sc=el.querySelector(".dsched");if(sc)sc.onclick=function(ev){ev.stopPropagation();openSchedule(it.id)};
+    var pb=el.querySelector(".act-prompt");if(pb)pb.onclick=function(ev){ev.stopPropagation();genPrompt(it.id)};
+    var eb=el.querySelector(".act-edit");if(eb)eb.onclick=function(ev){ev.stopPropagation();editTask(it.id)};
+    var pn=el.querySelector(".act-pin");if(pn)pn.onclick=function(ev){ev.stopPropagation();if(pinned)unpin(it.id);else promote(it.id)};
     attachSwipe(el,it.id,it.kind);
-    c.appendChild(el)})}
+    c.appendChild(el);
+  });
+}
 /* ===== CLAUDE PROMPT FORMATTER =====
    Turns a shorthand task into a drop-in, high-effectiveness prompt for Claude.
    The rule block front-loads the standards that make output land right the
