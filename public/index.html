@@ -473,6 +473,8 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 
 /* TOAST + CONFETTI */
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
+.sync-banner{position:relative;z-index:6;background:rgba(240,133,126,0.16);border-bottom:1px solid rgba(240,133,126,0.5);color:var(--red);font-size:12.5px;font-weight:600;padding:10px 16px;line-height:1.45;text-align:center}
+.sync-banner b{color:#ffd9d4}
 .toast{position:fixed;left:50%;bottom:calc(90px + var(--saf));transform:translateX(-50%) translateY(20px);z-index:70;background:var(--elev2);border:1px solid var(--line2);border-radius:14px;padding:13px 20px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:10px;opacity:0;transition:all .35s cubic-bezier(.22,1,.36,1);box-shadow:0 12px 40px -10px rgba(0,0,0,0.6)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast i{width:18px;height:18px;color:var(--grn)}
@@ -644,6 +646,7 @@ input,textarea,select{font-size:16px}
   </div>
 </div>
 
+<div id="syncBanner" class="sync-banner hidden"></div>
 <div class="tab-nav">
   <button class="tab-btn active" data-tab="home" onclick="switchTab('home')"><i data-lucide="target"></i> Home</button>
   <button class="tab-btn" data-tab="goals" onclick="switchTab('goals')"><i data-lucide="flag"></i> Goals</button>
@@ -1064,7 +1067,10 @@ function restoreFromSnapshot(){
       toast("Restored from snapshot","rotate-ccw");
     });
   }catch(e){toast("Restore failed","alert-triangle")}}
-function setSync(state){syncState=state;var el=document.getElementById("syncDot");if(!el)return;
+function setSync(state){syncState=state;
+  if(state==="err"){showSyncBanner('<b>Cloud sync error.</b> '+esc(lastSyncError||"could not reach the database")+'. Your changes are saved on this device but may not be reaching the cloud. If this is a permission error, run this in your Supabase SQL editor:  grant select, insert, update on public.hq_items to anon;')}
+  else if(state==="ok"){clearSyncBanner()}
+  var el=document.getElementById("syncDot");if(!el)return;
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
@@ -1090,9 +1096,9 @@ function flushQueue(){clearTimeout(flushTimer);flushTimer=setTimeout(function(){
   pushQueue={};setSync("saving");
   markOwnWrite();
   sb.from("hq_items").upsert(rows,{onConflict:"id"}).then(function(r){
-    if(r.error){setSync("err");requeue(rows)}
+    if(r.error){lastSyncError=(r.error.message||r.error.hint||r.error.details||"write rejected");setSync("err");requeue(rows)}
     else{rows.forEach(function(x){delete pendingIds[x.id]});lastSynced=Date.now();setSync("ok");bumpLastSeen()}
-  }).catch(function(){setSync("err");requeue(rows)});
+  }).catch(function(e){lastSyncError=(e&&e.message)||"network error during save";setSync("err");requeue(rows)});
 },350)}
 
 /* push only rows whose local copy is genuinely newer than the cloud copy.
@@ -1200,7 +1206,7 @@ function backfillTs(reupload){
 /* rows come back in a stable order, so nothing reshuffles between pulls */
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
   sb.from("hq_items").select("*").eq("user_key","gibson").order("id",{ascending:true}).then(function(res){
-    if(res.error){remoteLoaded=true;setSync("err");if(cb)cb(false);return}
+    if(res.error){lastSyncError=(res.error.message||"read failed");remoteLoaded=true;setSync("err");if(cb)cb(false);return}
     var rows=res.data||[];
     lastFullPullAt=Date.now();noteUpdatedAt(rows);
     if(rows.length===0&&dataCount(S)>0){
@@ -1209,7 +1215,7 @@ function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(fals
     renderIfChanged();
     autoBackup();
     remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(cb)cb(true,rows);
-  }).catch(function(){remoteLoaded=true;setSync("err");if(cb)cb(false)})}
+  }).catch(function(e){lastSyncError=(e&&e.message)||"network error during read";remoteLoaded=true;setSync("err");if(cb)cb(false)})}
 
 /* ---------- the render guard ----------
    A full redraw wipes every container. If it happens while a field is focused
@@ -1252,6 +1258,9 @@ document.addEventListener("touchend",function(){setTimeout(flushDeferred,180)});
    through one place with a floor, and the poll stops while realtime is live. */
 var MIN_PULL_MS=2500,POLL_MS=5000,FULL_RECONCILE_MS=60000;
 var lastPullAt=0,pullTimer=null,pullInFlight=false,rtConnected=false,ownWriteUntil=0,lastSeenUpdatedAt=null,lastFullPullAt=0;
+var lastSyncError="";
+function showSyncBanner(msg){var b=document.getElementById("syncBanner");if(b){b.innerHTML=msg;b.classList.remove("hidden")}}
+function clearSyncBanner(){var b=document.getElementById("syncBanner");if(b)b.classList.add("hidden")}
 function markOwnWrite(){ownWriteUntil=Date.now()+1200}
 function noteUpdatedAt(rows){(rows||[]).forEach(function(r){var u=r&&r.updated_at;if(u&&(!lastSeenUpdatedAt||u>lastSeenUpdatedAt))lastSeenUpdatedAt=u})}
 function bumpLastSeen(){if(!sb)return;sb.from("hq_items").select("updated_at").eq("user_key","gibson").order("updated_at",{ascending:false}).limit(1).then(function(res){if(!res.error&&res.data&&res.data.length)noteUpdatedAt(res.data)}).catch(function(){})}
