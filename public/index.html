@@ -13,12 +13,12 @@
 --amb:#e8c06a;--grn:#46d187;--red:#f0857e;--cy:#63c7b0;
 --saf:env(safe-area-inset-bottom,0px);
 }
-html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow:hidden;overscroll-behavior:none}
 html,body{height:100%}
 /* dvh so the shell matches the real visible viewport. with height:100% the
    layout viewport can be shorter than what is on screen, which leaves a strip
    of dead space under a bottom-fixed bar. */
-body{height:100vh;height:100dvh;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;display:flex;flex-direction:column;font-size:15px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
+body{position:fixed;top:0;left:0;right:0;bottom:0;height:100vh;height:100dvh;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;display:flex;flex-direction:column;font-size:15px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
 /* text is selectable/copyable everywhere; only buttons and nav chrome are not */
 button,.tab-btn,.bn-btn,.tb-icon,.fab,.cal-day-pill,.cat-pill,.m-cat,.sday,.check,.step-check,.recur-tog,.pdot,.goal-caret,.sec-title i,.bn-btn i{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .ptext,.dtext,.step-text,.ntext,.ptitle,.pdesc,.goal-title,.goal-why,.ctext,.sg-text,.rv-next .txt,.trow .ttitle,.cal-block .bt,.vcapbar,.vcap,.sys-hello,.sys-sub,.cdh-date{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;cursor:text}
@@ -49,7 +49,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .tab-btn.active{color:var(--vio2);border-bottom-color:var(--vio)}
 .bottom-nav{display:none}
 
-.content{position:relative;z-index:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:22px}
+.content{position:relative;z-index:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;overscroll-behavior-y:contain;touch-action:pan-y;padding:22px}
 .tab{display:none;animation:fade .3s ease}
 .tab.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -140,6 +140,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .deck{display:flex;flex-direction:column;gap:8px}
 .deck-item{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:background .15s}
 .deck-item:hover{background:var(--elev)}
+.deck-item.pinned{border-left:3px solid var(--vio)}
 .deck-item .check{width:22px;height:22px;border-radius:7px;border:2px solid var(--line2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .deck-item .check i{width:13px;height:13px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
 .deck-item .check:hover{border-color:var(--vio)}
@@ -478,10 +479,13 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 input,textarea,select{font-size:16px}
 .topbar{padding:calc(11px + env(safe-area-inset-top)) 16px 11px}.logo{font-size:21px}.tagline{display:none}.date-chip{display:none}
 .tab-nav{display:none}
-.content{padding:16px 15px calc(90px + var(--saf))}
-.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(17,20,18,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 6px calc(4px + var(--saf));justify-content:space-around}
-.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:600;cursor:pointer;flex:1;padding:3px 0;letter-spacing:.2px}
-.bn-btn i{width:21px;height:21px}
+.content{padding:16px 15px calc(74px + var(--saf))}
+.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(17,20,18,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:5px 6px calc(5px + var(--saf));justify-content:space-around}
+.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:600;cursor:pointer;flex:1;padding:2px 0;letter-spacing:.2px}
+.bn-btn i{width:20px;height:20px}
+.deck-item{padding:10px 12px;gap:10px}
+.deck-item .dtext{font-size:14px}
+.deck-item .check{width:20px;height:20px}
 .bn-btn.active{color:var(--vio2)}
 .prime-grid{grid-template-columns:1fr;gap:9px}
 /* the card is [check][body][actions]. body is its own column so the title gets
@@ -649,27 +653,6 @@ input,textarea,select{font-size:16px}
 <div class="content">
   <!-- HOME -->
   <div class="tab active wrap" id="tab-home">
-    <div class="reminder-strip" id="reminderStrip"></div>
-    <div class="sysbar" id="sysbar">
-      <div>
-        <div class="sys-hello" id="sysHello">Execute today.</div>
-        <div class="sys-sub" id="sysSub"></div>
-      </div>
-      <div class="sys-right">
-        <button class="review-btn" onclick="openReview()"><i data-lucide="clipboard-check"></i> Weekly Review</button>
-        <span class="review-ago" id="reviewAgo"></span>
-      </div>
-    </div>
-
-    <div class="suggest-wrap" id="suggestWrap"></div>
-
-    <div class="sec-head">
-      <div class="sec-title"><i data-lucide="crosshair"></i> Tasks <span class="count" id="primeCount"></span></div>
-      <div class="sec-tools">
-        <button class="sweep-btn icon-only" id="searchToggle" onclick="toggleSearch()" title="Search tasks"><i data-lucide="search"></i></button>
-        <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
-      </div>
-    </div>
     <div class="add-prime">
       <input class="add-input" id="nmInput" placeholder="Add a task…">
       <button class="add-btn" onclick="addNM()"><i data-lucide="plus"></i> Add</button>
@@ -677,13 +660,20 @@ input,textarea,select{font-size:16px}
     <div class="task-tools hidden" id="taskTools"><input class="task-search" id="taskSearch" placeholder="Search tasks…" oninput="taskQuery=this.value;renderTaskViews()"></div>
     <div class="tag-row hidden" id="tagPills"></div>
     <div class="tag-row hidden" id="venturePills"></div>
-    <div class="prime-grid" id="primeGrid"></div>
 
     <div class="sec-head" id="deckHead">
       <div class="sec-title"><i data-lucide="layers"></i> On Deck <span class="count" id="deckCount"></span></div>
-      <div class="sec-sub">Next up</div>
+      <div class="sec-tools">
+        <button class="sweep-btn icon-only" id="searchToggle" onclick="toggleSearch()" title="Search tasks"><i data-lucide="search"></i></button>
+        <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
+      </div>
     </div>
+    <div class="prime-grid hidden" id="primeGrid"></div>
     <div class="deck" id="deckList"></div>
+
+    <div class="reminder-strip" id="reminderStrip"></div>
+
+    <div class="suggest-wrap" id="suggestWrap"></div>
 
     <div class="sec-head hidden" id="doneHead" style="cursor:pointer" onclick="doneOpen=!doneOpen;renderDone()">
       <div class="sec-title"><i data-lucide="check-circle"></i> Done today <span class="count" id="doneCount"></span></div>
@@ -1259,6 +1249,11 @@ var MIN_PULL_MS=2500,POLL_MS=5000,FULL_RECONCILE_MS=60000;
 var lastPullAt=0,pullTimer=null,pullInFlight=false,rtConnected=false,ownWriteUntil=0,lastSeenUpdatedAt=null,lastFullPullAt=0;
 function markOwnWrite(){ownWriteUntil=Date.now()+1200}
 function noteUpdatedAt(rows){(rows||[]).forEach(function(r){var u=r&&r.updated_at;if(u&&(!lastSeenUpdatedAt||u>lastSeenUpdatedAt))lastSeenUpdatedAt=u})}
+/* Re-push any local write that did not finish before the app was backgrounded.
+   iOS suspends in-flight requests when you lock or switch away, so on return we
+   flush anything still marked pending so a task typed on the phone cannot be
+   stranded locally and never reach the cloud. */
+function flushPending(){var ids=Object.keys(pendingIds);if(ids.length)ids.forEach(function(id){pushItem(id)})}
 /* Cheap change detector. Asks the DB for just the single newest updated_at (one
    tiny row, never the photos) and only triggers a full pull when it is newer
    than what we have already merged. This lets us check often and sync fast
@@ -1359,9 +1354,9 @@ function forcePullFromCloud(){
 function downloadBackup(){
   var data={exported:new Date().toISOString(),build:BUILD,tasks:S.needleMovers,goals:S.goals,notes:S.notes,projects:S.projects,events:S.calendarEvents,captures:S.captures,images:S.images,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview};
   try{var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="hq-backup-"+todayStr()+".json";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},600);toast("Backup downloaded","download")}catch(e){toast("Backup failed","alert-triangle")}}
-document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){ensureRealtime();checkForChanges()}});
-window.addEventListener("focus",function(){ensureRealtime();checkForChanges()});
-window.addEventListener("online",function(){ensureRealtime();checkForChanges()});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){ensureRealtime();flushPending();requestPull("visible")}});
+window.addEventListener("focus",function(){ensureRealtime();flushPending();requestPull("focus")});
+window.addEventListener("online",function(){ensureRealtime();flushPending();requestPull("online")});
 
 /* ===== TODAY LIST (movers + goal steps pulled to today) ===== */
 /* Ordering is device-independent: pinned first (most recently pinned on top),
@@ -1377,7 +1372,7 @@ function taskMatches(it){
   if(taskQuery){if(String(it.text||"").toLowerCase().indexOf(taskQuery.toLowerCase())<0)return false}
   return true}
 function visibleItems(){return todayItems().filter(taskMatches)}
-function renderTaskViews(){renderTags();renderVentures();renderPrime();renderDeck();renderDone();icons()}
+function renderTaskViews(){renderTags();renderVentures();renderDeck();renderDone();icons()}
 /* Search is opt-in now. Hiding it always clears the query, otherwise the list
    could stay silently filtered with no visible control explaining why. */
 function toggleSearch(){
@@ -1415,7 +1410,7 @@ function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].ste
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderPrime();renderDeck();renderDone();renderToday()}
+  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderDeck();renderDone();renderToday()}
   else if(activeTab==="goals")renderGoals();
   else if(activeTab==="calendar"){renderCalForm();renderCal()}
   else if(activeTab==="vision")renderVision();
@@ -1430,10 +1425,10 @@ function renderSys(){
   var bt=document.getElementById("buildTag");if(bt)bt.textContent=BUILD;
   document.getElementById("tbDate").textContent=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
   var act=todayItems().length,goalsActive=live(S.goals).filter(function(g){return !g.archived}).length;
-  document.getElementById("sysHello").textContent=act===0?"Clear slate. Pull in what matters.":"Execute today.";
-  document.getElementById("sysSub").innerHTML=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" goals";
+  var _hl=document.getElementById("sysHello");if(_hl)_hl.textContent=act===0?"Clear slate.":"Execute today.";
+  var _sb=document.getElementById("sysSub");if(_sb)_sb.innerHTML=d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" &middot; "+act+" on deck &middot; "+goalsActive+" goals";
   var ago=document.getElementById("reviewAgo");
-  if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";
+  if(ago){if(S.lastReview){var days=Math.floor((Date.now()-S.lastReview)/86400000);ago.textContent=days<=0?"Reviewed today":("Reviewed "+days+"d ago")}else ago.textContent="No review yet";}
 }
 
 /* ===== STANDING REMINDERS =====
@@ -1521,14 +1516,13 @@ function renderPrime(){
 }
 function renderDeck(){
   var c=document.getElementById("deckList");if(!c)return;
-  var vis=visibleItems();var pinnedIds=vis.filter(function(it){return (it.ref.pin||0)>0}).slice(0,3).map(function(it){return it.id});
-  var rest=vis.filter(function(it){return pinnedIds.indexOf(it.id)<0});
+  var rest=visibleItems();
   c.innerHTML="";
   document.getElementById("deckCount").textContent=rest.length?rest.length:"";
-  if(!rest.length){document.getElementById("deckHead").classList.add("hidden");c.classList.add("hidden");return}
+  if(!rest.length){document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>';return}
   document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");
   rest.forEach(function(it){var sl=schedLabel(it.ref);
-    var el=document.createElement("div");el.className="deck-item";
+    var pinned=(it.ref.pin||0)>0;var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");
     var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});if(it.ref.venture)tagsHtml+='<span class="dtag" onclick="assignVenture(\''+it.id+'\')">'+esc(it.ref.venture)+'</span>';
     el.innerHTML='<div class="check" onclick="completeFromDeck(\''+it.id+'\',this)"><i data-lucide="check"></i></div>'+
       (it.kind==="step"?'<span class="dgoal">'+esc(it.goalTitle.slice(0,14))+'</span>':'')+
@@ -1537,7 +1531,7 @@ function renderDeck(){
       (sl?'<span class="dsched" onclick="openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
       '<button class="promote" onclick="genPrompt(\''+it.id+'\')" title="Generate Claude prompt"><i data-lucide="sparkles"></i></button>'+
       '<button class="promote" onclick="editTask(\''+it.id+'\')" title="Edit"><i data-lucide="pencil"></i></button>'+
-      '<button class="promote" onclick="promote(\''+it.id+'\')" title="Pin to top 3"><i data-lucide="chevrons-up"></i></button>'+
+      '<button class="promote" onclick="'+(pinned?'unpin':'promote')+'(\''+it.id+'\')" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>'+
       '<button class="drm" onclick="rmItem(\''+it.id+'\')" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>';
     attachSwipe(el,it.id,it.kind);
     c.appendChild(el)})}
