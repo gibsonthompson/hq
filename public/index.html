@@ -1426,17 +1426,40 @@ function findRef(id){var m=S.needleMovers.find(function(x){return x.id===id});if
 /* ===== TASKS / COMPLETION ===== */
 function autoGrowInput(el){if(!el)return;el.style.height="auto";el.style.height=Math.min(el.scrollHeight,180)+"px"}
 function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim();if(!v)return;var p=parseTags(v);var nid=mid();S.needleMovers.push({id:nid,text:(p.text||v),tags:p.tags,done:false,del:false,ts:Date.now(),pin:0,mtime:Date.now(),duration:1,venture:(ventureFilter!=="all"&&ventureFilter!=="__gen__"?ventureFilter:"")});inp.value="";inp.style.height="";save(nid);forceRender()}
-function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMover(id);return}f.ref.onToday=false;touch(f.ref);save(id);forceRender()}
-function deleteMover(id){tomb(id);forceRender();toast("Deleted · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);forceRender();toast("Restored","rotate-ccw")}})}
+
+
 function unpin(id){var f=findRef(id);if(!f)return;f.ref.pin=0;touch(f.ref);save(id);forceRender()}
 function uncomplete(id){var f=findRef(id);if(!f)return;f.ref.done=false;f.ref.doneTs=null;touch(f.ref);save(id);forceRender()}
 function promote(id){var f=findRef(id);if(!f)return;f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()}
 function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender();if(f.kind==="mover")assignVenture(id)})}
+/* ===== ON DECK: complete / delete, rebuilt from scratch =====
+   These never redraw the whole list. They update state and surgically remove
+   the one row, so a background sync re-render can never collide with a click
+   and swallow it. lastSig is refreshed so the next sync pull sees no change and
+   does not trigger a spurious rebuild. */
+function deckRowEl(id){try{return document.querySelector('#deckList .deck-item[data-id="'+id+'"]')}catch(e){return null}}
+function refreshDeckMeta(){var c=document.getElementById("deckList");if(!c)return;var rows=c.querySelectorAll(".deck-item");var dc=document.getElementById("deckCount");if(dc)dc.textContent=rows.length?rows.length:"";if(!rows.length){var h=document.getElementById("deckHead");if(h)h.classList.remove("hidden");c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>'}}
 function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
   f.ref.done=true;f.ref.doneTs=Date.now();f.ref.date=null;f.ref.startHour=null;if(f.kind==="step")f.ref.onToday=false;touch(f.ref);save(id);
+  var row=deckRowEl(id)||el;if(row&&row.parentNode)row.parentNode.removeChild(row);
+  refreshDeckMeta();try{renderDone();renderToday();icons()}catch(e){}
+  lastSig=stateSignature();
+  if(todayItems().length===0)burst();
   toast("Done · tap to undo","check-circle",function(){var u=findRef(id);if(u){u.ref.done=false;u.ref.doneTs=null;touch(u.ref);save(id);forceRender();toast("Restored","rotate-ccw")}});
-  var left=todayItems().length;if(left===0)burst();
-  forceRender();
+}
+function deleteMover(id){var f=findAny(id);if(!f)return;
+  f.item.del=true;f.item.mtime=Date.now();if(f.kind==="goal"){(f.item.steps||[]).forEach(function(st){st.del=true;st.mtime=Date.now();pushItem(st.id)})}
+  saveLocal();pushItem(id);
+  var row=deckRowEl(id);if(row&&row.parentNode)row.parentNode.removeChild(row);
+  refreshDeckMeta();try{renderToday();icons()}catch(e){}
+  lastSig=stateSignature();
+  toast("Deleted · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);forceRender();toast("Restored","rotate-ccw")}});
+}
+function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMover(id);return}
+  f.ref.onToday=false;touch(f.ref);save(id);
+  var row=deckRowEl(id);if(row&&row.parentNode)row.parentNode.removeChild(row);
+  refreshDeckMeta();try{renderToday();icons()}catch(e){}
+  lastSig=stateSignature();
 }
 function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].steps.find(function(x){return x.id===stepId});if(s){s.onToday=true;s.pin=Date.now();if(!s.ts)s.ts=Date.now();touch(s);save(stepId);forceRender();toast("Pulled to Today","arrow-up");return}}}
 
@@ -1568,7 +1591,8 @@ function renderDeck(){
       (sl?'<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
       '<button class="promote act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
       '<button class="promote act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
-      '<button class="promote act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>';
+      '<button class="promote act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>'+
+      '<button class="drm act-del" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>';
     attachSwipe(el,it.id,it.kind);
     c.appendChild(el);
   });
@@ -2665,6 +2689,7 @@ document.addEventListener("click",function(ev){
   if(ev.target.closest(".act-prompt")){genPrompt(id);return}
   if(ev.target.closest(".dtag-venture")){assignVenture(id);return}
   if(ev.target.closest(".dsched")){openSchedule(id);return}
+  if(ev.target.closest(".act-del")){rmItem(id);return}
   if(ev.target.closest(".check")){completeItem(id);return}
 });
 /* ===== BOOT ===== */
