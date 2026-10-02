@@ -145,6 +145,8 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .deck-item.done-swoosh .dtext{color:var(--dim);text-decoration:line-through}
 @keyframes deckPop{0%{transform:scale(1)}32%{transform:scale(1.04);background:rgba(70,209,135,.32)}100%{transform:scale(1)}}
 .deck-item .check{width:22px;height:22px;border-radius:7px;border:2px solid var(--line2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.deck-item .check{position:relative}
+.deck-item .check::before{content:"";position:absolute;top:-10px;left:-10px;bottom:-10px;right:-6px;border-radius:12px}
 .deck-item .check i{width:13px;height:13px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
 .deck-item .check:hover{border-color:var(--vio)}
 .deck-item.completing .check{background:var(--grn);border-color:var(--grn)}
