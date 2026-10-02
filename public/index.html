@@ -1434,20 +1434,9 @@ function promote(id){var f=findRef(id);if(!f)return;f.ref.pin=Date.now();touch(f
 function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender();if(f.kind==="mover")assignVenture(id)})}
 function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
   f.ref.done=true;f.ref.doneTs=Date.now();f.ref.date=null;f.ref.startHour=null;if(f.kind==="step")f.ref.onToday=false;touch(f.ref);save(id);
-  var undoId=id;
-  toast("Done · tap to undo","check-circle",function(){var u=findRef(undoId);if(u){u.ref.done=false;u.ref.doneTs=null;touch(u.ref);save(undoId);forceRender();toast("Restored","rotate-ccw")}});
-  if(el&&el.classList&&el.classList.contains("deck-item")){
-    el.classList.add("completing");el.classList.add("done-swoosh");
-    el.style.overflow="hidden";var h=el.offsetHeight;el.style.maxHeight=h+"px";
-    requestAnimationFrame(function(){requestAnimationFrame(function(){
-      el.style.transition="max-height .4s cubic-bezier(.4,0,.2,1),opacity .34s ease,margin .4s ease,padding .4s ease";
-      el.style.maxHeight="0px";el.style.opacity="0";el.style.marginTop="0";el.style.marginBottom="0";el.style.paddingTop="0";el.style.paddingBottom="0";
-    })});
-    setTimeout(function(){var left=todayItems().length;if(left===0)burst();forceRender()},460);
-  }else{
-    if(el)el.classList.add("completing");
-    setTimeout(function(){var left=todayItems().length;if(left===0)burst();forceRender()},el?300:0);
-  }
+  toast("Done · tap to undo","check-circle",function(){var u=findRef(id);if(u){u.ref.done=false;u.ref.doneTs=null;touch(u.ref);save(id);forceRender();toast("Restored","rotate-ccw")}});
+  var left=todayItems().length;if(left===0)burst();
+  forceRender();
 }
 function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].steps.find(function(x){return x.id===stepId});if(s){s.onToday=true;s.pin=Date.now();if(!s.ts)s.ts=Date.now();touch(s);save(stepId);forceRender();toast("Pulled to Today","arrow-up");return}}}
 
@@ -1569,7 +1558,7 @@ function renderDeck(){
   if(!rest.length){c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>';return}
   rest.forEach(function(it){
     var sl=schedLabel(it.ref);var pinned=(it.ref.pin||0)>0;
-    var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");
+    var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");el.setAttribute("data-id",it.id);
     var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});
     if(it.ref.venture)tagsHtml+='<span class="dtag dtag-venture">'+esc(it.ref.venture)+'</span>';
     el.innerHTML='<div class="check"><i data-lucide="check"></i></div>'+
@@ -1580,15 +1569,10 @@ function renderDeck(){
       '<button class="promote act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
       '<button class="promote act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
       '<button class="promote act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>';
-    var chk=el.querySelector(".check");if(chk)chk.onclick=function(ev){ev.stopPropagation();completeItem(it.id,el)};
-    var vch=el.querySelector(".dtag-venture");if(vch)vch.onclick=function(ev){ev.stopPropagation();assignVenture(it.id)};
-    var sc=el.querySelector(".dsched");if(sc)sc.onclick=function(ev){ev.stopPropagation();openSchedule(it.id)};
-    var pb=el.querySelector(".act-prompt");if(pb)pb.onclick=function(ev){ev.stopPropagation();genPrompt(it.id)};
-    var eb=el.querySelector(".act-edit");if(eb)eb.onclick=function(ev){ev.stopPropagation();editTask(it.id)};
-    var pn=el.querySelector(".act-pin");if(pn)pn.onclick=function(ev){ev.stopPropagation();if(pinned)unpin(it.id);else promote(it.id)};
     attachSwipe(el,it.id,it.kind);
     c.appendChild(el);
   });
+  icons();
 }
 /* ===== CLAUDE PROMPT FORMATTER =====
    Turns a shorthand task into a drop-in, high-effectiveness prompt for Claude.
@@ -2669,6 +2653,20 @@ if('serviceWorker' in navigator){
 }
 ['gesturestart','gesturechange','gestureend'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
 
+/* One delegated click handler for the On Deck list. Attached once, it catches
+   every tap on a row no matter when the row was drawn, which is the most
+   reliable way to wire a list that re-renders. */
+document.addEventListener("click",function(ev){
+  var row=ev.target.closest?ev.target.closest(".deck-item"):null;
+  if(!row||!row.parentNode||row.parentNode.id!=="deckList")return;
+  var id=row.getAttribute("data-id");if(!id)return;
+  if(ev.target.closest(".act-edit")){editTask(id);return}
+  if(ev.target.closest(".act-pin")){if(row.classList.contains("pinned"))unpin(id);else promote(id);return}
+  if(ev.target.closest(".act-prompt")){genPrompt(id);return}
+  if(ev.target.closest(".dtag-venture")){assignVenture(id);return}
+  if(ev.target.closest(".dsched")){openSchedule(id);return}
+  if(ev.target.closest(".check")){completeItem(id);return}
+});
 /* ===== BOOT ===== */
 load();
 window.addEventListener("load",function(){icons()});
