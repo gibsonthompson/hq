@@ -141,6 +141,9 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .deck-item{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:background .15s}
 .deck-item:hover{background:var(--elev)}
 .deck-item.pinned{border-left:3px solid var(--vio)}
+.deck-item.deck-done-flash{background:rgba(70,209,135,0.22);border-color:rgba(70,209,135,0.55)}
+.deck-item.deck-done-flash .check{background:var(--grn);border-color:var(--grn)}
+.deck-item.deck-done-flash .check i{opacity:1;transform:scale(1)}
 .deck-item.done-swoosh{animation:deckPop .26s cubic-bezier(.2,.9,.3,1.25);will-change:max-height,opacity,transform}
 .deck-item.done-swoosh .dtext{color:var(--dim);text-decoration:line-through}
 @keyframes deckPop{0%{transform:scale(1)}32%{transform:scale(1.04);background:rgba(70,209,135,.32)}100%{transform:scale(1)}}
@@ -1441,11 +1444,27 @@ function deckRowEl(id){try{return document.querySelector('#deckList .deck-item[d
 function refreshDeckMeta(){var c=document.getElementById("deckList");if(!c)return;var rows=c.querySelectorAll(".deck-item");var dc=document.getElementById("deckCount");if(dc)dc.textContent=rows.length?rows.length:"";if(!rows.length){var h=document.getElementById("deckHead");if(h)h.classList.remove("hidden");c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>'}}
 function completeItem(id,el){var f=findRef(id);if(!f||f.ref.done)return;
   f.ref.done=true;f.ref.doneTs=Date.now();f.ref.date=null;f.ref.startHour=null;if(f.kind==="step")f.ref.onToday=false;touch(f.ref);save(id);
-  var row=deckRowEl(id)||el;if(row&&row.parentNode)row.parentNode.removeChild(row);
-  refreshDeckMeta();try{renderDone();renderToday();icons()}catch(e){}
   lastSig=stateSignature();
   if(todayItems().length===0)burst();
   toast("Done · tap to undo","check-circle",function(){var u=findRef(id);if(u){u.ref.done=false;u.ref.doneTs=null;touch(u.ref);save(id);forceRender();toast("Restored","rotate-ccw")}});
+  var row=(el&&el.parentNode)?el:deckRowEl(id);
+  if(row&&row.parentNode){animateDeckRemove(row,function(){refreshDeckMeta();try{renderDone();renderToday();icons()}catch(e){}});}
+  else{refreshDeckMeta();try{renderDone();renderToday();icons()}catch(e){}}
+}
+/* Animate the exact row out: a quick green flash, then collapse + slide + fade,
+   then remove. transitionend fires the removal, with a timeout fallback so it
+   can never get stuck half-animated. */
+function animateDeckRemove(el,cb){
+  if(el.__removing)return;el.__removing=true;
+  var h=el.offsetHeight;
+  el.classList.add("deck-done-flash");
+  el.style.overflow="hidden";el.style.height=h+"px";
+  void el.offsetHeight;
+  el.style.transition="height .32s cubic-bezier(.4,0,.2,1),opacity .26s ease,margin .32s ease,padding .32s ease,transform .32s cubic-bezier(.4,0,.2,1)";
+  setTimeout(function(){el.style.height="0px";el.style.opacity="0";el.style.marginTop="0";el.style.marginBottom="0";el.style.paddingTop="0";el.style.paddingBottom="0";el.style.transform="translateX(22px)";},110);
+  var done=false;function fin(){if(done)return;done=true;try{el.removeEventListener("transitionend",fin)}catch(e){}if(el.parentNode)el.parentNode.removeChild(el);if(cb)cb();}
+  el.addEventListener("transitionend",fin);
+  setTimeout(fin,560);
 }
 function deleteMover(id){var f=findAny(id);if(!f)return;
   f.item.del=true;f.item.mtime=Date.now();if(f.kind==="goal"){(f.item.steps||[]).forEach(function(st){st.del=true;st.mtime=Date.now();pushItem(st.id)})}
@@ -1691,7 +1710,7 @@ function attachSwipe(el,id,kind){
     el.style.background=dx>60?"rgba(70,209,135,0.22)":(dx<-60?"rgba(240,133,126,0.20)":"");
   },{passive:false});
   el.addEventListener("touchend",function(){if(!active)return;active=false;el.style.transition="transform .18s,background .18s";
-    if(locked&&dx>70){el.style.transform="translateX(110%)";setTimeout(function(){swipeActive=false;completeItem(id,null)},140)}
+    if(locked&&dx>70){el.style.transform="translateX(110%)";setTimeout(function(){swipeActive=false;completeItem(id,el)},140)}
     else if(locked&&dx<-70){el.style.transform="translateX(-110%)";setTimeout(function(){swipeActive=false;if(kind==="mover")deleteMover(id);else rmItem(id)},140)}
     else{el.style.transform="";el.style.background="";swipeActive=false;setTimeout(flushDeferred,120)}
   });
@@ -2690,7 +2709,7 @@ document.addEventListener("click",function(ev){
   if(ev.target.closest(".dtag-venture")){assignVenture(id);return}
   if(ev.target.closest(".dsched")){openSchedule(id);return}
   if(ev.target.closest(".act-del")){rmItem(id);return}
-  if(ev.target.closest(".check")){completeItem(id);return}
+  if(ev.target.closest(".check")){completeItem(id,row);return}
 });
 /* ===== BOOT ===== */
 load();
