@@ -1618,7 +1618,7 @@ function renderDeck(){
   rest.forEach(function(it){
     var sl=schedLabel(it.ref);var pinned=(it.ref.pin||0)>0;
     var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");el.setAttribute("data-id",it.id);
-    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag">#'+esc(t)+'</span>'});
+    var tagsHtml="";(it.ref.tags||[]).forEach(function(t){tagsHtml+='<span class="dtag dtag-filter" data-tag="'+esc(t)+'">#'+esc(t)+'</span>'});
     if(it.ref.venture)tagsHtml+='<span class="dtag dtag-venture">'+esc(it.ref.venture)+'</span>';
     el.innerHTML='<div class="check"><i data-lucide="check"></i></div>'+
       (it.kind==="step"?'<span class="dgoal">'+esc(it.goalTitle.slice(0,14))+'</span>':'')+
@@ -1626,6 +1626,7 @@ function renderDeck(){
       '<div class="dtext">'+esc(it.text)+'</div>'+
       (sl?'<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'')+
       '<button class="promote act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
+      '<button class="promote act-label" title="Labels"><i data-lucide="tag"></i></button>'+
       '<button class="promote act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
       '<button class="promote act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>'+
       '<button class="drm act-del" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>';
@@ -1695,6 +1696,15 @@ function ventureList(){var set={};live(S.needleMovers).forEach(function(m){if(m.
 function ventureGeneralCount(){var n=0;live(S.needleMovers).forEach(function(m){if(!m.done&&!(m.venture||""))n++});return n}
 function renderVentures(){var row=document.getElementById("venturePills");if(!row)return;var counts=ventureList();var names=Object.keys(counts).sort();if(ventureFilter!=="all"&&ventureFilter!=="__gen__"&&names.indexOf(ventureFilter)<0)ventureFilter="all";row.classList.remove("hidden");var h='<div class="tag-pill'+(ventureFilter==="all"?" on":"")+'" onclick="ventureFilter=\'all\';renderTaskViews()">All</div>';names.forEach(function(n){h+='<div class="tag-pill'+(ventureFilter===n?" on":"")+'" data-v="'+esc(n)+'" onclick="ventureFilter=this.dataset.v;renderTaskViews()"><i data-lucide="briefcase"></i><span>'+esc(n)+'</span><span class="vp-ct">'+counts[n]+'</span></div>'});h+='<div class="tag-pill'+(ventureFilter==="__gen__"?" on":"")+'" onclick="ventureFilter=\'__gen__\';renderTaskViews()"><span>General</span><span class="vp-ct">'+ventureGeneralCount()+'</span></div>';h+='<div class="tag-pill vp-add" onclick="addVenture()"><i data-lucide="plus"></i><span>Business</span></div>';row.innerHTML=h}
 function addVenture(){uiPrompt("New business","",{message:"Name a business to file tasks under, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=v.trim();if(!v||v.toLowerCase()==="general")return;var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}ventureFilter=v;renderTaskViews()})}
+function allLabels(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;(m.tags||[]).forEach(function(t){if(t)set[t]=1})});return Object.keys(set).sort()}
+function pickLabel(id){var f=findRef(id);if(!f||f.kind!=="mover"){toast("Labels are for tasks","alert-triangle");return}
+  var existing=allLabels();var cur=(f.ref.tags||[]).join(" ");
+  var msg=existing.length?("Your labels: "+existing.join(", ")+". Type labels separated by spaces. Clear the box to remove all."):"Type one or more labels separated by spaces, like: admin calls";
+  uiPrompt("Labels",cur,{message:msg}).then(function(v){if(v==null)return;
+    var parts=String(v).toLowerCase().replace(/#/g,"").split(/[\s,]+/).map(function(x){return x.trim()}).filter(Boolean);
+    var uniq=[];parts.forEach(function(l){if(uniq.indexOf(l)<0)uniq.push(l)});
+    f.ref.tags=uniq;touch(f.ref);save(id);forceRender();
+    toast(uniq.length?("Labeled "+uniq.join(", ")):"Labels cleared","tag")})}
 function assignVenture(id){var f=findRef(id);if(!f)return;if(f.kind!=="mover"){toast("Businesses are for tasks","alert-triangle");return}var names=Object.keys(ventureList()).sort();var msg=names.length?("Businesses: "+names.join(", ")+". Type one, or leave blank for General."):"Type a business, or leave blank for General.";uiPrompt("File under business",(f.ref.venture||""),{message:msg}).then(function(v){if(v==null)return;v=v.trim();if(v.toLowerCase()==="general")v="";f.ref.venture=v;if(v){var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}}touch(f.ref);save(id);renderTaskViews()})}
 function renderDone(){
   var head=document.getElementById("doneHead"),list=document.getElementById("doneList");if(!head||!list)return;
@@ -2720,6 +2730,8 @@ document.addEventListener("click",function(ev){
   var row=ev.target.closest?ev.target.closest(".deck-item"):null;
   if(!row||!row.parentNode||row.parentNode.id!=="deckList")return;
   var id=row.getAttribute("data-id");if(!id)return;
+  if(ev.target.closest(".act-label")){pickLabel(id);return}
+  var _tf=ev.target.closest(".dtag-filter");if(_tf){taskFilter=_tf.getAttribute("data-tag")||"all";renderTaskViews();return}
   if(ev.target.closest(".act-edit")){editTask(id);return}
   if(ev.target.closest(".act-pin")){if(row.classList.contains("pinned"))unpin(id);else promote(id);return}
   if(ev.target.closest(".act-prompt")){genPrompt(id);return}
