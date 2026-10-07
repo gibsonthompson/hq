@@ -1040,7 +1040,24 @@ function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.par
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
   S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
-function saveLocal(){try{localStorage.setItem("hq_d",JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci}));localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}}
+function pruneLocalBackups(keepN){try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();var drop=keys.slice(0,Math.max(0,keys.length-(keepN||1)));drop.forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});return drop.length}catch(e){return 0}}
+function saveLocal(){
+  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
+  /* The task data MUST persist. If browser storage is full (photos or old
+     snapshots), free space and retry so an edit can never be silently lost. */
+  try{localStorage.setItem("hq_d",main)}
+  catch(e){
+    pruneLocalBackups(1);
+    try{localStorage.setItem("hq_d",main)}
+    catch(e2){
+      try{localStorage.removeItem("hq_i")}catch(_){}
+      try{localStorage.setItem("hq_d",main)}catch(e3){console.warn("hq_d save failed:",e3&&e3.name)}
+    }
+  }
+  /* Photos are best-effort (they also live in the cloud), never let them block
+     the task save. */
+  try{localStorage.setItem("hq_i",JSON.stringify(S.images))}catch(e){}
+}
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
 var BUILD="v26";
@@ -1059,7 +1076,7 @@ function live(arr){return (arr||[]).filter(function(x){return x&&!x.del})}
 function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var b=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(b.length>4)localStorage.removeItem(b.shift())}catch(e){}}
 /* automatic daily snapshot, so there is always a restore path */
-function autoBackup(){try{var k="hq_bak_day_"+todayStr();if(!localStorage.getItem(k)&&dataCount(S)>0)backupLocal("day_"+todayStr())}catch(e){}}
+function autoBackup(){try{var k="hq_bak_day_"+todayStr();if(!localStorage.getItem(k)&&dataCount(S)>0){backupLocal("day_"+todayStr());pruneLocalBackups(2)}}catch(e){}}
 function restoreFromSnapshot(){
   try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();
     if(!keys.length){toast("No local snapshot found","alert-triangle");return}
@@ -1434,7 +1451,7 @@ function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim
 function unpin(id){var f=findRef(id);if(!f)return;f.ref.pin=0;touch(f.ref);save(id);forceRender()}
 function uncomplete(id){var f=findRef(id);if(!f)return;f.ref.done=false;f.ref.doneTs=null;touch(f.ref);save(id);forceRender()}
 function promote(id){var f=findRef(id);if(!f)return;f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()}
-function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender();if(f.kind==="mover")assignVenture(id)})}
+function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender()})}
 /* ===== ON DECK: complete / delete, rebuilt from scratch =====
    These never redraw the whole list. They update state and surgically remove
    the one row, so a background sync re-render can never collide with a click
