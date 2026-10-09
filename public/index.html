@@ -916,6 +916,12 @@ input,textarea,select{font-size:16px}
     <button class="m-btn" style="width:100%;margin-bottom:8px" onclick="restoreFromSnapshot()"><i data-lucide="rotate-ccw" style="width:14px;height:14px;vertical-align:-2px"></i> Restore last local snapshot</button>
     <button class="m-btn" style="width:100%;border-color:rgba(240,133,126,0.5);color:var(--red)" onclick="forcePullFromCloud()">Force pull from cloud (replace this device)</button>
   </div>
+  <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+    <div class="m-label"><i data-lucide="calendar-check" style="width:14px;height:14px;vertical-align:-2px"></i> Jarvis Google Calendar</div>
+    <div id="jcalStatus" class="rv-intro" style="margin-bottom:12px">Checking&hellip;</div>
+    <button id="jcalConnect" class="m-btn primary" style="width:100%;margin-bottom:8px;display:none" onclick="connectJarvisCal()"><i data-lucide="link" style="width:14px;height:14px;vertical-align:-2px"></i> Connect Google Calendar</button>
+    <button id="jcalDisconnect" class="m-btn" style="width:100%;display:none;border-color:rgba(240,133,126,0.5);color:var(--red)" onclick="disconnectJarvisCal()">Disconnect calendar</button>
+  </div>
 </div></div>
 
 <!-- CUSTOM LIST PICKER -->
@@ -2673,7 +2679,41 @@ function openSbSettings(){try{document.getElementById("sbUrl").value=(SUPABASE_U
       else el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Database: <b style=\"color:var(--red)\">ERROR</b>");
     }).catch(function(){el.innerHTML=el.innerHTML.replace("Cloud: checking\u2026","Database: <b style=\"color:var(--red)\">UNREACHABLE</b>");});
   }
+  loadJarvisCalStatus();
   openModal("sbModal")}
+// ── Jarvis Google Calendar connector ──────────────────────────────────────
+// Talks to the VoiceAI Connect backend (where the Jarvis line lives). Override
+// the backend URL or set the optional connect token via localStorage keys
+// hq_jarvis_backend / hq_jarvis_cal_token.
+function jcalBackend(){try{return (localStorage.getItem("hq_jarvis_backend")||"").trim()||"https://api.voiceaiconnect.com"}catch(e){return "https://api.voiceaiconnect.com"}}
+function jcalToken(){try{return (localStorage.getItem("hq_jarvis_cal_token")||"").trim()}catch(e){return ""}}
+function loadJarvisCalStatus(){
+  var s=document.getElementById("jcalStatus"),c=document.getElementById("jcalConnect"),d=document.getElementById("jcalDisconnect");
+  if(!s)return;
+  s.textContent="Checking…";if(c)c.style.display="none";if(d)d.style.display="none";
+  fetch(jcalBackend()+"/api/auth/jarvis-calendar/status").then(function(r){return r.json()}).then(function(j){
+    if(j&&j.connected){s.innerHTML="Connected"+(j.email?" as <b>"+j.email+"</b>":"")+". Jarvis reads this calendar in your briefing and books onto it.";if(d)d.style.display="block"}
+    else{s.textContent="Not connected. Link your Google Calendar so Jarvis sees your real schedule and can book onto it.";if(c)c.style.display="block"}
+    icons();
+  }).catch(function(){s.innerHTML="<span style=\"color:var(--red)\">Could not reach the Jarvis backend.</span> Set the backend URL in localStorage (hq_jarvis_backend).";if(c)c.style.display="block";icons()});
+}
+function connectJarvisCal(){
+  var ret=encodeURIComponent(location.origin+location.pathname);
+  var tok=jcalToken();
+  location.href=jcalBackend()+"/api/auth/jarvis-calendar/connect?return="+ret+(tok?"&token="+encodeURIComponent(tok):"");
+}
+function disconnectJarvisCal(){
+  var tok=jcalToken();
+  fetch(jcalBackend()+"/api/auth/jarvis-calendar/disconnect"+(tok?"?token="+encodeURIComponent(tok):""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:tok})})
+    .then(function(r){return r.json()}).then(function(){toast("Calendar disconnected","calendar-x");loadJarvisCalStatus()})
+    .catch(function(){toast("Could not disconnect","alert-triangle")});
+}
+// Returning from the Google consent screen: confirm and clean the URL.
+(function(){try{var q=new URLSearchParams(location.search);var r=q.get("calendar");if(r){
+  var msg=r==="connected"?"Google Calendar connected":r==="wrong_account"?"That is not the allowed Google account":r==="no_refresh"?"Google did not return offline access, try again":"Calendar connection "+r;
+  setTimeout(function(){toast(msg,r==="connected"?"calendar-check":"alert-triangle")},800);
+  q.delete("calendar");var qs=q.toString();history.replaceState(null,"",location.pathname+(qs?"?"+qs:""));
+}}catch(e){}})();
 function saveSbSettings(){var u=document.getElementById("sbUrl").value.trim(),k=document.getElementById("sbKey").value.trim();try{if(u)localStorage.setItem("hq_sb_url",u);if(k)localStorage.setItem("hq_sb_key",k)}catch(e){}location.reload()}
 document.querySelectorAll(".modal").forEach(function(m){m.addEventListener("click",function(e){if(e.target===m){if(m._esc){m._esc();return}m.classList.remove("show");if(m.id==="noteModal")editingNoteId=null;setTimeout(flushDeferred,120)}})});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){
