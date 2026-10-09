@@ -2685,7 +2685,7 @@ function openSbSettings(){try{document.getElementById("sbUrl").value=(SUPABASE_U
 // Talks to the VoiceAI Connect backend (where the Jarvis line lives). Override
 // the backend URL or set the optional connect token via localStorage keys
 // hq_jarvis_backend / hq_jarvis_cal_token.
-function jcalBackend(){try{return (localStorage.getItem("hq_jarvis_backend")||"").trim()||"https://api.voiceaiconnect.com"}catch(e){return "https://api.voiceaiconnect.com"}}
+function jcalBackend(){try{return (localStorage.getItem("hq_jarvis_backend")||"").trim()||"https://urchin-app-bqb4i.ondigitalocean.app"}catch(e){return "https://urchin-app-bqb4i.ondigitalocean.app"}}
 function jcalToken(){try{return (localStorage.getItem("hq_jarvis_cal_token")||"").trim()}catch(e){return ""}}
 function loadJarvisCalStatus(){
   var s=document.getElementById("jcalStatus"),c=document.getElementById("jcalConnect"),d=document.getElementById("jcalDisconnect");
