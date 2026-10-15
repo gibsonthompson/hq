@@ -1137,7 +1137,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v28";
+var BUILD="v29";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1543,9 +1543,16 @@ function unpin(id){var f=findRef(id);if(!f)return;f.ref.pin=0;touch(f.ref);save(
 function uncomplete(id){var f=findRef(id);if(!f)return;f.ref.done=false;f.ref.doneTs=null;touch(f.ref);save(id);forceRender()}
 function promote(id){
   var f=findRef(id);if(!f)return;
-  // Top 3 means 3. If all three slots are full, don't silently hide a fourth.
+  // Top 3 means 3. If all three slots are full, don't make him go unpin one
+  // first, and don't silently hide a fourth: float the task to the top of On
+  // Deck so it still jumps to where he'll see it next. On Deck is ordered newest
+  // first, so refreshing ts moves it to the top.
   var pinnedCount=visibleItems().filter(function(it){return (it.ref.pin||0)>0}).length;
-  if(pinnedCount>=3){toast("Top 3 is full, unpin one first","chevrons-up");return}
+  if(pinnedCount>=3){
+    f.ref.pin=0;f.ref.ts=Date.now();touch(f.ref);save(id);forceRender();
+    toast("Top 3 is full, moved to the top of On Deck","arrow-up");
+    return;
+  }
   f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()
 }
 // Add a brand-new task straight into an open Top 3 slot.
