@@ -114,15 +114,16 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 
 /* PRIME 3 */
 .prime-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.prime{position:relative;border-radius:15px;padding:17px 16px 16px;background:var(--elev);border:1px solid var(--line2);min-height:118px;display:flex;flex-direction:column;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;overflow:hidden}
+.prime{position:relative;border-radius:14px;padding:12px 13px 11px;background:var(--elev);border:1px solid var(--line2);min-height:72px;display:flex;flex-direction:column;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;overflow:hidden}
 .prime:hover{transform:translateY(-2px);border-color:rgba(70,209,135,0.5);box-shadow:0 10px 30px -12px rgba(70,209,135,0.4)}
 .prime .rank{position:absolute;top:12px;right:14px;font-family:'Sora';font-weight:800;font-size:30px;color:rgba(255,255,255,0.05);line-height:1}
-.prime .check{width:26px;height:26px;border-radius:8px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-bottom:11px}
-.prime .check i{width:15px;height:15px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
+.prime .check{width:20px;height:20px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-bottom:8px}
+.prime .check i{width:12px;height:12px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
 .prime:hover .check{border-color:var(--vio)}
 .prime .pbody{flex:1;min-width:0;display:flex;flex-direction:column}
-.prime .ptext{font-family:'Sora';font-weight:600;font-size:15.5px;line-height:1.35;color:var(--tx);flex:1}
-.prime .pfoot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+.prime .ptext{font-family:'Sora';font-weight:600;font-size:12px;line-height:1.3;color:var(--tx);flex:1;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.prime .rank{font-size:22px !important}
+.prime .pfoot{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 .prime .pacts{position:absolute;bottom:10px;right:11px;display:flex;gap:2px;opacity:0;transition:opacity .15s}
 .prime:hover .pacts{opacity:.75}
 .prime .px{background:none;border:none;color:var(--dim2);cursor:pointer;font-size:16px;line-height:1;padding:4px;display:flex;align-items:center;justify-content:center}
@@ -422,7 +423,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .cal-block.task .chk{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border:1.5px solid currentColor;border-radius:4px;margin-right:4px;vertical-align:-2px}
 .cal-now{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:5}
 .cal-now::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--red)}
-.cal-side{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.cal-side{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;align-self:flex-start}
 .side-card{background:var(--elev);border:1px solid var(--line);border-radius:13px;padding:14px}
 .side-title{font-family:'Sora';font-weight:600;font-size:13px;margin-bottom:11px;display:flex;align-items:center;gap:7px}
 .side-title i{width:15px;height:15px;color:var(--vio2)}
@@ -522,7 +523,7 @@ input,textarea,select{font-size:16px}
 .prime{min-height:auto;flex-direction:row;align-items:flex-start;gap:12px;padding:14px}
 .prime .check{margin-bottom:0}
 .prime .rank{display:none}
-.prime .ptext{font-size:15.5px;flex:none}
+.prime .ptext{font-size:12px;flex:none}
 .prime .pfoot{margin-top:9px}
 .prime .pacts{position:static;opacity:.55;flex-direction:column;gap:6px;flex-shrink:0;margin-left:2px}
 .prime .px{padding:2px}
@@ -602,8 +603,13 @@ input,textarea,select{font-size:16px}
 .tag-pill{padding:6px 12px;border-radius:16px;border:1px solid var(--line2);background:var(--surface);color:var(--dim);cursor:pointer;font-size:12px;font-weight:600}
 .tag-pill.on{background:rgba(70,209,135,0.16);border-color:var(--vio);color:var(--vio2)}
 #venturePills .tag-pill{display:inline-flex;align-items:center;gap:5px}
-#venturePills .tag-pill i{width:14px;height:14px}
-#venturePills .vp-ct{opacity:.6;font-variant-numeric:tabular-nums}
+#venturePills{gap:5px;margin-bottom:9px}
+#venturePills .tag-pill{padding:3px 9px;font-size:11px;gap:4px}
+#venturePills .tag-pill i{width:12px;height:12px}
+#venturePills .vp-ct{opacity:.55;font-variant-numeric:tabular-nums;font-size:10px}
+#venturePills .vp-del{opacity:0;margin-left:1px;color:var(--dim2);font-weight:700;cursor:pointer;transition:opacity .15s,color .15s;font-size:13px;line-height:1}
+#venturePills .tag-pill:hover .vp-del{opacity:.6}
+#venturePills .vp-del:hover{color:var(--red);opacity:1}
 .pchip.tag{background:rgba(99,199,176,0.14);color:var(--cy);cursor:default}
 .dtag{font-size:10px;color:var(--cy);font-weight:700;letter-spacing:.3px;flex-shrink:0}
 .sweep-btn{display:inline-flex;align-items:center;gap:6px;background:var(--elev);border:1px solid var(--line2);color:var(--dim);padding:7px 12px;border-radius:9px;cursor:pointer;font-size:12px;font-weight:600}
@@ -701,7 +707,6 @@ input,textarea,select{font-size:16px}
       <div class="sec-title"><i data-lucide="layers"></i> On Deck <span class="count" id="deckCount"></span></div>
       <div class="sec-tools">
         <button class="sweep-btn icon-only" id="searchToggle" onclick="toggleSearch()" title="Search tasks"><i data-lucide="search"></i></button>
-        <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
       </div>
     </div>
     <div class="deck" id="deckList"></div>
@@ -1789,8 +1794,18 @@ function renderTags(){
   row.innerHTML=h}
 function ventureList(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;var v=(m.venture||"");if(v)set[v]=(set[v]||0)+1});(S.ventures||[]).forEach(function(vr){if(vr&&vr.name&&set[vr.name]==null)set[vr.name]=0});return set}
 function ventureGeneralCount(){var n=0;live(S.needleMovers).forEach(function(m){if(!m.done&&!(m.venture||""))n++});return n}
-function renderVentures(){var row=document.getElementById("venturePills");if(!row)return;var counts=ventureList();var names=Object.keys(counts).sort();if(ventureFilter!=="all"&&ventureFilter!=="__gen__"&&names.indexOf(ventureFilter)<0)ventureFilter="all";row.classList.remove("hidden");var h='<div class="tag-pill'+(ventureFilter==="all"?" on":"")+'" onclick="ventureFilter=\'all\';renderTaskViews()">All</div>';names.forEach(function(n){h+='<div class="tag-pill'+(ventureFilter===n?" on":"")+'" data-v="'+esc(n)+'" onclick="ventureFilter=this.dataset.v;renderTaskViews()"><i data-lucide="briefcase"></i><span>'+esc(n)+'</span><span class="vp-ct">'+counts[n]+'</span></div>'});h+='<div class="tag-pill'+(ventureFilter==="__gen__"?" on":"")+'" onclick="ventureFilter=\'__gen__\';renderTaskViews()"><span>General</span><span class="vp-ct">'+ventureGeneralCount()+'</span></div>';h+='<div class="tag-pill vp-add" onclick="addVenture()"><i data-lucide="plus"></i><span>Business</span></div>';row.innerHTML=h}
+function renderVentures(){var row=document.getElementById("venturePills");if(!row)return;var counts=ventureList();var names=Object.keys(counts).sort();if(ventureFilter!=="all"&&ventureFilter!=="__gen__"&&names.indexOf(ventureFilter)<0)ventureFilter="all";row.classList.remove("hidden");var h='<div class="tag-pill'+(ventureFilter==="all"?" on":"")+'" onclick="ventureFilter=\'all\';renderTaskViews()">All</div>';names.forEach(function(n){h+='<div class="tag-pill'+(ventureFilter===n?" on":"")+'" data-v="'+esc(n)+'" onclick="ventureFilter=this.dataset.v;renderTaskViews()"><i data-lucide="briefcase"></i><span>'+esc(n)+'</span><span class="vp-ct">'+counts[n]+'</span><span class="vp-del" onclick="event.stopPropagation();delVenture(this.parentNode.dataset.v)" title="Delete business">&times;</span></div>'});h+='<div class="tag-pill'+(ventureFilter==="__gen__"?" on":"")+'" onclick="ventureFilter=\'__gen__\';renderTaskViews()"><span>General</span><span class="vp-ct">'+ventureGeneralCount()+'</span></div>';h+='<div class="tag-pill vp-add" onclick="addVenture()"><i data-lucide="plus"></i><span>Business</span></div>';row.innerHTML=h}
 function addVenture(){uiPrompt("New business","",{message:"Name a business to file tasks under, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=v.trim();if(!v||v.toLowerCase()==="general")return;var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}ventureFilter=v;renderTaskViews()})}
+function delVenture(name){
+  if(!name)return;
+  uiConfirm('Delete the business "'+name+'"? Any tasks filed under it stay on your list, they just move to General.',{title:"Delete business",okText:"Delete",danger:true}).then(function(go){
+    if(!go)return;
+    (S.ventures||[]).forEach(function(v){if(v&&!v.del&&(v.name||"").toLowerCase()===name.toLowerCase()){v.del=true;touch(v);save(v.id)}});
+    live(S.needleMovers).forEach(function(m){if((m.venture||"")===name){m.venture="";touch(m);save(m.id)}});
+    if(ventureFilter===name)ventureFilter="all";
+    renderTaskViews();toast("Business deleted","trash-2");
+  });
+}
 function allLabels(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;(m.tags||[]).forEach(function(t){if(t)set[t]=1})});return Object.keys(set).sort()}
 function pickLabel(id){var f=findRef(id);if(!f||f.kind!=="mover"){toast("Labels are for tasks","alert-triangle");return}
   var existing=allLabels();var cur=(f.ref.tags||[]).join(" ");
