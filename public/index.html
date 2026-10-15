@@ -121,7 +121,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .prime .check i{width:12px;height:12px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
 .prime:hover .check{border-color:var(--vio)}
 .prime .pbody{flex:1;min-width:0;display:flex;flex-direction:column}
-.prime .ptext{font-family:'Sora';font-weight:600;font-size:12px;line-height:1.3;color:var(--tx);flex:1;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.prime .ptext{font-family:'Sora';font-weight:600;font-size:11.5px;line-height:1.32;color:var(--tx);flex:1;word-break:break-word}
 .prime .rank{font-size:22px !important}
 .prime .pfoot{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 .prime .pacts{position:absolute;bottom:10px;right:11px;display:flex;gap:2px;opacity:0;transition:opacity .15s}
@@ -523,7 +523,7 @@ input,textarea,select{font-size:16px}
 .prime{min-height:auto;flex-direction:row;align-items:flex-start;gap:12px;padding:14px}
 .prime .check{margin-bottom:0}
 .prime .rank{display:none}
-.prime .ptext{font-size:12px;flex:none}
+.prime .ptext{font-size:11.5px;flex:none}
 .prime .pfoot{margin-top:9px}
 .prime .pacts{position:static;opacity:.55;flex-direction:column;gap:6px;flex-shrink:0;margin-left:2px}
 .prime .px{padding:2px}
@@ -1057,9 +1057,20 @@ function hasSelection(){try{var s=window.getSelection();return !!(s&&String(s).t
 /* ===== PERSISTENCE ===== */
 var SUPABASE_URL="https://szdrpdjyordvqtkuuazh.supabase.co",SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZHJwZGp5b3JkdnF0a3V1YXpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4MDAxMzgsImV4cCI6MjA4MjM3NjEzOH0.7rHx3HXaqe1h7q3y79nMwuXbOR9CcmWrY3WKXFjk8yM";
 try{if(SUPABASE_URL.indexOf("REPLACE")===0){var _su=localStorage.getItem("hq_sb_url"),_sk=localStorage.getItem("hq_sb_key");if(_su)SUPABASE_URL=_su;if(_sk)SUPABASE_ANON_KEY=_sk}}catch(e){}
-var sb=null;
-var sbLibLoaded=(typeof supabase!=="undefined"&&supabase&&typeof supabase.createClient==="function");
-try{if(sbLibLoaded)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
+var sb=null,sbLibLoaded=false;
+/* Build the client from whatever Supabase library is present. Callable again
+   after a fallback library loads, so a stale or missing local copy of the lib
+   on a device can self-heal instead of leaving that device local-only. */
+function initSb(){
+  try{
+    if(typeof supabase!=="undefined"&&supabase&&typeof supabase.createClient==="function"){
+      sbLibLoaded=true;
+      if(!sb)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    }
+  }catch(e){sb=null}
+  return !!sb;
+}
+initSb();
 
 function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1,venture:""};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1,venture:(x.venture||"")}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),mtime:(g.mtime!=null?g.mtime:(g.created||1)),del:!!g.del,archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ts:(s.ts||s.ord||Date.now()),pin:(s.pin!=null?s.pin:0),mtime:(s.mtime!=null?s.mtime:(s.ts||1)),del:!!s.del,date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
@@ -1107,7 +1118,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v26";
+var BUILD="v27";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1138,6 +1149,7 @@ function restoreFromSnapshot(){
   }catch(e){toast("Restore failed","alert-triangle")}}
 function setSync(state){syncState=state;
   if(state==="err"){showSyncBanner('<b>Cloud sync error.</b> '+esc(lastSyncError||"could not reach the database")+'. Your changes are saved on this device but may not be reaching the cloud. If this is a permission error, run this in your Supabase SQL editor:  grant select, insert, update on public.hq_items to anon;')}
+  else if(state==="local"){showSyncBanner('<b>This device is not syncing.</b> It could not start the cloud connection, so changes you make here will not appear on your other devices. Reload the page; if it keeps happening, fully close and reopen the app.')}
   else if(state==="ok"){clearSyncBanner()}
   var el=document.getElementById("syncDot");if(!el)return;
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
@@ -1417,10 +1429,22 @@ function migrateItems(){function fix(a){(a||[]).forEach(function(x){if(!x)return
   fix(S.needleMovers);fix(S.notes);fix(S.projects);fix(S.calendarEvents);fix(S.captures);fix(S.images);fix(S.reminders);fix(S.visionAreas);fix(S.goals);
   (S.goals||[]).forEach(function(g){fix(g.steps)})}
 
-function load(){loadLocal();migrateItems();forceRender();
-  if(!sb){setSync("local");remoteLoaded=true;return}
+function startCloud(){
   lastPullAt=Date.now();pullInFlight=true;
-  pullRemote(function(){pullInFlight=false;remoteLoaded=true;startRealtime();startPolling();autoBackup()});}
+  pullRemote(function(){pullInFlight=false;remoteLoaded=true;startRealtime();startPolling();autoBackup()});
+}
+function load(){loadLocal();migrateItems();forceRender();
+  if(sb){startCloud();return}
+  /* The bundled Supabase library did not produce a client on this device, which
+     is almost always a stale or broken cached copy. Pull the official build from
+     the CDN and try again, so this device syncs like every other one instead of
+     silently staying local-only. */
+  var sc=document.createElement("script");
+  sc.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  sc.onload=function(){ if(initSb()&&sb){startCloud();} else {remoteLoaded=true;setSync("local");} };
+  sc.onerror=function(){remoteLoaded=true;setSync("local");};
+  document.head.appendChild(sc);
+}
 
 /* soft delete = flag the row; every device learns about it */
 function tomb(id){var f=findAny(id);if(!f)return;f.item.del=true;f.item.mtime=Date.now();
