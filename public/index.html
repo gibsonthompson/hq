@@ -116,13 +116,13 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .prime-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .prime{position:relative;border-radius:14px;padding:12px 13px 11px;background:var(--elev);border:1px solid var(--line2);min-height:72px;display:flex;flex-direction:column;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;overflow:hidden}
 .prime:hover{transform:translateY(-2px);border-color:rgba(70,209,135,0.5);box-shadow:0 10px 30px -12px rgba(70,209,135,0.4)}
-.prime .rank{position:absolute;top:12px;right:14px;font-family:'Sora';font-weight:800;font-size:30px;color:rgba(255,255,255,0.05);line-height:1}
+.prime .rank{position:absolute;bottom:9px;left:13px;font-family:'Sora';font-weight:800;font-size:34px;color:rgba(255,255,255,0.05);line-height:1;z-index:0}
 .prime .check{width:20px;height:20px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-bottom:8px}
 .prime .check i{width:12px;height:12px;color:#fff;opacity:0;transform:scale(.3);transition:all .2s}
 .prime:hover .check{border-color:var(--vio)}
 .prime .pbody{flex:1;min-width:0;display:flex;flex-direction:column}
 .prime .ptext{font-family:'Sora';font-weight:600;font-size:11.5px;line-height:1.32;color:var(--tx);flex:1;word-break:break-word}
-.prime .rank{font-size:22px !important}
+.prime .rank{font-size:26px !important}
 .prime .pfoot{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 .prime .pacts{position:absolute;bottom:10px;right:11px;display:flex;gap:2px;opacity:0;transition:opacity .15s}
 .prime:hover .pacts{opacity:.75}
@@ -168,6 +168,13 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .deck-item .dact:hover{opacity:1;color:var(--vio2)}
 .dtag-venture{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--dim);background:var(--elev);border:1px solid var(--line2);border-radius:7px;padding:2px 7px;max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .dtag-venture i{width:11px;height:11px;flex-shrink:0;opacity:.7}
+.dtag-label{display:inline-flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.2px;padding:2px 8px;border-radius:7px;border:1px solid transparent;white-space:nowrap;cursor:pointer;transition:filter .15s}
+.dtag-label:hover{filter:brightness(1.18)}
+.tp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;flex-shrink:0}
+.pchip.plabel{cursor:default;letter-spacing:.2px}
+.prime .premove{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:8px;border:none;background:rgba(255,255,255,0.045);color:var(--dim2);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.65;transition:all .15s;z-index:3}
+.prime .premove:hover{opacity:1;background:rgba(240,133,126,0.18);color:#f0857e}
+.prime .premove i{width:15px;height:15px}
 .deck-item:hover{background:var(--elev)}
 .deck-item.pinned{border-left:3px solid var(--vio)}
 .deck-item.deck-done-flash{background:rgba(70,209,135,0.22);border-color:rgba(70,209,135,0.55)}
@@ -1130,7 +1137,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v27";
+var BUILD="v28";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1720,19 +1727,19 @@ function renderPrime(){
     var sl=schedLabel(it.ref);
     var chips="";
     if(it.kind==="step")chips+='<span class="pchip goal"><i data-lucide="flag"></i>'+esc(it.goalTitle.slice(0,16))+(it.goalTitle.length>16?"…":"")+'</span>';
-    (it.ref.tags||[]).forEach(function(t){chips+='<span class="pchip tag">#'+esc(t)+'</span>'});
+    (it.ref.tags||[]).forEach(function(t){var lc=labelColor(t);chips+='<span class="pchip plabel" style="color:'+lc.fg+';background:'+lc.bg+'">'+esc(t)+'</span>'});
     if(it.ref.venture)chips+='<span class="pchip" onclick="event.stopPropagation();assignVenture(\''+it.id+'\')"><i data-lucide="briefcase"></i>'+esc(it.ref.venture)+'</span>';
     chips+=sl?'<span class="pchip sched" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="clock"></i>'+esc(sl)+'</span>':'<span class="pchip" onclick="event.stopPropagation();openSchedule(\''+it.id+'\')"><i data-lucide="calendar-plus"></i>Schedule</span>';
-    chips+='<span class="pchip" onclick="event.stopPropagation();unpin(\''+it.id+'\')" title="Send back to the list"><i data-lucide="chevrons-down"></i>Unpin</span>';
     var el=document.createElement("div");el.className="prime";
     el.onclick=(function(id){return function(){if(hasSelection())return;completeItem(id,this)}})(it.id);
     el.innerHTML='<span class="rank">'+(i+1)+'</span>'+
+      '<button class="premove" onclick="event.stopPropagation();unpin(\''+it.id+'\')" title="Remove from Top 3">&times;</button>'+
       '<div class="check"><i data-lucide="check"></i></div>'+
       '<div class="pbody"><div class="ptext">'+esc(it.text)+'</div><div class="pfoot">'+chips+'</div></div>'+
       '<div class="pacts">'+
         '<button class="px" onclick="event.stopPropagation();genPrompt(\''+it.id+'\')" title="Generate Claude prompt"><i data-lucide="sparkles"></i></button>'+
         '<button class="px" onclick="event.stopPropagation();editTask(\''+it.id+'\')" title="Edit"><i data-lucide="pencil"></i></button>'+
-        '<button class="px" onclick="event.stopPropagation();rmItem(\''+it.id+'\')" title="Remove">&times;</button>'+
+        '<button class="px" onclick="event.stopPropagation();rmItem(\''+it.id+'\')" title="Delete task"><i data-lucide="trash-2"></i></button>'+
       '</div>';
     g.appendChild(el);
   });
@@ -1759,7 +1766,7 @@ function renderDeck(){
     // squeezed by the chips.
     var metaLeft="";
     if(it.kind==="step")metaLeft+='<span class="dgoal">'+esc(it.goalTitle.slice(0,18))+'</span>';
-    (it.ref.tags||[]).forEach(function(t){metaLeft+='<span class="dtag dtag-filter" data-tag="'+esc(t)+'">#'+esc(t)+'</span>'});
+    (it.ref.tags||[]).forEach(function(t){var lc=labelColor(t);metaLeft+='<span class="dtag-label dtag-filter" data-tag="'+esc(t)+'" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t)+'</span>'});
     var metaRight="";
     if(it.ref.venture)metaRight+='<span class="dtag dtag-venture" title="'+esc(it.ref.venture)+'"><i data-lucide="briefcase"></i>'+esc(it.ref.venture)+'</span>';
     if(sl)metaRight+='<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>';
@@ -1833,12 +1840,14 @@ function renderTags(){
   if(!names.length){row.classList.add("hidden");row.innerHTML="";return}
   row.classList.remove("hidden");
   var h='<div class="tag-pill'+(taskFilter==="all"?" on":"")+'" onclick="taskFilter=\'all\';renderTaskViews()">All</div>';
-  names.forEach(function(t){h+='<div class="tag-pill'+(taskFilter===t?" on":"")+'" onclick="taskFilter=\''+t+'\';renderTaskViews()">#'+esc(t)+' <span style="opacity:.6">'+tags[t]+'</span></div>'});
+  names.forEach(function(t){var lc=labelColor(t);h+='<div class="tag-pill'+(taskFilter===t?" on":"")+'" onclick="taskFilter=\''+t+'\';renderTaskViews()"><span class="tp-dot" style="background:'+lc.fg+'"></span>'+esc(t)+' <span style="opacity:.6">'+tags[t]+'</span></div>'});
   row.innerHTML=h}
-function ventureList(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;var v=(m.venture||"");if(v)set[v]=(set[v]||0)+1});(S.ventures||[]).forEach(function(vr){if(vr&&vr.name&&set[vr.name]==null)set[vr.name]=0});return set}
+var LABEL_PALETTE=[[99,199,176],[240,133,126],[232,192,106],[139,156,240],[208,139,224],[95,176,232],[111,211,138],[232,154,106],[122,196,210],[224,160,120]];
+function labelColor(name){var s=String(name||"");var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;var c=LABEL_PALETTE[h%LABEL_PALETTE.length];return{fg:"rgb("+c[0]+","+c[1]+","+c[2]+")",bg:"rgba("+c[0]+","+c[1]+","+c[2]+",0.14)",bd:"rgba("+c[0]+","+c[1]+","+c[2]+",0.30)"}}
+function ventureList(){var set={};live(S.needleMovers).forEach(function(m){if(m.done)return;var v=(m.venture||"");if(v)set[v]=(set[v]||0)+1});live(S.ventures).forEach(function(vr){if(vr&&vr.name&&set[vr.name]==null)set[vr.name]=0});return set}
 function ventureGeneralCount(){var n=0;live(S.needleMovers).forEach(function(m){if(!m.done&&!(m.venture||""))n++});return n}
 function renderVentures(){var row=document.getElementById("venturePills");if(!row)return;var counts=ventureList();var names=Object.keys(counts).sort();if(ventureFilter!=="all"&&ventureFilter!=="__gen__"&&names.indexOf(ventureFilter)<0)ventureFilter="all";row.classList.remove("hidden");var h='<div class="tag-pill'+(ventureFilter==="all"?" on":"")+'" onclick="ventureFilter=\'all\';renderTaskViews()">All</div>';names.forEach(function(n){h+='<div class="tag-pill'+(ventureFilter===n?" on":"")+'" data-v="'+esc(n)+'" onclick="ventureFilter=this.dataset.v;renderTaskViews()"><i data-lucide="briefcase"></i><span>'+esc(n)+'</span><span class="vp-ct">'+counts[n]+'</span><span class="vp-del" onclick="event.stopPropagation();delVenture(this.parentNode.dataset.v)" title="Delete business">&times;</span></div>'});h+='<div class="tag-pill'+(ventureFilter==="__gen__"?" on":"")+'" onclick="ventureFilter=\'__gen__\';renderTaskViews()"><span>General</span><span class="vp-ct">'+ventureGeneralCount()+'</span></div>';h+='<div class="tag-pill vp-add" onclick="addVenture()"><i data-lucide="plus"></i><span>Business</span></div>';row.innerHTML=h}
-function addVenture(){uiPrompt("New business","",{message:"Name a business to file tasks under, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=v.trim();if(!v||v.toLowerCase()==="general")return;var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}ventureFilter=v;renderTaskViews()})}
+function addVenture(){uiPrompt("New business","",{message:"Name a business to file tasks under, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=v.trim();if(!v||v.toLowerCase()==="general")return;var exists=false;(S.ventures||[]).forEach(function(x){if((x.name||"").toLowerCase()===v.toLowerCase()){if(x.del){x.del=false;touch(x);save(x.id)}exists=true}});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}ventureFilter=v;renderTaskViews()})}
 function delVenture(name){
   if(!name)return;
   uiConfirm('Delete the business "'+name+'"? Any tasks filed under it stay on your list, they just move to General.',{title:"Delete business",okText:"Delete",danger:true}).then(function(go){
@@ -1858,7 +1867,7 @@ function pickLabel(id){var f=findRef(id);if(!f||f.kind!=="mover"){toast("Labels 
     var uniq=[];parts.forEach(function(l){if(uniq.indexOf(l)<0)uniq.push(l)});
     f.ref.tags=uniq;touch(f.ref);save(id);forceRender();
     toast(uniq.length?("Labeled "+uniq.join(", ")):"Labels cleared","tag")})}
-function assignVenture(id){var f=findRef(id);if(!f)return;if(f.kind!=="mover"){toast("Businesses are for tasks","alert-triangle");return}var names=Object.keys(ventureList()).sort();var msg=names.length?("Businesses: "+names.join(", ")+". Type one, or leave blank for General."):"Type a business, or leave blank for General.";uiPrompt("File under business",(f.ref.venture||""),{message:msg}).then(function(v){if(v==null)return;v=v.trim();if(v.toLowerCase()==="general")v="";f.ref.venture=v;if(v){var exists=(S.ventures||[]).some(function(x){return (x.name||"").toLowerCase()===v.toLowerCase()});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}}touch(f.ref);save(id);renderTaskViews()})}
+function assignVenture(id){var f=findRef(id);if(!f)return;if(f.kind!=="mover"){toast("Businesses are for tasks","alert-triangle");return}var names=Object.keys(ventureList()).sort();var msg=names.length?("Businesses: "+names.join(", ")+". Type one, or leave blank for General."):"Type a business, or leave blank for General.";uiPrompt("File under business",(f.ref.venture||""),{message:msg}).then(function(v){if(v==null)return;v=v.trim();if(v.toLowerCase()==="general")v="";f.ref.venture=v;if(v){var exists=false;(S.ventures||[]).forEach(function(x){if((x.name||"").toLowerCase()===v.toLowerCase()){if(x.del){x.del=false;touch(x);save(x.id)}exists=true}});if(!exists){var vid=mid();S.ventures.push({id:vid,name:v,ts:Date.now(),mtime:Date.now(),del:false});save(vid)}}touch(f.ref);save(id);renderTaskViews()})}
 function renderDone(){
   var head=document.getElementById("doneHead"),list=document.getElementById("doneList");if(!head||!list)return;
   var t0=new Date();t0.setHours(0,0,0,0);var t0ms=t0.getTime();
