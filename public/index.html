@@ -54,6 +54,24 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .tab.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .wrap{max-width:1080px;margin:0 auto}
+.home-cols{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(250px,1fr);gap:30px;align-items:start}
+.home-side{position:sticky;top:14px}
+.snote-add{margin-top:0}
+.snote-add-btn{padding:0 14px}
+.snote-list{display:flex;flex-direction:column;gap:8px}
+.snote-item{position:relative;display:flex;gap:10px;align-items:flex-start;background:var(--elev);border:1px solid var(--line2);border-left:3px solid var(--amb);border-radius:12px;padding:11px 12px}
+.snote-item.done{border-left-color:var(--grn);opacity:.72}
+.snote-item.done .snote-text{color:var(--dim2)}
+.snote-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px;transition:all .18s}
+.snote-item.done .snote-check{background:var(--grn);border-color:var(--grn)}
+.snote-check i{width:12px;height:12px;color:#fff;opacity:0}
+.snote-item.done .snote-check i{opacity:1}
+.snote-text{flex:1;min-width:0;font-size:13.5px;line-height:1.42;color:var(--tx);white-space:pre-wrap;word-break:break-word}
+.snote-x{background:none;border:none;color:var(--dim2);cursor:pointer;padding:2px;display:flex;opacity:.6}
+.snote-x:hover{color:var(--red);opacity:1}
+.snote-x i{width:14px;height:14px}
+.snote-empty{color:var(--dim2);font-size:13px;padding:6px 2px;line-height:1.4}
+@media(max-width:900px){.home-cols{grid-template-columns:1fr;gap:0}.home-side{position:static;margin-top:4px}}
 
 /* SYSTEM HEADER */
 .sysbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(70,209,135,0.10),rgba(99,102,241,0.03));border:1px solid var(--line2)}
@@ -664,6 +682,8 @@ input,textarea,select{font-size:16px}
 <div class="content">
   <!-- HOME -->
   <div class="tab active wrap" id="tab-home">
+   <div class="home-cols">
+    <div class="home-main">
     <div class="add-prime">
       <textarea class="add-input" id="nmInput" rows="1" placeholder="Add a task…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
       <button class="add-btn" onclick="addNM()"><i data-lucide="plus"></i> Add</button>
@@ -672,6 +692,11 @@ input,textarea,select{font-size:16px}
     <div class="tag-row hidden" id="tagPills"></div>
     <div class="tag-row hidden" id="venturePills"></div>
 
+    <div class="sec-head" id="primeHead">
+      <div class="sec-title"><i data-lucide="chevrons-up"></i> Top 3 <span class="count" id="primeCount"></span></div>
+    </div>
+    <div class="prime-grid" id="primeGrid"></div>
+
     <div class="sec-head" id="deckHead">
       <div class="sec-title"><i data-lucide="layers"></i> On Deck <span class="count" id="deckCount"></span></div>
       <div class="sec-tools">
@@ -679,7 +704,6 @@ input,textarea,select{font-size:16px}
         <button class="sweep-btn" onclick="openSweep()"><i data-lucide="list-checks"></i> Sweep</button>
       </div>
     </div>
-    <div class="prime-grid hidden" id="primeGrid"></div>
     <div class="deck" id="deckList"></div>
 
     <div class="reminder-strip" id="reminderStrip"></div>
@@ -694,6 +718,16 @@ input,textarea,select{font-size:16px}
 
     <div class="sec-head"><div class="sec-title"><i data-lucide="clock"></i> Today</div></div>
     <div class="today-list" id="todayList"></div>
+    </div><!-- /home-main -->
+    <aside class="home-side">
+      <div class="sec-head"><div class="sec-title"><i data-lucide="notebook-pen"></i> Session Notes <span class="count" id="snoteCount"></span></div></div>
+      <div class="add-prime snote-add">
+        <textarea class="add-input" id="snoteInput" rows="1" placeholder="Did X. Still need to test Y…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
+        <button class="add-btn snote-add-btn" onclick="addSNote()" title="Add note"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="snote-list" id="snoteList"></div>
+    </aside>
+   </div><!-- /home-cols -->
   </div>
 
   <!-- GOALS -->
@@ -993,6 +1027,7 @@ var S={
   goals:[],          // {id,title,why,cat,target,steps:[...],created,archived}
   needleMovers:[],   // standalone {id,text,done,ts,doneTs,date,startHour,duration}
   notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],visionAreas:[],ventures:[],
+  sessionNotes:[],   // {id,text,status:'open'|'done',ts,mtime,del}
   lastReview:null,
   schedCats:null,nci:0,wcalWeekStart:null
 };
@@ -1040,15 +1075,16 @@ function normalizeCaptures(arr){if(!Array.isArray(arr))return[];return arr.map(f
 function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(function(r){var ts=(r.ts!=null?r.ts:(r.mtime||1));return{id:r.id||mid(),text:r.text||"",ts:ts,mtime:(r.mtime!=null?r.mtime:ts),del:!!r.del}})}
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
+function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
-  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.sessionNotes=normalizeSNotes(p.sessionNotes);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
 function pruneLocalBackups(keepN){try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();var drop=keys.slice(0,Math.max(0,keys.length-(keepN||1)));drop.forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});return drop.length}catch(e){return 0}}
 function saveLocal(){
-  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
+  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,sessionNotes:S.sessionNotes,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
   /* The task data MUST persist. If browser storage is full (photos or old
      snapshots), free space and retry so an edit can never be silently lost. */
   try{localStorage.setItem("hq_d",main)}
@@ -1102,9 +1138,9 @@ function setSync(state){syncState=state;
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
-function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures"}[kind]}
-function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture"}[listName]}
-function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","goals"];
+function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures",snote:"sessionNotes"}[kind]}
+function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture",sessionNotes:"snote"}[listName]}
+function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","goals"];
   for(var i=0;i<L.length;i++){var a=S[L[i]]||[];for(var j=0;j<a.length;j++){if(a[j]&&a[j].id===id)return{item:a[j],kind:kindOf(L[i]),parent:null}}}
   for(var g=0;g<(S.goals||[]).length;g++){var st=S.goals[g].steps||[];for(var k=0;k<st.length;k++){if(st[k].id===id)return{item:st[k],kind:"step",parent:S.goals[g].id}}}
   return null}
@@ -1143,7 +1179,7 @@ function pushNewer(remoteRows,cb){
     if(r&&!((item.mtime||0)>rm))return;      /* cloud is same or newer, leave it */
     rows.push({id:item.id,user_key:"gibson",kind:kind,parent:parent,deleted:!!item.del,data:JSON.parse(JSON.stringify(item))});
   }
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes"].forEach(function(L){
     (S[L]||[]).forEach(function(x){consider(x,kindOf(L),null)})});
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;
     consider({id:g.id,title:g.title,why:g.why,cat:g.cat,target:g.target,created:g.created,archived:g.archived,mtime:g.mtime,del:g.del},"goal",null);
@@ -1169,7 +1205,7 @@ var lastSig="";
 function stateSignature(){
   var parts=[];
   function add(a){(a||[]).forEach(function(x){if(x&&x.id)parts.push(x.id+":"+(x.mtime||0)+":"+(x.del?1:0))})}
-  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);
+  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);add(S.ventures);add(S.sessionNotes);
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;parts.push(g.id+":"+(g.mtime||0)+":"+(g.del?1:0));add(g.steps)});
   parts.sort();
   return parts.join("|");
@@ -1181,10 +1217,10 @@ function applyRows(rows){
      2. local copy modified more recently -> keep the local copy
      3. item exists here but has no row   -> keep it and upload it */
   var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
-            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],goals:S.goals||[]};
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],sessionNotes:S.sessionNotes||[],goals:S.goals||[]};
   var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
   var goals={},goalOrder=[],steps=[],seen={};
-  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[]};
+  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[],sessionNotes:[]};
   function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
     var lh=findAny(r.id);
@@ -1199,7 +1235,7 @@ function applyRows(rows){
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
   var reupload=[];
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes"].forEach(function(L){
     (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
   (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;goalOrder.push(g.id);reupload.push(g.id)}});
   Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
@@ -1212,6 +1248,7 @@ function applyRows(rows){
   S.captures=normalizeCaptures(next.captures);
   S.reminders=normalizeReminders(next.reminders);
   S.visionAreas=normalizeVAreas(next.visionAreas);S.ventures=normalizeVentures(next.ventures);
+  S.sessionNotes=normalizeSNotes(next.sessionNotes);
   S.images=normalizeImages(next.images);
   S.goals=normalizeGoals(goalOrder.map(function(k){return goals[k]}));
   /* backfill: anything that arrived without a ts now has one, and it is
@@ -1432,7 +1469,7 @@ function taskMatches(it){
   if(taskQuery){if(String(it.text||"").toLowerCase().indexOf(taskQuery.toLowerCase())<0)return false}
   return true}
 function visibleItems(){return todayItems().filter(taskMatches)}
-function renderTaskViews(){renderTags();renderVentures();renderDeck();renderDone();icons()}
+function renderTaskViews(){renderTags();renderVentures();renderPrime();renderDeck();renderDone();icons()}
 /* Search is opt-in now. Hiding it always clears the query, otherwise the list
    could stay silently filtered with no visible control explaining why. */
 function toggleSearch(){
@@ -1456,7 +1493,24 @@ function addNM(){var inp=document.getElementById("nmInput");var v=inp.value.trim
 
 function unpin(id){var f=findRef(id);if(!f)return;f.ref.pin=0;touch(f.ref);save(id);forceRender()}
 function uncomplete(id){var f=findRef(id);if(!f)return;f.ref.done=false;f.ref.doneTs=null;touch(f.ref);save(id);forceRender()}
-function promote(id){var f=findRef(id);if(!f)return;f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()}
+function promote(id){
+  var f=findRef(id);if(!f)return;
+  // Top 3 means 3. If all three slots are full, don't silently hide a fourth.
+  var pinnedCount=visibleItems().filter(function(it){return (it.ref.pin||0)>0}).length;
+  if(pinnedCount>=3){toast("Top 3 is full, unpin one first","chevrons-up");return}
+  f.ref.pin=Date.now();touch(f.ref);save(id);forceRender()
+}
+// Add a brand-new task straight into an open Top 3 slot.
+function addPrimeFresh(){
+  var pinnedCount=visibleItems().filter(function(it){return (it.ref.pin||0)>0}).length;
+  if(pinnedCount>=3){toast("Top 3 is full, unpin one first","chevrons-up");return}
+  uiPrompt("Add to Top 3","",{message:"A top priority task, it goes straight into a focus slot.",okText:"Add"}).then(function(v){
+    if(v==null)return;v=String(v).trim();if(!v)return;
+    var p=parseTags(v);var nid=mid();
+    S.needleMovers.push({id:nid,text:(p.text||v),tags:p.tags,done:false,del:false,ts:Date.now(),pin:Date.now(),mtime:Date.now(),duration:1,venture:(ventureFilter!=="all"&&ventureFilter!=="__gen__"?ventureFilter:"")});
+    save(nid);forceRender();
+  });
+}
 function editTask(id){var f=findRef(id);if(!f)return;var tags=f.ref.tags||[];var cur=(f.ref.text||"")+(tags.length?" "+tags.map(function(t){return "#"+t}).join(" "):"");uiPrompt("Edit task",cur,{multiline:true}).then(function(v){if(v==null)return;v=v.trim();if(!v)return;var p=parseTags(v);f.ref.text=(p.text||v);f.ref.tags=p.tags;touch(f.ref);save(id);forceRender()})}
 /* ===== ON DECK: complete / delete, rebuilt from scratch =====
    These never redraw the whole list. They update state and surgically remove
@@ -1510,7 +1564,7 @@ function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].ste
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderDeck();renderDone();renderToday()}
+  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderPrime();renderDeck();renderDone();renderToday();renderSNotes()}
   else if(activeTab==="goals")renderGoals();
   else if(activeTab==="calendar"){renderCalForm();renderCal()}
   else if(activeTab==="vision")renderVision();
@@ -1587,11 +1641,40 @@ function renderSuggest(){
 
 function schedLabel(ref){if(!ref.date&&ref.startHour==null)return"";var lbl="";if(ref.date){var dd=new Date(ref.date+"T12:00:00");lbl=DSH[dd.getDay()]}if(ref.startHour!=null)lbl+=(lbl?" ":"")+fmtHS(ref.startHour);return lbl}
 
+/* ===== SESSION NOTES (recent work + what's still open to test) ===== */
+function addSNote(){
+  var inp=document.getElementById("snoteInput");if(!inp)return;var v=inp.value.trim();if(!v)return;
+  var nid=mid();
+  S.sessionNotes.push({id:nid,text:v,status:"open",ts:Date.now(),mtime:Date.now(),del:false});
+  inp.value="";inp.style.height="";save(nid);renderSNotes();
+}
+function toggleSNote(id){var n=(S.sessionNotes||[]).find(function(x){return x.id===id});if(!n)return;n.status=(n.status==="done"?"open":"done");touch(n);save(id);renderSNotes()}
+function delSNote(id){var n=(S.sessionNotes||[]).find(function(x){return x.id===id});if(!n)return;n.del=true;touch(n);save(id);renderSNotes()}
+function renderSNotes(){
+  var c=document.getElementById("snoteList");if(!c)return;
+  var list=live(S.sessionNotes).slice().sort(function(a,b){
+    var sa=(a.status==="done")?1:0,sb=(b.status==="done")?1:0;if(sa!==sb)return sa-sb;  // open first
+    return (b.ts||0)-(a.ts||0);                                                          // newest first
+  });
+  var openN=list.filter(function(n){return n.status!=="done"}).length;
+  var cnt=document.getElementById("snoteCount");if(cnt)cnt.textContent=openN?openN+" open":"";
+  c.innerHTML="";
+  if(!list.length){c.innerHTML='<div class="snote-empty">Jot what you just did and what is still open to test. It syncs across your devices.</div>';return}
+  list.forEach(function(n){
+    var el=document.createElement("div");el.className="snote-item"+(n.status==="done"?" done":"");
+    el.innerHTML='<div class="snote-check" onclick="toggleSNote(\''+n.id+'\')" title="'+(n.status==="done"?"Mark open":"Mark tested")+'"><i data-lucide="check"></i></div>'+
+      '<div class="snote-text">'+esc(n.text)+'</div>'+
+      '<button class="snote-x" onclick="delSNote(\''+n.id+'\')" title="Delete"><i data-lucide="x"></i></button>';
+    c.appendChild(el);
+  });
+  icons();
+}
+
 function renderPrime(){
   var g=document.getElementById("primeGrid");if(!g)return;
   var vis=visibleItems();var pinned=vis.filter(function(it){return (it.ref.pin||0)>0}).slice(0,3);
   g.innerHTML="";
-  document.getElementById("primeCount").textContent=vis.length?vis.length+" open":"";
+  var pc=document.getElementById("primeCount");if(pc)pc.textContent=pinned.length+"/3";
   pinned.forEach(function(it,i){
     var sl=schedLabel(it.ref);
     var chips="";
@@ -1612,11 +1695,17 @@ function renderPrime(){
       '</div>';
     g.appendChild(el);
   });
-  if(pinned.length<3){var e=document.createElement("div");e.className="prime empty";e.innerHTML='<i data-lucide="chevrons-up" class="eicon"></i><span style="font-size:13px">'+(pinned.length===0?"Pin your top 3 with the up arrow":"Open focus slot, pin with the up arrow")+'</span>';g.appendChild(e)}
+  for(var k=pinned.length;k<3;k++){
+    var e=document.createElement("div");e.className="prime empty";
+    e.onclick=function(){addPrimeFresh()};
+    e.innerHTML='<i data-lucide="plus" class="eicon"></i><span style="font-size:13px">Add a top task</span>';
+    g.appendChild(e);
+  }
 }
 function renderDeck(){
   var c=document.getElementById("deckList");if(!c)return;
-  var rest=visibleItems();
+  // Pinned items live in the Top 3 strip above, so On Deck shows the rest.
+  var rest=visibleItems().filter(function(it){return !((it.ref.pin||0)>0)});
   c.innerHTML="";
   document.getElementById("deckCount").textContent=rest.length?rest.length:"";
   document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");
@@ -1893,7 +1982,7 @@ function dayHasItems(ds,dow){var has=false;
 /* time options at 15-minute granularity (research: 15/30 are the natural
    intervals, finer feels unnatural). Duration also offers 15/45. */
 function timeOpts(){var o=[];for(var h=SHS;h<=SHE;h++){o.push({value:h,label:fmtH(h)});o.push({value:h+0.25,label:fmtH(h+0.25)});o.push({value:h+0.5,label:fmtH(h+0.5)});o.push({value:h+0.75,label:fmtH(h+0.75)})}return o}
-var DUR_OPTS=[{value:0.25,label:"15 min"},{value:0.5,label:"30 min"},{value:0.75,label:"45 min"},{value:1,label:"1 hr"},{value:1.5,label:"1.5 hr"},{value:2,label:"2 hr"},{value:3,label:"3 hr"},{value:4,label:"4 hr"}];
+var DUR_OPTS=[{value:0.25,label:"15 min"},{value:0.5,label:"30 min"},{value:0.75,label:"45 min"},{value:1,label:"1 hr"},{value:1.5,label:"1.5 hr"},{value:2,label:"2 hr"},{value:3,label:"3 hr"},{value:4,label:"4 hr"},{value:5,label:"5 hr"},{value:6,label:"6 hr"},{value:8,label:"8 hr"},{value:10,label:"10 hr"},{value:12,label:"12 hr"}];
 /* next open 15-min slot from now, within calendar hours (the "Now" default) */
 function nextSlotNow(){var n=new Date();var h=n.getHours()+n.getMinutes()/60;h=Math.ceil(h*4)/4;if(h<SHS)h=SHS;if(h>SHE)h=SHE;return h}
 function renderCalForm(){
@@ -1915,6 +2004,19 @@ function renderCalForm(){
    scrollable container means a 30 minute block always looks like 30 minutes. */
 var HOUR_PX_WIDE=68,HOUR_PX_NARROW=60;
 function hourPx(){try{return (window.innerWidth<=760)?HOUR_PX_NARROW:HOUR_PX_WIDE}catch(e){return HOUR_PX_WIDE}}
+/* Fit-to-view bounds: the day timeline is zoomed so the whole day fits the
+   visible height (no scrolling), clamped so an hour is never unreadably short
+   or needlessly tall. */
+var CAL_MIN_HP=26,CAL_MAX_HP=72;
+/* Click an empty slot on the day timeline to start a new event at that time:
+   prefill the Add Event form's day and start, then focus the title. */
+function calSlotClick(hr){
+  if(hr<SHS)hr=SHS;if(hr>SHE)hr=SHE;
+  var sc=document.getElementById("calStart");if(sc&&sc._ui)sc._ui.set(hr);
+  var dc=document.getElementById("calDay");if(dc&&dc._ui)dc._ui.set(calSelIdx);
+  var t=document.getElementById("calTitle");if(t){try{t.scrollIntoView({block:"nearest"})}catch(e){}t.focus()}
+  toast("New event at "+fmtHS(hr)+", add a title","calendar-plus");
+}
 /* Items that genuinely overlap get side by side lanes instead of stacking on
    top of each other. Lanes are computed per cluster of overlapping items, so
    one collision in the morning does not shrink an unrelated afternoon block. */
@@ -1966,8 +2068,12 @@ function renderCal(){
   live(S.goals).forEach(function(g){live(g.steps).forEach(function(s){if(!s.done&&s.date===selDs&&s.startHour!=null)items.push({kind:"task",h:s.startHour,dur:s.duration||1,title:s.text,id:s.id})})});
   document.getElementById("calDetailHead").innerHTML='<span class="cdh-date">'+sel.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+'</span><span class="cdh-count">'+(items.length?items.length+" scheduled":"Nothing scheduled")+'</span>';
   var grid=document.getElementById("calDetailGrid");grid.innerHTML="";
-  if(!items.length){grid.innerHTML='<div class="cal-detail-empty">Nothing scheduled. Schedule a task or add an event.</div>';renderCalForm();renderEvtList();icons();return}
-  var HP=hourPx(),totalH=span*HP;
+  /* Zoom the day to fit the visible height so every hour, and every event, is
+     on screen at once with no scrolling. When the grid height is not known yet
+     (hidden tab), fall back to fixed per-hour pixels, which scrolls as before. */
+  var gh=grid.clientHeight||0;
+  var HP=(gh>80)?Math.max(CAL_MIN_HP,Math.min(CAL_MAX_HP,Math.floor((gh-8)/span))):hourPx();
+  var totalH=span*HP;
   var scroll=document.createElement("div");scroll.className="cal-scroll";scroll.style.height=totalH+"px";
   /* hour rail */
   var tcol=document.createElement("div");tcol.className="cal-time-col";
@@ -1978,6 +2084,14 @@ function renderCal(){
   var lines="";
   for(var s2=0;s2<span;s2++)lines+='<div class="cal-hourline" style="top:'+(s2*HP)+'px"></div>';
   day.innerHTML=lines;
+  /* Click any empty part of the day (scheduled or not) to start a new event at
+     that time. Clicks on an existing block are handled by the block itself. */
+  day.addEventListener("click",function(ev){
+    if(ev.target.closest(".cal-block"))return;
+    var rect=day.getBoundingClientRect();
+    var hr=SHS+Math.floor((ev.clientY-rect.top)/HP);
+    calSlotClick(hr);
+  });
   assignLanes(items).forEach(function(it){
     var top=(it.h-SHS)*HP;
     var h=Math.max(24,(it.dur||1)*HP-3);
@@ -2007,9 +2121,12 @@ function renderCal(){
   var nowTop=null;
   if(selDs===todayS){var now=new Date(),nowH=now.getHours()+now.getMinutes()/60;if(nowH>=SHS&&nowH<=SHE+1){nowTop=(nowH-SHS)*HP;var line=document.createElement("div");line.className="cal-now";line.style.top=nowTop+"px";day.appendChild(line)}}
   scroll.appendChild(day);grid.appendChild(scroll);
-  /* land the view on now, or on the first thing scheduled */
-  if(!calScrolled){
-    var target=(nowTop!=null?nowTop:(items[0].h-SHS)*HP)-HP;
+  /* Only land the view on now or the first item when the day does not fully fit
+     (fallback/fixed-pixel path). When it is zoomed to fit, everything is already
+     visible, so leave the scroll at the top. */
+  if(!calScrolled&&totalH>gh+2){
+    var firstH=items.length?items[0].h:SHS;
+    var target=(nowTop!=null?nowTop:(firstH-SHS)*HP)-HP;
     grid.scrollTop=Math.max(0,target);calScrolled=true;
   }
   renderCalForm();renderEvtList();icons();
@@ -2723,6 +2840,9 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"){
   document.querySelectorAll(".modal.show").forEach(function(m){m.classList.remove("show")});editingNoteId=null;if(document.getElementById("visionFeed").classList.contains("show"))closeVisionFeed();setTimeout(flushDeferred,120)}});
 function switchTab(id){
   activeTab=id;
+  // The calendar always opens on the month overview; clicking a day drops into
+  // that day's detail from there.
+  if(id==="calendar"){calView="month";calScrolled=false;}
   document.querySelectorAll(".tab-btn,.bn-btn").forEach(function(b){b.classList.toggle("active",b.dataset.tab===id)});
   document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.id==="tab-"+id)});
   document.querySelector(".content").scrollTop=0;
@@ -2730,6 +2850,7 @@ function switchTab(id){
 }
 document.getElementById("nmInput").addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addNM()}});
 document.getElementById("nmInput").addEventListener("input",function(){autoGrowInput(this)});
+(function(){var si=document.getElementById("snoteInput");if(si){si.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addSNote()}});si.addEventListener("input",function(){autoGrowInput(this)})}})();
 document.getElementById("noteInput").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))addNote()});
 document.getElementById("captureInput").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))saveCapture()});
 document.getElementById("noteEditText").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))saveNoteModal()});
