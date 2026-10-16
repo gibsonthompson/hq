@@ -529,9 +529,9 @@ input,textarea,select{font-size:16px}
 .deck-item .dact{opacity:.6;padding:5px}
 .deck-item .dacts .act-del,.deck-item .dacts .act-prompt{display:none}
 .deck-item .dmeta-right{max-width:60%}
-.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(17,20,18,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:5px 6px calc(5px + var(--saf));justify-content:space-around}
-.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:600;cursor:pointer;flex:1;padding:2px 0;letter-spacing:.2px}
-.bn-btn i{width:20px;height:20px}
+.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(17,20,18,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:7px 6px calc(5px + var(--saf) * 0.5);justify-content:space-around}
+.bn-btn{background:none;border:none;color:var(--dim2);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;cursor:pointer;flex:1;padding:3px 0;letter-spacing:.2px}
+.bn-btn i{width:22px;height:22px}
 .deck-item{padding:10px 12px;gap:10px}
 .deck-item .dtext{font-size:14px}
 .deck-item .check{width:20px;height:20px}
@@ -795,15 +795,7 @@ input,textarea,select{font-size:16px}
         </div>
         <div class="cal-side">
           <div class="side-card">
-            <div class="side-title"><i data-lucide="plus-circle"></i> Add Event</div>
-            <div class="ui-sel cal-in" id="calDay"></div>
-            <input class="cal-in" id="calTitle" placeholder="Event title...">
-            <div class="cal-row2">
-              <div class="ui-sel cal-in" id="calStart" style="flex:1;margin-bottom:0"></div>
-              <div class="ui-sel cal-in" id="calDur" style="flex:1;margin-bottom:0"></div>
-            </div>
-            <div class="recur-tog" onclick="calRecur=!calRecur;renderCalForm()"><div class="box" id="calRecurBox"></div> Repeat weekly</div>
-            <button class="add-btn" style="width:100%;justify-content:center" onclick="addEvt()"><i data-lucide="plus"></i> Add Event</button>
+            <button class="add-btn" style="width:100%;justify-content:center" onclick="openEventModal()"><i data-lucide="plus"></i> Add Event</button>
           </div>
           <div class="side-card">
             <div class="side-title"><i data-lucide="list-checks"></i> This Week</div>
@@ -883,6 +875,22 @@ input,textarea,select{font-size:16px}
   <div class="m-actions">
     <button class="m-btn" onclick="unschedule()">Clear</button>
     <button class="m-btn primary" onclick="saveSchedule()">Schedule</button>
+  </div>
+</div></div>
+
+<!-- EVENT MODAL -->
+<div class="modal" id="eventModal"><div class="modal-box">
+  <div class="modal-title"><i data-lucide="calendar-plus"></i> Add event</div>
+  <div class="ui-sel m-in" id="calDay" style="margin-bottom:9px"></div>
+  <input class="m-in" id="calTitle" placeholder="Event title..." onkeydown="if(event.key==='Enter'){event.preventDefault();addEvt()}">
+  <div class="cal-row2" style="margin-bottom:12px">
+    <div class="ui-sel m-in" id="calStart" style="flex:1;margin-bottom:0"></div>
+    <div class="ui-sel m-in" id="calDur" style="flex:1;margin-bottom:0"></div>
+  </div>
+  <div class="recur-tog" onclick="calRecur=!calRecur;renderCalForm()"><div class="box" id="calRecurBox"></div> Repeat weekly</div>
+  <div class="m-actions">
+    <button class="m-btn" onclick="closeModal('eventModal')">Cancel</button>
+    <button class="m-btn primary" onclick="addEvt()"><i data-lucide="plus"></i> Add event</button>
   </div>
 </div></div>
 
@@ -1137,7 +1145,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v31";
+var BUILD="v32";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1197,7 +1205,7 @@ function flushQueue(){clearTimeout(flushTimer);flushTimer=setTimeout(function(){
   markOwnWrite();
   sb.from("hq_items").upsert(rows,{onConflict:"id"}).then(function(r){
     if(r.error){lastSyncError=(r.error.message||r.error.hint||r.error.details||"write rejected");setSync("err");requeue(rows)}
-    else{rows.forEach(function(x){delete pendingIds[x.id]});lastSynced=Date.now();setSync("ok");bumpLastSeen()}
+    else{rows.forEach(function(x){delete pendingIds[x.id]});lastSynced=Date.now();setSync("ok");requestPull("after-write")}
   }).catch(function(e){lastSyncError=(e&&e.message)||"network error during save";setSync("err");requeue(rows)});
 },350)}
 
@@ -1368,7 +1376,7 @@ document.addEventListener("touchend",function(){setTimeout(flushDeferred,180)});
    v20 pulled from a 4s timer, focus, visibilitychange and realtime all at once,
    and realtime also fired on this device's own writes. Everything now funnels
    through one place with a floor, and the poll stops while realtime is live. */
-var MIN_PULL_MS=2500,POLL_MS=5000,FULL_RECONCILE_MS=60000;
+var MIN_PULL_MS=2500,POLL_MS=5000,FULL_RECONCILE_MS=30000;
 var lastPullAt=0,pullTimer=null,pullInFlight=false,rtConnected=false,ownWriteUntil=0,lastSeenUpdatedAt=null,lastFullPullAt=0;
 var lastSyncError="";
 function showSyncBanner(msg){var b=document.getElementById("syncBanner");if(b){b.innerHTML=msg;b.classList.remove("hidden")}}
@@ -2095,12 +2103,19 @@ function hourPx(){try{return (window.innerWidth<=760)?HOUR_PX_NARROW:HOUR_PX_WID
 var CAL_MIN_HP=26,CAL_MAX_HP=72;
 /* Click an empty slot on the day timeline to start a new event at that time:
    prefill the Add Event form's day and start, then focus the title. */
+/* Add Event is a centered modal, not an inline sidebar form: on mobile the
+   keyboard used to shove the inline fields into the dead band above the nav. */
+function openEventModal(prefillHr){
+  renderCalForm();
+  var sc=document.getElementById("calStart");if(sc&&sc._ui)sc._ui.set(prefillHr!=null?prefillHr:nextSlotNow());
+  var dc=document.getElementById("calDay");if(dc&&dc._ui)dc._ui.set(calSelIdx);
+  var t=document.getElementById("calTitle");if(t)t.value="";
+  openModal("eventModal");
+  setTimeout(function(){var ti=document.getElementById("calTitle");if(ti)ti.focus()},130);
+}
 function calSlotClick(hr){
   if(hr<SHS)hr=SHS;if(hr>SHE)hr=SHE;
-  var sc=document.getElementById("calStart");if(sc&&sc._ui)sc._ui.set(hr);
-  var dc=document.getElementById("calDay");if(dc&&dc._ui)dc._ui.set(calSelIdx);
-  var t=document.getElementById("calTitle");if(t){try{t.scrollIntoView({block:"nearest"})}catch(e){}t.focus()}
-  toast("New event at "+fmtHS(hr)+", add a title","calendar-plus");
+  openEventModal(hr);
 }
 /* Items that genuinely overlap get side by side lanes instead of stacking on
    top of each other. Lanes are computed per cluster of overlapping items, so
@@ -2338,8 +2353,8 @@ function addEvt(){var t=document.getElementById("calTitle").value.trim();if(!t)r
   if(slot==null){toast("No open slot that day before "+fmtH(SHE+1),"alert-triangle");return}
   var eid=mid();
   S.calendarEvents.push({id:eid,del:false,ts:Date.now(),mtime:Date.now(),date:ds,startHour:slot,duration:dur,title:t,allDay:false,recurring:calRecur,recurDay:calRecur?dow:null,notes:""});
-  document.getElementById("calTitle").value="";save(eid);renderCal();lastSig=stateSignature();
-  if(Math.abs(slot-reqStart)>0.001)toast("That slot was taken, moved to "+fmtH(slot),"clock");
+  document.getElementById("calTitle").value="";save(eid);closeModal("eventModal");renderCal();lastSig=stateSignature();
+  toast("Event added"+(Math.abs(slot-reqStart)>0.001?", moved to "+fmtH(slot)+" (slot was taken)":""),"calendar-check");
 }
 function rmEvt(id){tomb(id);renderCal();lastSig=stateSignature()}
 
