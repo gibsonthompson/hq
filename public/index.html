@@ -1137,7 +1137,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v29";
+var BUILD="v31";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1304,19 +1304,30 @@ function backfillTs(reupload){
   if(fixed>0)backfilled=true;
 }
 
-/* rows come back in a stable order, so nothing reshuffles between pulls */
+/* rows come back in a stable order, so nothing reshuffles between pulls.
+   Paged: Supabase caps a single read (commonly at 1000 rows), and silently
+   returning only the first 1000 would make applyRows treat every row past the
+   cap as "missing locally" and re-upload stale copies, corrupting sync. We page
+   through in 1000-row chunks so a pull is always the COMPLETE row set. */
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
-  sb.from("hq_items").select("*").eq("user_key","gibson").order("id",{ascending:true}).then(function(res){
-    if(res.error){lastSyncError=(res.error.message||"read failed");remoteLoaded=true;setSync("err");if(cb)cb(false);return}
-    var rows=res.data||[];
-    lastFullPullAt=Date.now();noteUpdatedAt(rows);
-    if(rows.length===0&&dataCount(S)>0){
-      remoteLoaded=true;seedCloud(function(){setSync("ok")});if(cb)cb(true,rows);return}
-    applyRows(rows);
-    renderIfChanged();
-    autoBackup();
-    remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(cb)cb(true,rows);
-  }).catch(function(e){lastSyncError=(e&&e.message)||"network error during read";remoteLoaded=true;setSync("err");if(cb)cb(false)})}
+  var PAGE=1000,acc=[];
+  function page(from){
+    sb.from("hq_items").select("*").eq("user_key","gibson").order("id",{ascending:true}).range(from,from+PAGE-1).then(function(res){
+      if(res.error){lastSyncError=(res.error.message||"read failed");remoteLoaded=true;setSync("err");if(cb)cb(false);return}
+      var got=res.data||[];acc=acc.concat(got);
+      if(got.length===PAGE){page(from+PAGE);return}
+      var rows=acc;
+      lastFullPullAt=Date.now();noteUpdatedAt(rows);
+      if(rows.length===0&&dataCount(S)>0){
+        remoteLoaded=true;seedCloud(function(){setSync("ok")});if(cb)cb(true,rows);return}
+      applyRows(rows);
+      renderIfChanged();
+      autoBackup();
+      remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(cb)cb(true,rows);
+    }).catch(function(e){lastSyncError=(e&&e.message)||"network error during read";remoteLoaded=true;setSync("err");if(cb)cb(false)});
+  }
+  page(0);
+}
 
 /* ---------- the render guard ----------
    A full redraw wipes every container. If it happens while a field is focused

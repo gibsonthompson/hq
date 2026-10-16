@@ -3,7 +3,7 @@
    so a deploy takes effect immediately. Only static assets (icons, libs, fonts)
    are cached, which is what makes cold starts fast and offline work.
    Bump CACHE to invalidate assets. */
-const CACHE = 'hq-assets-v27';
+const CACHE = 'hq-assets-v31';
 /* Only these get cached. Note: index.html is deliberately NOT in this list. */
 const ASSETS = [
   '/manifest.json',
