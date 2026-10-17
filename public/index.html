@@ -714,19 +714,17 @@ input,textarea,select{font-size:16px}
 <div id="syncBanner" class="sync-banner hidden"></div>
 <div class="tab-nav">
   <button class="tab-btn active" data-tab="home" onclick="switchTab('home')"><i data-lucide="target"></i> Home</button>
+  <button class="tab-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i> Priorities</button>
   <button class="tab-btn" data-tab="goals" onclick="switchTab('goals')"><i data-lucide="flag"></i> Goals</button>
   <button class="tab-btn" data-tab="calendar" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i> Calendar</button>
   <button class="tab-btn" data-tab="vision" onclick="switchTab('vision')"><i data-lucide="image"></i> Vision</button>
   <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i> Notes</button>
   <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')"><i data-lucide="folder"></i> Projects</button>
-  <button class="tab-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i> Priorities</button>
 </div>
 
 <div class="content">
   <!-- HOME -->
   <div class="tab active wrap" id="tab-home">
-   <div class="home-cols">
-    <div class="home-main">
     <div class="add-prime">
       <textarea class="add-input" id="nmInput" rows="1" placeholder="Add a task…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
       <button class="add-btn" onclick="addNM()"><i data-lucide="plus"></i> Add</button>
@@ -761,16 +759,6 @@ input,textarea,select{font-size:16px}
 
     <div class="sec-head"><div class="sec-title"><i data-lucide="clock"></i> Today</div></div>
     <div class="today-list" id="todayList"></div>
-    </div><!-- /home-main -->
-    <aside class="home-side">
-      <div class="sec-head"><div class="sec-title"><i data-lucide="notebook-pen"></i> Session Notes <span class="count" id="snoteCount"></span></div></div>
-      <div class="add-prime snote-add">
-        <textarea class="add-input" id="snoteInput" rows="1" placeholder="Did X. Still need to test Y…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
-        <button class="add-btn snote-add-btn" onclick="addSNote()" title="Add note"><i data-lucide="plus"></i></button>
-      </div>
-      <div class="snote-list" id="snoteList"></div>
-    </aside>
-   </div><!-- /home-cols -->
   </div>
 
   <!-- GOALS -->
@@ -854,22 +842,34 @@ input,textarea,select{font-size:16px}
   </div>
 
   <!-- PRIORITIES -->
-  <div class="tab wrap" id="tab-priorities" style="max-width:860px">
-    <div class="vhead">
-      <div class="sec-title"><i data-lucide="signal"></i> Priorities</div>
-    </div>
-    <div id="prioBody"></div>
+  <div class="tab wrap" id="tab-priorities">
+   <div class="home-cols">
+    <div class="home-main">
+      <div class="vhead">
+        <div class="sec-title"><i data-lucide="signal"></i> Priorities</div>
+      </div>
+      <div id="prioBody"></div>
+    </div><!-- /home-main -->
+    <aside class="home-side">
+      <div class="sec-head"><div class="sec-title"><i data-lucide="notebook-pen"></i> Session Notes <span class="count" id="snoteCount"></span></div></div>
+      <div class="add-prime snote-add">
+        <textarea class="add-input" id="snoteInput" rows="1" placeholder="Did X. Still need to test Y…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
+        <button class="add-btn snote-add-btn" onclick="addSNote()" title="Add note"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="snote-list" id="snoteList"></div>
+    </aside>
+   </div><!-- /home-cols -->
   </div>
 </div>
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <button class="bn-btn active" data-tab="home" onclick="switchTab('home')"><i data-lucide="target"></i>Home</button>
+  <button class="bn-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i>Priority</button>
   <button class="bn-btn" data-tab="goals" onclick="switchTab('goals')"><i data-lucide="flag"></i>Goals</button>
   <button class="bn-btn" data-tab="calendar" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i>Cal</button>
   <button class="bn-btn" data-tab="vision" onclick="switchTab('vision')"><i data-lucide="image"></i>Vision</button>
   <button class="bn-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i>Notes</button>
-  <button class="bn-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i>Priority</button>
 </div>
 
 
@@ -1184,7 +1184,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v33";
+var BUILD="v34";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1677,13 +1677,13 @@ function pullStep(stepId){for(var i=0;i<S.goals.length;i++){var s=S.goals[i].ste
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderPrime();renderDeck();renderDone();renderToday();renderSNotes()}
+  if(activeTab==="home"){renderReminders();renderSuggest();renderTags();renderVentures();renderPrime();renderDeck();renderDone();renderToday()}
   else if(activeTab==="goals")renderGoals();
   else if(activeTab==="calendar"){renderCalForm();renderCal()}
   else if(activeTab==="vision")renderVision();
   else if(activeTab==="notes")renderNotes();
   else if(activeTab==="projects")renderProjects();
-  else if(activeTab==="priorities")renderPriorities();
+  else if(activeTab==="priorities"){renderPriorities();renderSNotes()}
   icons();
   lastSig=stateSignature();
 }
