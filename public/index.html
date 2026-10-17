@@ -175,6 +175,22 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 .prime .premove{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:8px;border:none;background:rgba(255,255,255,0.045);color:var(--dim2);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.65;transition:all .15s;z-index:3}
 .prime .premove:hover{opacity:1;background:rgba(240,133,126,0.18);color:#f0857e}
 .prime .premove i{width:15px;height:15px}
+/* Priority */
+.deck-item{position:relative}
+.deck-item.prio-3::before,.deck-item.prio-2::before,.deck-item.prio-1::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0}
+.deck-item.prio-3::before{background:var(--red)}
+.deck-item.prio-2::before{background:var(--amb)}
+.deck-item.prio-1::before{background:var(--cy)}
+.deck-item .act-prio i{width:15px;height:15px}
+.prio-opts{display:flex;flex-direction:column;gap:9px}
+.prio-opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line2);border-radius:12px;color:var(--tx);padding:13px 15px;font-size:14.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.prio-opt:hover{background:var(--hov)}
+.prio-opt.on{border-color:var(--vio);background:rgba(70,209,135,0.12)}
+.prio-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.prio-sec{margin-bottom:24px}
+.prio-head{display:flex;align-items:center;gap:9px;font-family:'Sora';font-weight:700;font-size:14px;margin-bottom:12px;letter-spacing:.2px}
+.prio-head .prio-ct{margin-left:auto;font-size:12px;color:var(--dim2);font-weight:700;background:var(--surface);border:1px solid var(--line2);border-radius:20px;padding:2px 10px}
+.prio-list .deck-item{margin-bottom:8px}
 .deck-item:hover{background:var(--elev)}
 .deck-item.pinned{border-left:3px solid var(--vio)}
 .deck-item.deck-done-flash{background:rgba(70,209,135,0.22);border-color:rgba(70,209,135,0.55)}
@@ -703,6 +719,7 @@ input,textarea,select{font-size:16px}
   <button class="tab-btn" data-tab="vision" onclick="switchTab('vision')"><i data-lucide="image"></i> Vision</button>
   <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i> Notes</button>
   <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')"><i data-lucide="folder"></i> Projects</button>
+  <button class="tab-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i> Priorities</button>
 </div>
 
 <div class="content">
@@ -726,6 +743,7 @@ input,textarea,select{font-size:16px}
     <div class="sec-head" id="deckHead">
       <div class="sec-title"><i data-lucide="layers"></i> On Deck <span class="count" id="deckCount"></span></div>
       <div class="sec-tools">
+        <button class="sweep-btn icon-only" onclick="switchTab('priorities')" title="See all tasks by priority"><i data-lucide="signal"></i></button>
         <button class="sweep-btn icon-only" id="searchToggle" onclick="toggleSearch()" title="Search tasks"><i data-lucide="search"></i></button>
       </div>
     </div>
@@ -834,6 +852,14 @@ input,textarea,select{font-size:16px}
     </div>
     <div class="proj-grid" id="projGrid"></div>
   </div>
+
+  <!-- PRIORITIES -->
+  <div class="tab wrap" id="tab-priorities" style="max-width:860px">
+    <div class="vhead">
+      <div class="sec-title"><i data-lucide="signal"></i> Priorities</div>
+    </div>
+    <div id="prioBody"></div>
+  </div>
 </div>
 
 <!-- BOTTOM NAV -->
@@ -843,6 +869,7 @@ input,textarea,select{font-size:16px}
   <button class="bn-btn" data-tab="calendar" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i>Cal</button>
   <button class="bn-btn" data-tab="vision" onclick="switchTab('vision')"><i data-lucide="image"></i>Vision</button>
   <button class="bn-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i>Notes</button>
+  <button class="bn-btn" data-tab="priorities" onclick="switchTab('priorities')"><i data-lucide="signal"></i>Priority</button>
 </div>
 
 
@@ -891,6 +918,18 @@ input,textarea,select{font-size:16px}
   <div class="m-actions">
     <button class="m-btn" onclick="closeModal('eventModal')">Cancel</button>
     <button class="m-btn primary" onclick="addEvt()"><i data-lucide="plus"></i> Add event</button>
+  </div>
+</div></div>
+
+<!-- PRIORITY MODAL -->
+<div class="modal" id="prioModal"><div class="modal-box">
+  <div class="modal-title"><i data-lucide="flag"></i> Set priority</div>
+  <div id="prioTgt" style="font-size:14px;color:var(--dim);margin-bottom:16px;line-height:1.4"></div>
+  <div class="prio-opts">
+    <button class="prio-opt" data-lvl="3" onclick="choosePrio(3)"><span class="prio-dot" style="background:var(--red)"></span> High</button>
+    <button class="prio-opt" data-lvl="2" onclick="choosePrio(2)"><span class="prio-dot" style="background:var(--amb)"></span> Medium</button>
+    <button class="prio-opt" data-lvl="1" onclick="choosePrio(1)"><span class="prio-dot" style="background:var(--cy)"></span> Low</button>
+    <button class="prio-opt" data-lvl="0" onclick="choosePrio(0)"><span class="prio-dot" style="background:var(--dim2)"></span> None</button>
   </div>
 </div></div>
 
@@ -1099,8 +1138,8 @@ function initSb(){
 }
 initSb();
 
-function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1,venture:""};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1,venture:(x.venture||"")}})}
-function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),mtime:(g.mtime!=null?g.mtime:(g.created||1)),del:!!g.del,archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ts:(s.ts||s.ord||Date.now()),pin:(s.pin!=null?s.pin:0),mtime:(s.mtime!=null?s.mtime:(s.ts||1)),del:!!s.del,date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1}})}})}
+function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1,venture:""};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1,venture:(x.venture||""),prio:(x.prio!=null?x.prio:0)}})}
+function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),mtime:(g.mtime!=null?g.mtime:(g.created||1)),del:!!g.del,archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ts:(s.ts||s.ord||Date.now()),pin:(s.pin!=null?s.pin:0),mtime:(s.mtime!=null?s.mtime:(s.ts||1)),del:!!s.del,date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1,prio:(s.prio!=null?s.prio:0)}})}})}
 /* ts is preserved, never regenerated, so ordering is stable across pulls */
 function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];
   var ca=(p.ca!=null?p.ca:null),ts=(p.ts!=null?p.ts:(ca!=null?ca:(p.mtime||1)));
@@ -1145,7 +1184,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v32";
+var BUILD="v33";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1644,6 +1683,7 @@ function R(){
   else if(activeTab==="vision")renderVision();
   else if(activeTab==="notes")renderNotes();
   else if(activeTab==="projects")renderProjects();
+  else if(activeTab==="priorities")renderPriorities();
   icons();
   lastSig=stateSignature();
 }
@@ -1785,31 +1825,62 @@ function renderDeck(){
   document.getElementById("deckHead").classList.remove("hidden");c.classList.remove("hidden");
   if(!rest.length){c.innerHTML='<div class="empty-note">No tasks yet. Type one above.</div>';return}
   rest.forEach(function(it){
-    var sl=schedLabel(it.ref);var pinned=(it.ref.pin||0)>0;
-    var el=document.createElement("div");el.className="deck-item"+(pinned?" pinned":"");el.setAttribute("data-id",it.id);
-    // Meta line under the title: goal + hashtags on the left, business and
-    // schedule pushed to the right. Keeps the title full-width instead of being
-    // squeezed by the chips.
-    var metaLeft="";
-    if(it.kind==="step")metaLeft+='<span class="dgoal">'+esc(it.goalTitle.slice(0,18))+'</span>';
-    (it.ref.tags||[]).forEach(function(t){var lc=labelColor(t);metaLeft+='<span class="dtag-label dtag-filter" data-tag="'+esc(t)+'" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t)+'</span>'});
-    var metaRight="";
-    if(it.ref.venture)metaRight+='<span class="dtag dtag-venture" title="'+esc(it.ref.venture)+'"><i data-lucide="briefcase"></i>'+esc(it.ref.venture)+'</span>';
-    if(sl)metaRight+='<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>';
-    var metaHtml=(metaLeft||metaRight)?('<div class="dmeta">'+metaLeft+(metaRight?'<span class="dmeta-right">'+metaRight+'</span>':'')+'</div>'):'';
-    el.innerHTML='<div class="check"><i data-lucide="check"></i></div>'+
-      '<div class="dbody"><div class="dtext">'+esc(it.text)+'</div>'+metaHtml+'</div>'+
-      '<div class="dacts">'+
-        '<button class="dact act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
-        '<button class="dact act-label" title="Labels"><i data-lucide="tag"></i></button>'+
-        '<button class="dact act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
-        '<button class="dact act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>'+
-        '<button class="dact act-del" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>'+
-      '</div>';
+    var el=document.createElement("div");el.className=deckRowClass(it);el.setAttribute("data-id",it.id);
+    el.innerHTML=taskRowInner(it);
     attachSwipe(el,it.id,it.kind);
     c.appendChild(el);
   });
   icons();
+}
+// Priority levels. Higher number = more important, drives sort + color.
+var PRIO={3:{label:"High",color:"var(--red)"},2:{label:"Medium",color:"var(--amb)"},1:{label:"Low",color:"var(--cy)"},0:{label:"None",color:"var(--dim2)"}};
+function deckRowClass(it){var pinned=(it.ref.pin||0)>0;var p=it.ref.prio||0;return "deck-item"+(pinned?" pinned":"")+(p?(" prio-"+p):"")}
+// Shared task-row markup, used by On Deck and the Priorities page so both behave
+// identically (complete, edit, pin, label, schedule, set priority).
+function taskRowInner(it){
+  var sl=schedLabel(it.ref);
+  var metaLeft="";
+  if(it.kind==="step")metaLeft+='<span class="dgoal">'+esc(it.goalTitle.slice(0,18))+'</span>';
+  (it.ref.tags||[]).forEach(function(t){var lc=labelColor(t);metaLeft+='<span class="dtag-label dtag-filter" data-tag="'+esc(t)+'" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t)+'</span>'});
+  var metaRight="";
+  if(it.ref.venture)metaRight+='<span class="dtag dtag-venture" title="'+esc(it.ref.venture)+'"><i data-lucide="briefcase"></i>'+esc(it.ref.venture)+'</span>';
+  if(sl)metaRight+='<span class="dsched"><i data-lucide="clock"></i>'+esc(sl)+'</span>';
+  var metaHtml=(metaLeft||metaRight)?('<div class="dmeta">'+metaLeft+(metaRight?'<span class="dmeta-right">'+metaRight+'</span>':'')+'</div>'):'';
+  var pinned=(it.ref.pin||0)>0;var p=it.ref.prio||0;var pcol=p?PRIO[p].color:"var(--dim2)";
+  return '<div class="check"><i data-lucide="check"></i></div>'+
+    '<div class="dbody"><div class="dtext">'+esc(it.text)+'</div>'+metaHtml+'</div>'+
+    '<div class="dacts">'+
+      '<button class="dact act-prio" title="Set priority" style="color:'+pcol+(p?';opacity:1':'')+'"><i data-lucide="flag"></i></button>'+
+      '<button class="dact act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
+      '<button class="dact act-label" title="Labels"><i data-lucide="tag"></i></button>'+
+      '<button class="dact act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
+      '<button class="dact act-pin" title="'+(pinned?'Unpin':'Pin to top')+'"><i data-lucide="'+(pinned?'chevrons-down':'chevrons-up')+'"></i></button>'+
+      '<button class="dact act-del" title="'+(it.kind==="step"?"Remove from Today":"Delete")+'"><i data-lucide="x"></i></button>'+
+    '</div>';
+}
+// ---- Priority setting ----
+var prioTargetId=null;
+function setPrio(id,level){var f=findRef(id);if(!f)return;f.ref.prio=level;touch(f.ref);save(id);forceRender();toast(level?("Priority set to "+PRIO[level].label):"Priority cleared","flag")}
+function openPrio(id){var f=findRef(id);if(!f)return;prioTargetId=id;
+  document.getElementById("prioTgt").textContent=f.ref.text||"";
+  var cur=f.ref.prio||0;
+  document.querySelectorAll("#prioModal .prio-opt").forEach(function(b){b.classList.toggle("on",parseInt(b.dataset.lvl)===cur)});
+  openModal("prioModal");}
+function choosePrio(level){var id=prioTargetId;prioTargetId=null;closeModal("prioModal");if(id!=null)setPrio(id,level)}
+// ---- Priorities page ----
+function renderPriorities(){
+  var mount=document.getElementById("prioBody");if(!mount)return;
+  var items=todayItems(); // every open task: standalone tasks + goal steps on Today
+  var groups={3:[],2:[],1:[],0:[]};
+  items.forEach(function(it){var p=it.ref.prio||0;(groups[p]||groups[0]).push(it)});
+  Object.keys(groups).forEach(function(k){groups[k].sort(function(a,b){var pa=(a.ref.pin||0)>0?1:0,pb=(b.ref.pin||0)>0?1:0;if(pa!==pb)return pb-pa;return (b.ref.ts||0)-(a.ref.ts||0)})});
+  if(!items.length){mount.innerHTML='<div class="mny-empty"><i data-lucide="signal" style="width:34px;height:34px;opacity:.4"></i><p style="margin:14px 0 6px;font-weight:600;color:var(--dim)">No open tasks</p><p style="font-size:13px">Add tasks on Home, then flag their priority to see them ranked here.</p></div>';icons();return}
+  var h="";[3,2,1,0].forEach(function(lvl){var arr=groups[lvl];if(!arr.length)return;var P=PRIO[lvl];
+    h+='<div class="prio-sec"><div class="prio-head"><span class="prio-dot" style="background:'+P.color+'"></span><span style="color:'+P.color+'">'+(lvl?P.label:"Unprioritized")+'</span><span class="prio-ct">'+arr.length+'</span></div><div class="prio-list">';
+    arr.forEach(function(it){h+='<div class="'+deckRowClass(it)+'" data-id="'+it.id+'">'+taskRowInner(it)+'</div>'});
+    h+='</div></div>';
+  });
+  mount.innerHTML=h;icons();
 }
 /* ===== CLAUDE PROMPT FORMATTER =====
    Turns a shorthand task into a drop-in, high-effectiveness prompt for Claude.
@@ -2989,8 +3060,9 @@ if('serviceWorker' in navigator){
    reliable way to wire a list that re-renders. */
 document.addEventListener("click",function(ev){
   var row=ev.target.closest?ev.target.closest(".deck-item"):null;
-  if(!row||!row.parentNode||row.parentNode.id!=="deckList")return;
+  if(!row||!(row.closest("#deckList")||row.closest("#prioBody")))return;
   var id=row.getAttribute("data-id");if(!id)return;
+  if(ev.target.closest(".act-prio")){openPrio(id);return}
   if(ev.target.closest(".act-label")){pickLabel(id);return}
   var _tf=ev.target.closest(".dtag-filter");if(_tf){taskFilter=_tf.getAttribute("data-tag")||"all";renderTaskViews();return}
   if(ev.target.closest(".act-edit")){editTask(id);return}
