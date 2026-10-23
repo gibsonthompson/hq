@@ -1233,7 +1233,7 @@ function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
-function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
+function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
@@ -1260,7 +1260,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v35";
+var BUILD="v36";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -3145,7 +3145,7 @@ function renderMoney(){
     h+='<div class="txn-row" onclick="openTxnEdit(\''+t.id+'\')">'+
       '<div class="txn-ico" style="background:'+(t.direction==="in"?"rgba(70,209,135,0.14)":lc.bg)+'"><i data-lucide="'+(t.direction==="in"?"arrow-down-left":"arrow-up-right")+'" style="color:'+(t.direction==="in"?"var(--grn)":lc.fg)+'"></i></div>'+
       '<div class="txn-main"><div class="txn-merch">'+esc(t.merchant||"Unknown")+(low?' <span title="Low confidence, tap to check" style="color:var(--amb)">?</span>':'')+'</div>'+
-      '<div class="txn-meta">'+ds+'<span class="cat-chip" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t.category)+'</span>'+(t.business?'<span style="color:var(--dim)">'+esc(t.business)+'</span>':'')+(t.account?'<span>'+esc(t.account)+'</span>':'')+'</div></div>'+
+      '<div class="txn-meta">'+ds+'<span class="cat-chip" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t.category)+'</span>'+(t.business?'<span style="color:var(--dim)">'+esc(t.business)+'</span>':'')+(t.account?'<span>'+esc(t.account)+'</span>':'')+(t.sender?'<span style="color:var(--dim2)">via '+esc(t.sender)+'</span>':'')+'</div></div>'+
       '<div class="txn-amt '+(t.direction==="in"?"in":"out")+'">'+(t.direction==="in"?"+":"−")+fmtMoney(t.amount)+'</div>'+
       '</div>'});
   h+='</div>';
