@@ -193,6 +193,17 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .btn-ghost{display:inline-flex;align-items:center;gap:7px;background:var(--elev);border:1px solid var(--line2);color:var(--vio2);border-radius:11px;padding:11px 17px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:14px}
 .btn-ghost:hover{border-color:var(--vio)}
 .btn-ghost i{width:15px;height:15px}
+/* subscriptions / recurring */
+.sub-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--elev);margin-bottom:8px}
+.sub-ico{width:32px;height:32px;border-radius:9px;background:rgba(139,156,240,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sub-ico i{width:15px;height:15px;color:#a9b6f5}
+.sub-main{flex:1;min-width:0}
+.sub-name{font-weight:600;font-size:14px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-sub{font-size:11.5px;color:var(--dim2);margin-top:2px}
+.sub-amt{font-family:'Sora';font-weight:700;font-size:14px;color:var(--tx);font-variant-numeric:tabular-nums;flex-shrink:0}
+.sub-amt span{font-size:11px;color:var(--dim2);font-weight:600;margin-left:1px}
+.rec-badge{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:5px;border:1px solid rgba(139,156,240,0.4);color:#a9b6f5}
+.rec-badge i{width:9px;height:9px}
 </style>
 </head>
 <body>
@@ -246,6 +257,11 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
     </div>
     <div class="f-label">Category</div>
     <div class="ui-sel" id="txnCategory"></div>
+    <div class="f-label">Recurring</div>
+    <div class="seg" id="segRec">
+      <div class="sg" data-rec="no" onclick="pickTxnRec(false)">One-time</div>
+      <div class="sg" data-rec="yes" onclick="pickTxnRec(true)">Subscription</div>
+    </div>
     <div class="f-label">Date</div>
     <button class="date-btn" id="txnDate" data-value="" onclick="openDatePicker(this)"><i data-lucide="calendar"></i><span>Pick a date</span></button>
     <div class="f-label">Account / note <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
@@ -320,7 +336,7 @@ var CAT_BUSINESS=["Software","Telephony","AI & Compute","Hosting","Advertising",
 
 /* ---------- state ---------- */
 var S={transactions:[],ventures:[]};
-function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":(t.source==="email"?"email":"sms")),confidence:(t.confidence==null?null:Number(t.confidence)),sample:!!t.sample,del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
+function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":(t.source==="email"?"email":"sms")),confidence:(t.confidence==null?null:Number(t.confidence)),recurring:!!t.recurring,sample:!!t.sample,del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("money_d");if(d){var p=JSON.parse(d);S.transactions=normalizeTxn(p.transactions||[]);S.ventures=(p.ventures||[])}}catch(e){}}
 function saveLocal(){try{localStorage.setItem("money_d",JSON.stringify({transactions:S.transactions,ventures:S.ventures}))}catch(e){}}
@@ -507,6 +523,39 @@ function pnlHtml(all){
   return h+'</div>';
 }
 
+/* ---- recurring / subscription detection ----
+   A charge is treated as recurring if it is explicitly flagged (parser or the
+   Subscription toggle), is in the Subscriptions category, OR the same merchant
+   recurs across 2+ months at a similar amount (within 15%). */
+var _subKeys={};
+function normMerch(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+function detectSubs(all){
+  var g={};
+  all.forEach(function(t){if(t.direction!=="out")return;var k=normMerch(t.merchant)||"unknown";
+    if(!g[k])g[k]={merchant:t.merchant||"Unknown",amts:[],months:{},lastTs:0,flagged:false};
+    var e=g[k];e.amts.push(t.amount);e.months[new Date(txnTime(t)).getFullYear()+"-"+new Date(txnTime(t)).getMonth()]=true;
+    if(txnTime(t)>=e.lastTs){e.lastTs=txnTime(t);e.merchant=t.merchant||e.merchant}
+    if(t.recurring||t.category==="Subscriptions")e.flagged=true;});
+  var subs=[];
+  Object.keys(g).forEach(function(k){var e=g[k];var months=Object.keys(e.months).length;
+    var amts=e.amts.slice().sort(function(a,b){return a-b});var med=amts[Math.floor(amts.length/2)];
+    var similar=amts.every(function(a){return med>0&&Math.abs(a-med)/med<=0.15});
+    if(e.flagged||(months>=2&&similar))subs.push({key:k,merchant:e.merchant,amount:med,months:months,lastTs:e.lastTs});});
+  subs.sort(function(a,b){return b.amount-a.amount});
+  return subs;
+}
+function subsHtml(all){
+  var subs=detectSubs(all);var keys={};subs.forEach(function(s){keys[s.key]=true});
+  if(!subs.length)return{html:'',keys:keys};
+  var total=0;subs.forEach(function(s){total+=s.amount});
+  var h='<div class="mny-sec"><div class="ms-head"><div class="ms-title"><i data-lucide="repeat"></i> Subscriptions &amp; recurring</div><div class="ms-meta">~'+fmtMoney(total)+'/mo · '+fmtMoney(total*12)+'/yr</div></div>';
+  subs.forEach(function(s){var last=new Date(s.lastTs).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    h+='<div class="sub-row"><div class="sub-ico"><i data-lucide="repeat"></i></div><div class="sub-main"><div class="sub-name">'+esc(s.merchant)+'</div><div class="sub-sub">'+(s.months>1?s.months+' months seen · ':'')+'last '+last+'</div></div><div class="sub-amt">'+fmtMoney(s.amount)+'<span>/mo</span></div></div>'});
+  return{html:h+'</div>',keys:keys};
+}
+function isRecurring(t){return !!(t.recurring||t.category==="Subscriptions"||_subKeys[normMerch(t.merchant)])}
+function recBadge(t){return isRecurring(t)?'<span class="rec-badge"><i data-lucide="repeat"></i>recurring</span>':''}
+
 function renderMoney(){
   var ps=document.getElementById("moneyPeriodSel");
   if(ps&&!ps._ui)uiSelect(ps,[{value:"month",label:"This month"},{value:"lastmonth",label:"Last month"},{value:"30d",label:"Last 30 days"},{value:"year",label:"This year"},{value:"all",label:"All time"}],moneyPeriod,function(v){moneyPeriod=v;renderMoney()});
@@ -528,6 +577,7 @@ function renderMoney(){
     '</div>';
   h+=trendHtml();
   h+=pnlHtml(all);
+  var subRes=subsHtml(all);_subKeys=subRes.keys;h+=subRes.html;
   var byCat={},catOut=0;all.forEach(function(t){if(t.direction!=="out")return;byCat[t.category]=(byCat[t.category]||0)+t.amount;catOut+=t.amount});
   var cats=Object.keys(byCat).map(function(k){return{name:k,amt:byCat[k]}}).sort(function(a,b){return b.amt-a.amt});
   if(cats.length){var max=cats[0].amt||1;
@@ -588,7 +638,7 @@ function renderTxnList(){
       h+='<div class="txn-row" onclick="openTxnEdit(\''+t.id+'\')">'+
         '<div class="txn-ico" style="background:'+(t.direction==="in"?"rgba(70,209,135,0.14)":lc.bg)+'"><i data-lucide="'+(t.direction==="in"?"arrow-down-left":"arrow-up-right")+'" style="color:'+(t.direction==="in"?"var(--grn)":lc.fg)+'"></i></div>'+
         '<div class="txn-main"><div class="txn-merch">'+esc(t.merchant||"Unknown")+(low?' <span title="Low confidence, tap to check" style="color:var(--amb)">?</span>':'')+'</div>'+
-        '<div class="txn-meta"><span class="cat-chip" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t.category)+'</span>'+(t.business?'<span style="color:var(--dim)">'+esc(t.business)+'</span>':'')+(t.account?'<span>'+esc(t.account)+'</span>':'')+(t.sender?'<span style="color:var(--dim2)">via '+esc(t.sender)+'</span>':'')+srcBadge(t)+'</div></div>'+
+        '<div class="txn-meta"><span class="cat-chip" style="color:'+lc.fg+';background:'+lc.bg+';border-color:'+lc.bd+'">'+esc(t.category)+'</span>'+(t.business?'<span style="color:var(--dim)">'+esc(t.business)+'</span>':'')+(t.account?'<span>'+esc(t.account)+'</span>':'')+(t.sender?'<span style="color:var(--dim2)">via '+esc(t.sender)+'</span>':'')+srcBadge(t)+recBadge(t)+'</div></div>'+
         '<div class="txn-amt '+(t.direction==="in"?"in":"out")+'">'+(t.direction==="in"?"+":"−")+fmtMoney(t.amount)+'</div>'+
         '</div>'});
   });
@@ -624,7 +674,8 @@ function loadSampleData(){var arr=sampleTxns();arr.forEach(function(t){S.transac
 function clearSampleData(){var n=0;txList().forEach(function(t){if(t.sample){t.del=true;t.mtime=Date.now();save(t.id);n++}});forceRender();toast(n+" sample transactions cleared","trash-2")}
 
 /* ---------- transaction modal ---------- */
-var txnDir="out",txnType="personal",editingTxnId=null;
+var txnDir="out",txnType="personal",txnRec=false,editingTxnId=null;
+function pickTxnRec(v){txnRec=!!v;document.querySelectorAll("#segRec [data-rec]").forEach(function(x){x.classList.toggle("on",x.dataset.rec===(v?"yes":"no"))})}
 function ventureNames(){var set={};(S.ventures||[]).forEach(function(n){if(n)set[n]=true});live(S.transactions).forEach(function(t){if(t.business)set[t.business]=true});return Object.keys(set).sort()}
 function catOptsFor(type){return (type==="business"?CAT_BUSINESS:CAT_PERSONAL).map(function(c){return{value:c,label:c}})}
 function bizOptsNow(current){var names=ventureNames();if(current&&names.indexOf(current)<0)names.unshift(current);var o=[{value:"",label:"— none —"}];names.forEach(function(n){o.push({value:n,label:n})});return o}
@@ -642,7 +693,7 @@ function openTxnModal(){editingTxnId=null;txnDir="out";txnType="personal";
   document.getElementById("txnAmount").value="";document.getElementById("txnMerchant").value="";
   setTxnDate(todayStr());
   document.getElementById("txnAccount").value="";document.getElementById("txnNote").value="";
-  ensureTxnSelects();pickTxnDir("out");pickTxnType("personal");
+  ensureTxnSelects();pickTxnDir("out");pickTxnType("personal");pickTxnRec(false);
   document.getElementById("txnBusiness")._ui.setOptions(bizOptsNow(""),"");
   document.getElementById("txnCategory")._ui.setOptions(catOptsFor("personal"),"Other");
   openModal("txnModal");setTimeout(function(){try{document.getElementById("txnAmount").focus()}catch(e){}},100)}
@@ -652,7 +703,7 @@ function openTxnEdit(id){var t=txList().find(function(x){return x.id===id});if(!
   document.getElementById("txnAmount").value=t.amount;document.getElementById("txnMerchant").value=t.merchant||"";
   var dv=(t.postedDate&&/^\d{4}-\d{2}-\d{2}$/.test(t.postedDate))?t.postedDate:new Date(t.ts).toISOString().slice(0,10);setTxnDate(dv);
   document.getElementById("txnAccount").value=t.account||"";document.getElementById("txnNote").value=t.note||"";
-  ensureTxnSelects();pickTxnDir(t.direction);pickTxnType(t.type);
+  ensureTxnSelects();pickTxnDir(t.direction);pickTxnType(t.type);pickTxnRec(!!t.recurring||t.category==="Subscriptions");
   document.getElementById("txnBusiness")._ui.setOptions(bizOptsNow(t.business||""),t.business||"");
   document.getElementById("txnCategory")._ui.setOptions(catOptsFor(t.type),t.category||"Other");
   openModal("txnModal")}
@@ -666,8 +717,8 @@ function saveTxn(){var amt=parseFloat(document.getElementById("txnAmount").value
   var category=(cc?cc.get():"")||"Other";
   var now=Date.now();
   if(editingTxnId){var t=txList().find(function(x){return x.id===editingTxnId});if(!t){closeModal("txnModal");return}
-    t.amount=Math.round(amt*100)/100;t.direction=txnDir;t.merchant=merchant;t.category=category;t.account=account;t.business=business;t.type=txnType;t.postedDate=date;t.note=note;t.mtime=now;save(t.id);
-  }else{var tx={id:mid(),amount:Math.round(amt*100)/100,direction:txnDir,merchant:merchant||"Unknown",category:category,account:account,sender:"",business:business,type:txnType,postedDate:date,note:note,raw:"",source:"manual",confidence:null,del:false,ts:now,mtime:now};S.transactions.push(tx);save(tx.id)}
+    t.amount=Math.round(amt*100)/100;t.direction=txnDir;t.merchant=merchant;t.category=category;t.account=account;t.business=business;t.type=txnType;t.postedDate=date;t.note=note;t.recurring=txnRec;t.mtime=now;save(t.id);
+  }else{var tx={id:mid(),amount:Math.round(amt*100)/100,direction:txnDir,merchant:merchant||"Unknown",category:category,account:account,sender:"",business:business,type:txnType,postedDate:date,note:note,raw:"",source:"manual",confidence:null,recurring:txnRec,del:false,ts:now,mtime:now};S.transactions.push(tx);save(tx.id)}
   closeModal("txnModal");forceRender();toast(editingTxnId?"Transaction updated":"Transaction added","check-circle");editingTxnId=null}
 function deleteTxn(){if(!editingTxnId)return;var id=editingTxnId;
   uiConfirm("Delete this transaction?",{title:"Delete transaction",okText:"Delete",danger:true}).then(function(go){if(!go)return;
