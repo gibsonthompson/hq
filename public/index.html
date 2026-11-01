@@ -903,6 +903,7 @@ input,textarea,select{font-size:16px}
       <div class="sec-title"><i data-lucide="wallet"></i> Money</div>
       <div class="mny-head-actions">
         <div class="ui-sel" id="moneyPeriodSel" style="min-width:150px"></div>
+        <a class="add-btn" href="/money.html" title="Open the full Money tracker" style="background:var(--elev);border:1px solid var(--line2);color:var(--vio2);text-decoration:none"><i data-lucide="external-link"></i> Full page</a>
         <button class="add-btn" onclick="openTxnModal()"><i data-lucide="plus"></i> Add</button>
       </div>
     </div>
@@ -1260,7 +1261,7 @@ function saveLocal(){
 }
 
 var remoteLoaded=false,lastSynced=0,syncState="idle";
-var BUILD="v37";
+var BUILD="v38";
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
