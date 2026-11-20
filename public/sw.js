@@ -1,7 +1,7 @@
-/* HQ service worker (v40)
+/* HQ service worker (v41)
 
    RULES
-   1. App pages (/, index.html, money.html) are ALWAYS fetched from the network
+   1. App pages (/, index.html) are ALWAYS fetched from the network
       first with no-store, so a deploy shows up on the next load. If the network
       is down or hangs past NAV_TIMEOUT_MS, the last good copy of THAT page is
       served so the app still opens; the in-page update check then pulls the new
@@ -17,7 +17,7 @@
 
    Bump CACHE on every release. */
 
-const CACHE = 'hq-assets-v40';
+const CACHE = 'hq-assets-v41';
 const ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
@@ -51,7 +51,7 @@ self.addEventListener('message', function (e) {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
-/* One stored fallback per page, so HQ and Money never show each other's HTML. */
+/* One stored fallback per page. */
 function pageKey(url) {
   var p = url.pathname;
   if (p === '/' || p === '') p = '/index.html';
