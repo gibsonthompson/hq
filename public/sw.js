@@ -1,4 +1,4 @@
-/* SESH service worker (v43)
+/* SESH service worker (v45)
 
    RULES
    1. App pages (/, index.html) are ALWAYS fetched from the network
@@ -17,7 +17,7 @@
 
    Bump CACHE on every release. */
 
-const CACHE = 'hq-assets-v43';
+const CACHE = 'hq-assets-v45';
 const ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
@@ -62,10 +62,10 @@ function offlinePage() {
   return new Response(
     '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>SESH offline</title>' +
-    '<body style="background:#fafafa;color:#0a0a0a;font:15px -apple-system,system-ui,sans-serif;padding:40px">' +
+    '<body style="background:#0a0a0a;color:#f5f5f5;font:15px -apple-system,system-ui,sans-serif;padding:40px">' +
     '<h1 style="font-size:20px;margin:0 0 8px">SESH is offline</h1>' +
-    '<p style="color:#525252;margin:0 0 18px">No saved copy is available yet. Reconnect, then reload.</p>' +
-    '<button onclick="location.reload()" style="background:#0a0a0a;color:#fff;border:0;border-radius:8px;padding:12px 18px;font-weight:700;font-size:15px">Reload</button>',
+    '<p style="color:#a3a3a3;margin:0 0 18px">No saved copy is available yet. Reconnect, then reload.</p>' +
+    '<button onclick="location.reload()" style="background:#fafafa;color:#0a0a0a;border:0;border-radius:8px;padding:12px 18px;font-weight:700;font-size:15px">Reload</button>',
     { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
   );
 }
