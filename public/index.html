@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v48"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v49"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -1242,7 +1242,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v48"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v49"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1416,6 +1416,14 @@ function backfillTs(reupload){
    returning only the first 1000 would make applyRows treat every row past the
    cap as "missing locally" and re-upload stale copies, corrupting sync. We page
    through in 1000-row chunks so a pull is always the COMPLETE row set. */
+/* One-time setup steps (starter links, Top 3 -> High) run right after a
+   SUCCESSFUL cloud load, never off a redraw: a pull that changes nothing does
+   not redraw, which is why they used to be skipped on a device that was
+   already up to date. They need the cloud copy so a link deleted on another
+   device is never re-added. */
+var cloudOk=false,setupRan=false;
+function afterCloudLoad(){if(setupRan)return;setupRan=true;
+  try{var before=stateSignature();migratePins();seedCodeLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
   var PAGE=1000,acc=[];
   function page(from){
@@ -1435,11 +1443,11 @@ function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(fals
       var rows=acc;
       lastFullPullAt=Date.now();noteUpdatedAt(rows);
       if(rows.length===0&&dataCount(S)>0){
-        remoteLoaded=true;seedCloud(function(){setSync("ok")});if(cb)cb(true,rows);return}
+        remoteLoaded=true;cloudOk=true;seedCloud(function(){setSync("ok")});afterCloudLoad();if(cb)cb(true,rows);return}
       applyRows(rows);
       renderIfChanged();
       autoBackup();
-      remoteLoaded=true;lastSynced=Date.now();setSync("ok");if(cb)cb(true,rows);
+      remoteLoaded=true;cloudOk=true;lastSynced=Date.now();setSync("ok");afterCloudLoad();if(cb)cb(true,rows);
     }).catch(function(e){clearTimeout(to);lastSyncError=(e&&e.message)||"network error during read";remoteLoaded=true;setSync("err");if(cb)cb(false)});
   }
   page(0);
@@ -1855,7 +1863,7 @@ function choosePrio(level){var id=prioTargetId;prioTargetId=null;closeModal("pri
 // ---- Task board: every open task, grouped by priority ----
 var DECK_CAP=12,deckExpanded=false;
 function migratePins(){ // Top 3 is gone: anything pinned there becomes High, once.
-  if(!remoteLoaded)return;try{if(localStorage.getItem("sesh_pinmig")==="1")return}catch(e){}
+  if(!cloudOk)return;try{if(localStorage.getItem("sesh_pinmig")==="1")return}catch(e){}
   var n=0;live(S.needleMovers).forEach(function(m){if((m.pin||0)>0){if(!m.done&&!(m.prio||0))m.prio=3;m.pin=0;touch(m);pushItem(m.id);n++}});
   if(n)saveLocal();try{localStorage.setItem("sesh_pinmig","1")}catch(e){}}
 function renderBoard(){
@@ -2144,7 +2152,7 @@ var LINK_SEED=[
   ["ql_ga","Google Analytics","https://analytics.google.com","Marketing","https://www.gstatic.com/images/branding/product/2x/analytics_48dp.png"]
 ];
 function sameSite(a,b){return normUrl(a).replace(/\/+$/,"").toLowerCase()===normUrl(b).replace(/\/+$/,"").toLowerCase()}
-function seedCodeLinks(){if(!remoteLoaded)return;var t=Date.now(),n=0;
+function seedCodeLinks(){if(!cloudOk)return;var t=Date.now(),n=0;
   var rows=CODE_SEED.map(function(r){return [r.at(0),r.at(1),pathToCode(HOME_DIR+"/Downloads/"+r.at(2)),"VS Code"]}).concat(LINK_SEED);
   rows.forEach(function(r,i){var id=r.at(0),url=r.at(2);if(findAny(id))return;
     if(live(S.qlinks).some(function(l){return sameSite(l.url,url)}))return;
