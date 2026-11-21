@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v50"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v51"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -947,6 +947,16 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 .app-ic.knock img{filter:invert(1);mix-blend-mode:screen;border-radius:0}
 @media(max-width:1439px){.cap-hint{display:none}}
 @media(max-width:760px){.topbar .tab-nav{display:none}}
+
+/* project drag handle + drag state */
+.proj .pgrip{position:absolute;top:7px;right:57px;background:none;border:none;color:var(--dim2);cursor:grab;opacity:.35;display:flex;padding:2px;touch-action:none}
+.proj .pgrip svg{width:15px;height:15px}
+.proj:hover .pgrip{opacity:.8}.proj .pgrip:hover{color:var(--tx);opacity:1}
+.proj .phead{padding-right:72px}
+.proj-ph{border:1.5px dashed var(--line2);background:rgba(255,255,255,0.02);box-shadow:none;transform:none!important}
+.proj.proj-drag{position:fixed;z-index:80;margin:0;pointer-events:none;transform:rotate(1.2deg) scale(1.02);box-shadow:0 24px 50px -18px rgba(0,0,0,.9);border-color:rgba(255,255,255,0.3);transition:none;cursor:grabbing}
+body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
+@media(hover:none){.proj .pgrip{opacity:.6}}
 </style></head>
 <body>
 
@@ -1256,7 +1266,7 @@ function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(func
 /* ts is preserved, never regenerated, so ordering is stable across pulls */
 function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];
   var ca=(p.ca!=null?p.ca:null),ts=(p.ts!=null?p.ts:(ca!=null?ca:(p.mtime||1)));
-  return{id:p.id||mid(),title:p.title||"",desc:p.desc||"",links:links,ca:(ca!=null?ca:ts),ts:ts,mtime:(p.mtime!=null?p.mtime:ts),del:!!p.del}})}
+  return{id:p.id||mid(),title:p.title||"",desc:p.desc||"",links:links,order:(typeof p.order==="number"?p.order:null),ca:(ca!=null?ca:ts),ts:ts,mtime:(p.mtime!=null?p.mtime:ts),del:!!p.del}})}
 function normalizeNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){
   var ts=(n.ts!=null?n.ts:parseNoteTime(n.time));
   if(ts==null)ts=(n.mtime||1);
@@ -1302,7 +1312,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v50"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v51"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2162,7 +2172,7 @@ function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-
 var NAME_SKIP=["www","app","apps","dashboard","console","admin","portal","my","login","account","accounts","web","go","cloud","studio","platform","manage"];
 function niceName(u){if(isCode(u)){var cp=codePath(u).split("/").filter(Boolean);return cp.length?cp.at(-1):"VS Code"}var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
 function letterOf(name){return esc(String(name||"?").trim().charAt(0).toUpperCase()||"?")}
-function appIcon(l,cls){var bl=(l.icon&&/^https?:\/\//i.test(l.icon))?"":brandLogo(l.url);var f=(l.icon&&/^https?:\/\//i.test(l.icon))?l.icon:(bl||favUrl(l.url));return '<span class="app-ic'+(cls?" "+cls:"")+(bl?" glyph":"")+(bl&&brandNeedsWhite(l.url)?" inv":"")+(!bl&&logoInvert(l)?" inv":"")+(!bl&&logoKnock(l)?" knock":"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="favFail(this)">':'')+'</span>'}
+function appIcon(l,cls){var bl=(l.icon&&/^https?:\/\//i.test(l.icon))?"":brandLogo(l.url);var f=(l.icon&&/^https?:\/\//i.test(l.icon))?l.icon:(bl||favUrl(l.url));return '<span class="app-ic'+(cls?" "+cls:"")+(bl&&bl.indexOf("/icons/icon-")<0?" glyph":"")+(bl&&brandNeedsWhite(l.url)?" inv":"")+(!bl&&logoInvert(l)?" inv":"")+(!bl&&logoKnock(l)?" knock":"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="favFail(this)">':'')+'</span>'}
 function linksSorted(){return live(S.qlinks).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function folderNames(){var seen={},out=[];linksSorted().forEach(function(l){var g=(l.group||"").trim();if(g&&!seen[g.toLowerCase()]){seen[g.toLowerCase()]=1;out.push(g)}});return out}
 function linkWhere(u){return isCode(u)?("VS Code \u00b7 "+shortPath(codePath(u))):linkHost(u)}
@@ -2186,7 +2196,7 @@ function bumpOpen(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)r
    they are shown in white. Known ones are automatic; any link can override it. */
 /* Real transparent brand logos (Simple Icons) for sites whose tab icon is a
    solid square; everything else uses its own favicon. */
-var BRAND_LOGOS={"claude.ai":"claude/D97757","github.com":"github/ffffff","vercel.com":"vercel/ffffff","supabase.com":"supabase/3FCF8E","digitalocean.com":"digitalocean/0080FF","stripe.com":"stripe/635BFF","elevenlabs.io":"elevenlabs/ffffff","brevo.com":"brevo/0B996E","anthropic.com":"anthropic/F0EEE6","x.com":"x/ffffff","notion.so":"notion/ffffff","apple.com":"apple/ffffff","threads.net":"threads/ffffff","medium.com":"medium/ffffff","mail.google.com":"@https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png","chatgpt.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg","openai.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg"};
+var BRAND_LOGOS={"claude.ai":"claude/D97757","github.com":"github/ffffff","vercel.com":"vercel/ffffff","supabase.com":"supabase/3FCF8E","digitalocean.com":"digitalocean/0080FF","stripe.com":"stripe/635BFF","elevenlabs.io":"elevenlabs/ffffff","brevo.com":"brevo/0B996E","anthropic.com":"anthropic/F0EEE6","x.com":"x/ffffff","notion.so":"notion/ffffff","apple.com":"apple/ffffff","threads.net":"threads/ffffff","medium.com":"medium/ffffff","money-seven-liart.vercel.app":"@https://money-seven-liart.vercel.app/icons/icon-192.png","mail.google.com":"@https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png","chatgpt.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg","openai.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg"};
 function brandLogo(u){if(isCode(u))return"";var h=linkHost(u),r=rootHost(h);var k=BRAND_LOGOS[h]||BRAND_LOGOS[r];if(!k)return"";return k.charAt(0)==="@"?k.slice(1):("https://cdn.simpleicons.org/"+k)}
 /* brand files that come in black get shown white */
 function brandNeedsWhite(u){var b=brandLogo(u);return b.indexOf("jsdelivr.net/npm/simple-icons")>=0}
@@ -2316,12 +2326,52 @@ function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});
   if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();updateLnkPreview()});
   [u,n].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveLink()}})})})();
 
+/* ===== PROJECTS: order + drag to reorder =====
+   A project's place comes from its saved "order" once he has dragged it.
+   Until then a sensible default (most-used first) applies, then age. Grab a
+   card by its grip and drop it anywhere; mouse and touch both work, and the
+   page scrolls itself when the card nears the top or bottom. */
+var PROJ_RANK={muhwhzdkqq19j:1,mwpntx1rmgt7q:2,mrwd0bib6azgs:3,muvj71a6uv8kt:4,ms4ob26e7qhyk:5,mrfug92w5n3b8:6,mw52a1xfgk506:7,mur2q0qqnc76t:8,ms36woz93bf8t:9,ms3z6l5qncios:10,mun51qzpyydup:11,mtrburm32b7lu:12,mtrbtxa63tlfh:13,mv8d0vmqc1m5k:14,mux6tbm0wcaiw:15,mudiu8q9igpv9:16,mrxlj73w8p7iu:17,ms51v9owkhr8c:18,muvbys3l2c2x9:19,mudisrrq9q6pn:20,mrsn7fddsllmx:21,muhwermzz6tjq:22,mrk7dmbo8fzag:23,mrsn4yfym805t:24,mrw2i7c1thfe7:25,mrfyngqpwa7mw:26,mrpdx6an2pquf:27,mrxggz0h0f9id:28};
+function projKey(p){if(typeof p.order==="number")return p.order;if(PROJ_RANK[p.id]!=null)return PROJ_RANK[p.id]*10;return 100000+(p.ts||0)/1e9}
+function projectsSorted(){return live(S.projects).slice().sort(function(a,b){var d=projKey(a)-projKey(b);if(d!==0)return d;d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
+/* save a new order: every project gets its slot number, only changed ones sync */
+function saveProjectOrder(ids){ids.forEach(function(id,i){var p=S.projects.find(function(x){return x.id===id});if(!p)return;var o=(i+1)*10;if(p.order!==o){p.order=o;touch(p);save(id)}});lastSig=stateSignature()}
+var _pd=null;
+function projDragStart(ev,grip){var card=grip.closest(".proj");if(!card)return;ev.preventDefault();ev.stopPropagation();
+  var r=card.getBoundingClientRect(),grid=document.getElementById("projGrid");
+  var ph=document.createElement("div");ph.className="proj proj-ph";ph.style.height=r.height+"px";
+  card.parentNode.insertBefore(ph,card);
+  card.classList.add("proj-drag");card.style.width=r.width+"px";card.style.height=r.height+"px";card.style.left=r.left+"px";card.style.top=r.top+"px";
+  document.body.appendChild(card);
+  _pd={card:card,ph:ph,grid:grid,dx:ev.clientX-r.left,dy:ev.clientY-r.top,y:ev.clientY,raf:null,id:card.getAttribute("data-pid")};
+  swipeActive=true;document.body.classList.add("dragging-proj");
+  try{grip.setPointerCapture(ev.pointerId)}catch(e){}
+  _pd.raf=requestAnimationFrame(projAutoScroll)}
+function projDragMove(ev){if(!_pd)return;ev.preventDefault();var c=_pd.card;_pd.y=ev.clientY;
+  c.style.left=(ev.clientX-_pd.dx)+"px";c.style.top=(ev.clientY-_pd.dy)+"px";
+  c.style.pointerEvents="none";var under=document.elementFromPoint(ev.clientX,ev.clientY);c.style.pointerEvents="";
+  var t=under&&under.closest?under.closest("#projGrid .proj:not(.proj-ph)"):null;if(!t)return;
+  var tr=t.getBoundingClientRect();var before=(ev.clientY<tr.top+tr.height/2)||(Math.abs(ev.clientY-(tr.top+tr.height/2))<tr.height/4&&ev.clientX<tr.left+tr.width/2);
+  if(before){if(t.previousSibling!==_pd.ph)_pd.grid.insertBefore(_pd.ph,t)}else{if(t.nextSibling!==_pd.ph)_pd.grid.insertBefore(_pd.ph,t.nextSibling)}}
+function projAutoScroll(){if(!_pd)return;var sc=document.querySelector(".content");if(sc){var r=sc.getBoundingClientRect(),edge=70,v=0;
+    if(_pd.y<r.top+edge)v=-Math.ceil((r.top+edge-_pd.y)/6);else if(_pd.y>r.bottom-edge)v=Math.ceil((_pd.y-(r.bottom-edge))/6);if(v)sc.scrollTop+=v}
+  _pd.raf=requestAnimationFrame(projAutoScroll)}
+function projDragEnd(){if(!_pd)return;var d=_pd;_pd=null;cancelAnimationFrame(d.raf);
+  d.card.classList.remove("proj-drag");d.card.style.width=d.card.style.height=d.card.style.left=d.card.style.top="";
+  d.grid.insertBefore(d.card,d.ph);d.ph.remove();document.body.classList.remove("dragging-proj");swipeActive=false;
+  var ids=Array.prototype.map.call(d.grid.querySelectorAll(".proj[data-pid]"),function(el){return el.getAttribute("data-pid")});
+  var before=projectsSorted().map(function(p){return p.id}).join(",");
+  if(ids.join(",")!==before){saveProjectOrder(ids);toast("Order saved","grip-vertical")}
+  setTimeout(flushDeferred,120)}
+document.addEventListener("pointerdown",function(ev){var g=ev.target.closest&&ev.target.closest("#projGrid .pgrip");if(g)projDragStart(ev,g)});
+document.addEventListener("pointermove",projDragMove,{passive:false});
+document.addEventListener("pointerup",projDragEnd);document.addEventListener("pointercancel",projDragEnd);
+
 /* ===== PROJECTS ===== */
-function projectsSorted(){return live(S.projects).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
   var list=projectsSorted();
   if(!list.length){c.innerHTML='<div class="empty-note" style="grid-column:1/-1">No projects yet.</div>';return}
-  list.forEach(function(p){var el=document.createElement("div");el.className="proj";
+  list.forEach(function(p){var el=document.createElement("div");el.className="proj";el.setAttribute("data-pid",p.id);
     var expanded=!!projOpen[p.id];
     if(expanded)el.classList.add("open");
     el.onclick=function(){if(hasSelection()||projOpen[p.id])return;openProjModal(p.id)};
@@ -2341,6 +2391,7 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
         a.innerHTML=appIcon({url:l.url,name:l.label||niceName(l.url)})+'<span class="app-name">'+esc(l.label||niceName(l.url))+'</span>';
         a.onclick=function(ev){ev.stopPropagation()};lw.appendChild(a)});
       el.appendChild(lw);}
+    var gr=document.createElement("button");gr.className="pgrip";gr.title="Drag to reorder";gr.setAttribute("aria-label","Drag to reorder");gr.innerHTML='<i data-lucide="grip-vertical"></i>';gr.onclick=function(ev){ev.stopPropagation()};el.appendChild(gr);
     var ed=document.createElement("button");ed.className="pedit";ed.innerHTML='<i data-lucide="pencil"></i>';ed.onclick=function(ev){ev.stopPropagation();openProjModal(p.id)};el.appendChild(ed);
     var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
     c.appendChild(el)});icons()}
@@ -2372,7 +2423,7 @@ function saveProj(){var t=document.getElementById("projTitle").value.trim();
   });
   if(bad){toast("That link needs a URL","alert-triangle");try{bad.querySelector(".pl-url").focus();bad.scrollIntoView({block:"nearest"})}catch(e){}return}
   if(editingProjId){var p=S.projects.find(function(x){return x.id===editingProjId});if(p){p.title=t;p.desc=desc;p.links=links;touch(p)}}
-  else{var now=Date.now();var pid=mid();S.projects.push({id:pid,title:t,desc:desc,links:links,del:false,ca:now,ts:now,mtime:now});editingProjId=pid}
+  else{var now=Date.now();var pid=mid();var first=projectsSorted()[0];S.projects.push({id:pid,title:t,desc:desc,links:links,order:(first?projKey(first)-10:0),del:false,ca:now,ts:now,mtime:now});editingProjId=pid}
   var savedPid=editingProjId;editingProjId=null;save(savedPid);closeModal("projModal");renderProjects();lastSig=stateSignature();icons()}
 function rmProj(id){uiConfirm("Delete this project?",{title:"Delete project",okText:"Delete",danger:true}).then(function(go){if(go){tomb(id);renderProjects();lastSig=stateSignature();icons()}})}
 

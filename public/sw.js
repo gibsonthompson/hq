@@ -1,4 +1,4 @@
-/* SESH service worker (v50)
+/* SESH service worker (v51)
 
    RULES
    1. App pages (/, index.html) are ALWAYS fetched from the network
@@ -17,7 +17,7 @@
 
    Bump CACHE on every release. */
 
-const CACHE = 'hq-assets-v50';
+const CACHE = 'hq-assets-v51';
 const ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
