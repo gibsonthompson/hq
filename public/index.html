@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v53"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v54"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -977,30 +977,47 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 @media(hover:none){.chat-edit{opacity:.55}}
 .chat-empty{font-size:12.5px;color:var(--dim2);line-height:1.45;padding:2px 6px 6px}
 
-/* reminders live in the top bar */
-.topbar .reminder-strip{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;margin:0 14px 0 10px;overflow:hidden}
+/* reminders live in the top bar: all visible, text shrinks to fit */
+.topbar .reminder-strip{--remfs:12.5px;flex:1 1 auto;min-width:0;height:40px;display:flex;flex-wrap:nowrap;align-items:center;align-content:center;justify-content:flex-start;gap:5px;margin:0 14px 0 10px;overflow:hidden}
 .topbar .reminder-strip>:first-child{margin-left:auto}
-.topbar .rem-chip{flex:0 0 auto;max-width:220px;padding:5px 9px;font-size:12px;border-radius:7px;white-space:nowrap}
+.topbar .reminder-strip.two{flex-wrap:wrap;justify-content:flex-end;row-gap:2px;column-gap:4px}
+.topbar .reminder-strip.two>:first-child{margin-left:0}
+.topbar .rem-chip{flex:0 0 auto;min-width:0;max-width:400px;gap:5px;padding:calc(var(--remfs)*0.36) calc(var(--remfs)*0.68);font-size:var(--remfs);line-height:1.15;border-radius:6px;white-space:nowrap}
+.topbar .rem-chip .rem-dot{width:5px;height:5px}
 .topbar .rem-chip .rem-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.topbar .rem-add,.topbar .rem-more{flex:0 0 auto;padding:5px 8px;font-size:12px;border-radius:7px;white-space:nowrap}
-.topbar .rem-add svg{width:13px;height:13px}
-.rem-more{background:rgba(180,83,9,0.10);border:1px solid rgba(180,83,9,0.32);color:var(--amb);font:inherit;font-weight:600;cursor:pointer}
-.rem-more:hover{background:rgba(180,83,9,0.18)}
+.topbar .rem-chip .rem-x{font-size:calc(var(--remfs) + 2px);line-height:1;padding:0 0 0 2px}
+.topbar .rem-add{flex:0 0 auto;padding:calc(var(--remfs)*0.36) calc(var(--remfs)*0.55);font-size:var(--remfs);line-height:1.15;border-radius:6px;white-space:nowrap}
+.topbar .rem-add svg{width:calc(var(--remfs) + 1px);height:calc(var(--remfs) + 1px)}
 .topbar .tb-right{margin-left:0;flex-shrink:0}
 .topbar .brand,.topbar .tab-nav{flex-shrink:0}
 .topbar .tab-nav{flex:0 0 auto}
-.rem-menu{position:fixed;z-index:400;display:none;flex-direction:column;gap:2px;padding:6px;max-height:60vh;overflow:auto;background:var(--elev);border:1px solid var(--line2);border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,0.45)}
-.rem-menu.open{display:flex;animation:remin .16s ease}
-.rem-row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;font-size:13px;color:var(--tx);background:none;border:0;font-family:inherit;text-align:left;cursor:pointer;width:100%}
-.rem-row:hover{background:rgba(255,255,255,0.05)}
-.rem-row .rem-rtxt{flex:1;min-width:0;line-height:1.35}
-.rem-row .rem-x{opacity:.5}.rem-row:hover .rem-x{opacity:1}
-.rem-row-add{color:var(--dim)}
-.rem-row .rem-dot{width:6px;height:6px;border-radius:50%;background:var(--amb);flex-shrink:0}
-.rem-row .rem-x{background:none;border:0;color:var(--dim);font-size:16px;cursor:pointer;padding:0 4px}.rem-row-add svg{width:14px;height:14px}
-@keyframes remin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.rem-menu.open{animation:none}}
-@media(max-width:760px){.topbar .reminder-strip{margin:0 8px}.topbar .rem-chip{max-width:150px}.topbar .rem-chip .rem-x{display:none}}
+@media(max-width:760px){.topbar{flex-wrap:wrap;row-gap:8px}.topbar .reminder-strip{order:5;flex:1 1 100%;margin:0;height:40px;justify-content:center}.topbar .reminder-strip>:first-child{margin-left:0}.topbar .reminder-strip:empty{display:none}.topbar .tb-right{margin-left:auto}.topbar .rem-chip .rem-x{display:none}}
+.chat-prev-wrap{margin:2px 0 14px;padding:10px 10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.chat-prev-label{font-size:11px;font-weight:600;color:var(--dim2);margin:0 0 4px 6px}
+.chat-row.chat-row-prev{padding-right:6px;cursor:default}
+.chat-row.chat-row-prev:hover{background:none}
+.chat-desc.ph{opacity:.55;font-style:italic}
+.lnk-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 14px;border:1px solid var(--line2);border-radius:10px;background:var(--surface)}
+.lnk-seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 8px;border:0;border-radius:7px;background:none;color:var(--dim);font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
+.lnk-seg button svg{width:15px;height:15px}
+.lnk-seg button.on{background:var(--vio);color:var(--on)}
+.lnk-prev-txt{flex:1;min-width:0}
+.lnk-name{width:100%;background:none;border:0;border-bottom:1px dashed transparent;color:var(--tx);font:600 15px/1.3 inherit;font-family:inherit;padding:2px 0;outline:none}
+.lnk-name:hover{border-bottom-color:var(--line2)}.lnk-name:focus{border-bottom-color:var(--dim2)}
+.lnk-prev-host{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lnk-tip .mono{color:var(--dim);font-size:11.5px}
+.lf-input{padding:8px 11px;border-radius:8px;border:1px solid var(--dim2);background:var(--surface);color:var(--tx);font:600 12.5px/1 inherit;font-family:inherit;outline:none;width:150px}
+.lnk-more{margin:10px 0 2px}
+.lnk-more-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 0;border:0;background:none;color:var(--dim2);font:600 12px/1 inherit;font-family:inherit;cursor:pointer}
+.lnk-more-btn svg{width:13px;height:13px;transition:transform .15s}
+.lnk-more.open .lnk-more-btn svg{transform:rotate(90deg)}
+.lnk-more-body{display:none;padding-top:8px}.lnk-more.open .lnk-more-body{display:block}
+.pl-row{align-items:center}
+.pl-ic{flex:0 0 30px;display:flex;align-items:center;justify-content:center}
+.pl-ic .app-ic{width:28px;height:28px;border-radius:7px}
+.pl-adds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pl-adds .pl-add{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.pl-adds .pl-add svg{width:14px;height:14px}
 </style></head>
 <body>
 
@@ -1153,7 +1170,7 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
   <textarea class="m-ta" id="projDesc" rows="2" placeholder="Short description" style="margin-bottom:11px"></textarea>
   <div class="m-label">Links <span id="projLinkCount" style="color:var(--dim2)"></span></div>
   <div id="projLinks"></div>
-  <button type="button" class="pl-add" onclick="addProjLinkRow('','',true)">+ Add link</button>
+  <div class="pl-adds"><button type="button" class="pl-add" onclick="addProjLinkRow('','',true,'web')"><i data-lucide="plus"></i>Website</button><button type="button" class="pl-add" onclick="addProjLinkRow('','',true,'code')"><i data-lucide="plus"></i>VS Code Project</button></div>
   <div class="m-actions">
     <button class="m-btn" onclick="closeModal('projModal')">Cancel</button>
     <button class="m-btn primary" onclick="saveProj()">Save</button>
@@ -1198,8 +1215,27 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 
 <!-- LAUNCHER: link editor -->
 <div class="modal" id="lnkModal"><div class="modal-box" style="max-width:440px">
-  <div class="modal-title"><i data-lucide="app-window"></i> <span id="lnkTitle">Add Link</span></div>
-  <div class="lnk-prev"><span class="app-ic" id="lnkPrevIc"></span><div><div class="lnk-prev-name" id="lnkPrevName">New link</div><div class="lnk-prev-host mono" id="lnkPrevHost">paste a website below</div></div></div>
+  <div class="modal-title"><i data-lucide="app-window"></i> <span id="lnkTitle">Add App</span></div>
+  <div class="lnk-seg" id="lnkSeg"><button type="button" data-t="web"><i data-lucide="globe"></i>Website</button><button type="button" data-t="code"><i data-lucide="code"></i>VS Code Project</button></div>
+  <div class="lnk-prev"><span id="lnkPrevWrap"></span><div class="lnk-prev-txt"><input class="lnk-name" id="lnkName" placeholder="Name" autocomplete="off"><div class="lnk-prev-host mono" id="lnkPrevHost"></div></div></div>
+  <div class="m-label" id="lnkUrlLabel">Web Address</div>
+  <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
+  <div class="lnk-tip" id="lnkTip"></div>
+  <div class="m-label">Folder</div>
+  <div class="lnk-folders" id="lnkFolders"></div>
+  <div class="lnk-more" id="lnkMore">
+    <button type="button" class="lnk-more-btn" onclick="document.getElementById('lnkMore').classList.toggle('open')"><i data-lucide="chevron-right"></i>Icon Options</button>
+    <div class="lnk-more-body">
+      <input class="m-in" id="lnkIcon" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Custom icon image link (only if the logo looks wrong)">
+      <button type="button" class="lnk-dark" id="lnkDark" onclick="toggleLnkDark()"><i data-lucide="sun"></i><span>Show logo in white</span></button>
+    </div>
+  </div>
+  <div class="m-actions">
+    <button class="m-btn danger" id="lnkDel" style="display:none;flex:0 0 auto" onclick="deleteLink()"><i data-lucide="trash-2"></i></button>
+    <button class="m-btn" onclick="closeModal('lnkModal')">Cancel</button>
+    <button class="m-btn primary" onclick="saveLink()">Save</button>
+  </div>
+</div></div></div>
   <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, or a VS Code folder path">
   <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
   <input class="m-in" id="lnkIcon" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Custom icon image link (optional)">
@@ -1226,7 +1262,7 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 <!-- CHAT editor -->
 <div class="modal" id="chatModal"><div class="modal-box" style="max-width:440px">
   <div class="modal-title"><i data-lucide="message-square"></i> <span id="chatModalTitle">Add Chat</span></div>
-  <div class="lnk-prev"><span class="app-ic" id="chatPrevIc"></span><div><div class="lnk-prev-name">Chat link</div><div class="lnk-prev-host mono">Claude, ChatGPT or any other</div></div></div>
+  <div class="chat-prev-wrap"><div class="chat-prev-label">Preview</div><div class="chat-list" id="chatPrev"></div></div>
   <input class="m-in" id="chatUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste the chat link">
   <input class="m-in" id="chatTitle" placeholder="Label, e.g. Claude: SESH build">
   <textarea class="m-ta" id="chatDesc" rows="3" placeholder="What this chat is best at right now"></textarea>
@@ -1377,7 +1413,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v53"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v54"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1559,7 +1595,7 @@ function backfillTs(reupload){
    device is never re-added. */
 var cloudOk=false,setupRan=false;
 function afterCloudLoad(){if(setupRan)return;setupRan=true;
-  try{var before=stateSignature();migratePins();seedCodeLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
+  try{var before=stateSignature();migratePins();seedCodeLinks();repairLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
   var PAGE=1000,acc=[];
   function page(from){
@@ -1914,39 +1950,26 @@ function renderReminders(){
   add.title="Add a reminder";add.setAttribute("aria-label","Add a reminder");
   add.innerHTML='<i data-lucide="plus"></i>'+(live(S.reminders).length?'':'<span>Add a reminder</span>');
   add.onclick=addReminder;
-  var more=document.createElement("button");more.className="rem-more";more.type="button";more.title="All reminders";
-  more.onclick=function(ev){ev.stopPropagation();remMenuToggle()};
-  strip.appendChild(more);strip.appendChild(add);
+  strip.appendChild(add);
   icons();remFit();
 }
-/* Show as many reminders as fit in the top bar; the rest sit behind a +N button. */
+/* Every reminder stays visible in the top bar: the text shrinks until they all
+   fit on one line, then they go to two compact rows, and only as a last resort
+   do the longest ones get cut short (full text on hover). */
 function remFit(){var strip=document.getElementById("reminderStrip");if(!strip)return;
-  var chips=[].slice.call(strip.querySelectorAll(".rem-chip")),more=strip.querySelector(".rem-more");if(!more)return;
-  chips.forEach(function(c){c.style.display=""});more.style.display="none";
-  var hidden=0;
-  while(strip.scrollWidth>strip.clientWidth+1&&hidden<chips.length){
-    hidden++;chips[chips.length-hidden].style.display="none";
-    more.style.display="";more.textContent="+"+hidden;
-  }
-  if(hidden&&hidden===chips.length&&chips.length){more.textContent=chips.length+" reminders"}
-  var m=document.getElementById("remMenu");if(m&&m.classList.contains("open"))remMenuBuild();
+  var chips=[].slice.call(strip.querySelectorAll(".rem-chip"));
+  strip.classList.remove("two");chips.forEach(function(c){c.style.maxWidth="";c.title=c.textContent.replace(/\u00d7$/,"").trim()});
+  function fits(){return strip.scrollWidth<=strip.clientWidth+1&&strip.scrollHeight<=strip.clientHeight+1}
+  function setFs(f){strip.style.setProperty("--remfs",f+"px")}
+  var f;for(f=12.5;f>=9.5;f-=0.5){setFs(f);if(fits())return}
+  if(chips.length<2){setFs(9.5);return}
+  strip.classList.add("two");for(f=11;f>=9;f-=0.5){setFs(f);if(fits())return}
+  /* still too long: cap the width of the longest ones only (short ones keep their full text) */
+  setFs(9);var lo=28,hi=Math.max.apply(null,chips.map(function(c){return c.offsetWidth}));
+  function cap(w){chips.forEach(function(c){c.style.maxWidth=w+"px"})}
+  while(hi-lo>2){var mid=Math.floor((lo+hi)/2);cap(mid);if(fits())lo=mid;else hi=mid}
+  cap(lo);
 }
-function remMenuBuild(){var m=document.getElementById("remMenu");if(!m){m=document.createElement("div");m.id="remMenu";m.className="rem-menu";document.body.appendChild(m)}
-  m.innerHTML="";
-  remindersSorted().forEach(function(r){var row=document.createElement("div");row.className="rem-row";
-    row.innerHTML='<span class="rem-dot"></span><span class="rem-rtxt">'+esc(r.text)+'</span><button class="rem-x" title="Remove">&times;</button>';
-    row.querySelector(".rem-rtxt").onclick=function(){remMenuClose();editReminder(r.id)};
-    row.querySelector(".rem-x").onclick=function(ev){ev.stopPropagation();rmReminder(r.id)};
-    m.appendChild(row)});
-  var add=document.createElement("button");add.className="rem-row rem-row-add";add.innerHTML='<i data-lucide="plus"></i><span>Add a reminder</span>';
-  add.onclick=function(){remMenuClose();addReminder()};m.appendChild(add);icons();
-  var btn=document.querySelector("#reminderStrip .rem-more"),bx=(btn&&btn.offsetWidth?btn:document.getElementById("reminderStrip")).getBoundingClientRect();
-  var w=Math.min(340,innerWidth-24);m.style.width=w+"px";m.style.top=(bx.bottom+8)+"px";m.style.left=Math.max(12,Math.min(bx.right-w,innerWidth-w-12))+"px";
-}
-function remMenuToggle(){var m=document.getElementById("remMenu");if(m&&m.classList.contains("open")){remMenuClose();return}remMenuBuild();document.getElementById("remMenu").classList.add("open")}
-function remMenuClose(){var m=document.getElementById("remMenu");if(m)m.classList.remove("open")}
-document.addEventListener("click",function(e){var m=document.getElementById("remMenu");if(m&&m.classList.contains("open")&&!m.contains(e.target))remMenuClose()});
-document.addEventListener("keydown",function(e){if(e.key==="Escape")remMenuClose()});
 var remFitT=null;window.addEventListener("resize",function(){clearTimeout(remFitT);remFitT=setTimeout(remFit,80)});
 function addReminder(){
   uiPrompt("Standing reminder","",{message:"A visible cue that stays at the top of Home, e.g. Posture, stand up straight."}).then(function(v){
@@ -2251,10 +2274,40 @@ var lpEdit=false,lpOpenFolder=null,editingLinkId=null,lnkFolderPick="";
 var HOME_DIR="/Users/gibsonthompson";
 function isCode(u){return /^vscode(-insiders)?:/i.test(String(u||"").trim())}
 function codePath(u){var m=String(u||"").trim().match(/^vscode(?:-insiders)?:\/\/file(\/[^?#]*)/i);if(!m)return"";try{return decodeURI(m[1])}catch(e){return m[1]}}
-function pathToCode(p){p=String(p||"").trim().replace(/^["']|["']$/g,"");if(p.indexOf("~/")===0)p=HOME_DIR+p.slice(1);if(p.charAt(0)!=="/")return"";return "vscode://file"+encodeURI(p.replace(/\/+$/,""))}
-function shortPath(p){return String(p||"").replace(HOME_DIR,"~")}
+function homeDir(){try{return localStorage.getItem("sesh_home")||HOME_DIR}catch(e){return HOME_DIR}}
+function codeRoot(){try{return localStorage.getItem("sesh_code_root")||(homeDir()+"/Downloads")}catch(e){return homeDir()+"/Downloads"}}
+/* Anything he might paste for a project becomes a VS Code link: a full folder
+   path, ~/path, a file:// path, a vscode:// link, a GitHub repo link, or just
+   the project's folder name (opened from his projects folder). */
+function resolveCode(v){v=String(v||"").trim().replace(/^["']|["']$/g,"");if(!v)return"";
+  v=v.replace(/^https?:\/\/(?=vscode|\/|~\/|file:)/i,"");
+  if(isCode(v))return v;
+  if(/^file:\/\//i.test(v)){v=v.replace(/^file:\/\//i,"");try{v=decodeURI(v)}catch(e){}}
+  if(/^(\/|~\/)/.test(v))return pathToCode(v);
+  var gh=v.match(/github\.com[\/:]([^\/\s]+)\/([^\/\s#?]+)/i);
+  var name=gh?gh[2]:v.split("/").filter(Boolean).pop();name=String(name||"").replace(/\.git$/i,"").trim();
+  if(!name)return"";return pathToCode(codeRoot()+"/"+name)}
+function isPathish(v){return /^\s*["']?(\/|~\/|vscode(-insiders)?:|file:\/\/)/i.test(String(v||""))}
+/* When he pastes a real folder path, learn where his projects live, and point
+   the starter VS Code links (which were a guess) at the same place. */
+function learnCodeHome(raw){raw=String(raw||"").trim().replace(/^["']|["']$/g,"").replace(/^file:\/\//i,"");
+  var m=raw.match(/^\/(Users|home)\/([^\/]+)(\/.*)?$/);if(!m)return 0;
+  var home="/"+m[1]+"/"+m[2],path=raw.replace(/\/+$/,""),root=path.slice(0,path.lastIndexOf("/"))||home;
+  try{localStorage.setItem("sesh_home",home);localStorage.setItem("sesh_code_root",root)}catch(e){}
+  var n=0;CODE_SEED.forEach(function(r){var g=findAny(r.at(0));if(!g||g.item.del)return;var l=g.item;
+    var guess="vscode://file"+encodeURI(HOME_DIR+"/Downloads/"+r.at(2)),now=pathToCode(root+"/"+r.at(2));
+    if(l.url===guess&&now!==guess){l.url=now;touch(l);save(l.id);n++}});
+  return n}
+function fixLinkUrl(u){u=String(u||"").trim();if(/^https?:\/\/(vscode(-insiders)?:|\/|~\/|file:)/i.test(u))return resolveCode(u);return u}
+/* one-time repair: older versions saved folder paths as broken web addresses */
+function repairLinks(){var n=0;
+  live(S.qlinks).forEach(function(l){var f=fixLinkUrl(l.url);if(f&&f!==l.url){l.url=f;touch(l);save(l.id);n++}});
+  live(S.projects).forEach(function(p){var ch=false;(p.links||[]).forEach(function(l){var f=fixLinkUrl(l.url);if(f&&f!==l.url){l.url=f;if(!l.label||/^(https?:)?\/\//.test(l.label)||/^vscode/i.test(l.label)||l.label.indexOf("/")>=0)l.label=niceName(f);ch=true}});if(ch){touch(p);save(p.id);n++}});
+  return n}
+function pathToCode(p){p=String(p||"").trim().replace(/^["']|["']$/g,"");if(p.indexOf("~/")===0)p=homeDir()+p.slice(1);if(p.charAt(0)!=="/")return"";return "vscode://file"+encodeURI(p.replace(/\/+$/,""))}
+function shortPath(p){return String(p||"").replace(homeDir(),"~").replace(HOME_DIR,"~")}
 function linkHost(u){if(isCode(u))return codePath(u)?"code.visualstudio.com":"";try{return new URL(/^https?:\/\//i.test(u)?u:"https://"+u).hostname.replace(/^www\./i,"")}catch(e){return ""}}
-function normUrl(u){u=String(u||"").trim();if(!u)return"";if(/^(\/|~\/)/.test(u))return pathToCode(u);if(isCode(u))return u;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
+function normUrl(u){u=String(u||"").trim();if(!u)return"";u=fixLinkUrl(u);if(/^(\/|~\/|file:\/\/)/i.test(u))return resolveCode(u);if(isCode(u))return u;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
 function favFor(h){return "https://www.google.com/s2/favicons?domain="+encodeURIComponent(h)+"&sz=128"}
 function favUrl(u){var h=linkHost(u);return h?favFor(h):""}
 var SHARED_HOSTS=["vercel.app","netlify.app","github.io","pages.dev","ondigitalocean.app","herokuapp.com","web.app","firebaseapp.com","onrender.com","fly.dev","railway.app"];
@@ -2385,44 +2438,81 @@ function renderFolder(){var g=lpOpenFolder;if(g==null)return;var ls=linksIn(g);
 function renameFolder(){var g=lpOpenFolder;if(g==null||!lpEdit)return;
   uiPrompt("Rename folder",g,{message:"Every link in this folder moves to the new name."}).then(function(v){if(v==null)return;v=String(v).trim();if(!v||v===g)return;
     linksIn(g).forEach(function(l){l.group=v;touch(l);save(l.id)});lpOpenFolder=v;renderLaunchpad();lastSig=stateSignature()})}
+/* Folder chips. "New Folder" turns into a small text box right there. */
+var lnkNewFolder=false;
 function renderLnkFolders(){var box=document.getElementById("lnkFolders");var names=folderNames();if(lnkFolderPick&&names.map(function(x){return x.toLowerCase()}).indexOf(lnkFolderPick.toLowerCase())<0)names.push(lnkFolderPick);
   var h='<button type="button" class="lf-chip'+(!lnkFolderPick?" on":"")+'" data-f="">No Folder</button>';
   names.forEach(function(n){h+='<button type="button" class="lf-chip'+(lnkFolderPick.toLowerCase()===n.toLowerCase()?" on":"")+'" data-f="'+esc(n)+'"><i data-lucide="folder"></i>'+esc(n)+'</button>'});
-  h+='<button type="button" class="lf-chip lf-new" data-new="1"><i data-lucide="folder-plus"></i>New Folder</button>';
+  h+=lnkNewFolder?'<input class="lf-input" id="lfNew" placeholder="Folder name" autocomplete="off">':'<button type="button" class="lf-chip lf-new" data-new="1"><i data-lucide="folder-plus"></i>New Folder</button>';
   box.innerHTML=h;
-  box.querySelectorAll(".lf-chip").forEach(function(b){b.onclick=function(){if(b.getAttribute("data-new")){uiPrompt("New folder","",{message:"Name it after the business, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=String(v).trim();if(!v)return;lnkFolderPick=v;renderLnkFolders()});return}lnkFolderPick=b.getAttribute("data-f")||"";renderLnkFolders()}});
+  box.querySelectorAll(".lf-chip").forEach(function(b){b.onclick=function(){if(b.getAttribute("data-new")){lnkNewFolder=true;renderLnkFolders();return}lnkFolderPick=b.getAttribute("data-f")||"";renderLnkFolders()}});
+  var inp=document.getElementById("lfNew");
+  if(inp){var done=function(){var v=inp.value.trim();lnkNewFolder=false;if(v)lnkFolderPick=v;renderLnkFolders()};
+    inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();done()}else if(e.key==="Escape"){e.stopPropagation();lnkNewFolder=false;renderLnkFolders()}});
+    inp.addEventListener("blur",done);setTimeout(function(){try{inp.focus()}catch(e){}},0)}
   icons()}
-var lnkNameAuto=true,lnkDarkPick=null;
-function lnkDarkEffective(){var u=normUrl(document.getElementById("lnkUrl").value)||"";return lnkDarkPick===null?logoInvert({url:u}):lnkDarkPick}
+/* Two kinds of app, each with its own simple form:
+   Website: paste the address; name and logo fill in on their own.
+   VS Code Project: paste the folder (or just its name); it opens in the VS Code app. */
+var lnkNameAuto=true,lnkDarkPick=null,lnkMode="web";
+function lnkCurrentUrl(){var v=document.getElementById("lnkUrl").value;return lnkMode==="code"?resolveCode(v):normUrl(v)}
+function lnkDarkEffective(){var u=lnkCurrentUrl()||"";return lnkDarkPick===null?logoInvert({url:u}):lnkDarkPick}
 function toggleLnkDark(){lnkDarkPick=!lnkDarkEffective();updateLnkPreview()}
-function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
-  var nu=normUrl(u)||u;if(lnkNameAuto)nm.value=u.trim()?niceName(nu):"";
-  var ic=(document.getElementById("lnkIcon").value||"").trim();var l={url:nu,name:nm.value||niceName(nu),icon:ic,dark:lnkDarkPick};
+function setLnkMode(m,keep){var was=lnkMode;lnkMode=m;
+  document.querySelectorAll("#lnkSeg button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-t")===m)});
+  var u=document.getElementById("lnkUrl");
+  document.getElementById("lnkUrlLabel").textContent=m==="code"?"Project Folder":"Web Address";
+  if(!editingLinkId)document.getElementById("lnkTitle").textContent=m==="code"?"Add VS Code Project":"Add Website";
+  u.placeholder=m==="code"?"Folder path, or just the folder name":"Paste a web address, e.g. stripe.com";
+  u.setAttribute("inputmode",m==="code"?"text":"url");
+  document.getElementById("lnkMore").style.display=m==="code"?"none":"";
+  if(!keep&&was!==m){if(m==="code"&&!lnkFolderPick)lnkFolderPick="VS Code";else if(m==="web"&&/^vs ?code$/i.test(lnkFolderPick))lnkFolderPick="";renderLnkFolders()}
+  updateLnkPreview()}
+function updateLnkPreview(){var raw=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
+  if(lnkMode==="web"&&isPathish(raw)){setLnkMode("code");return}
+  var nu=raw.trim()?lnkCurrentUrl():"";if(lnkNameAuto)nm.value=nu?niceName(nu):"";
+  nm.placeholder=lnkMode==="code"?"Project name":"Name";
+  var ic=(document.getElementById("lnkIcon").value||"").trim();
+  var l={url:nu||(lnkMode==="code"?"vscode://file/x":""),name:nm.value||niceName(nu)||(lnkMode==="code"?"VS Code":"?"),icon:lnkMode==="code"?"":ic,dark:lnkDarkPick};
   var db=document.getElementById("lnkDark");if(db)db.classList.toggle("on",lnkDarkEffective());
-  var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic','<span id="lnkPrevIc" class="app-ic');
-  document.getElementById("lnkPrevName").textContent=l.name||"New link";
-  var nu=normUrl(u);document.getElementById("lnkPrevHost").textContent=(nu&&isCode(nu))?("VS Code \u00b7 "+shortPath(codePath(nu))):(linkHost(u)||"paste a website or a folder path")}
+  document.getElementById("lnkPrevWrap").innerHTML=appIcon(l);
+  var host=document.getElementById("lnkPrevHost"),tip=document.getElementById("lnkTip");
+  if(lnkMode==="code"){host.textContent=nu?("Opens "+shortPath(codePath(nu))+" in VS Code"):"Opens in the VS Code app";
+    tip.innerHTML='Paste the folder path, or just the folder name if it lives in <span class="mono">'+esc(shortPath(codeRoot()))+'</span>. To copy a path: open the project in VS Code, then in its terminal run <span class="mono">pwd | pbcopy</span>.'}
+  else{var h=linkHost(nu);host.textContent=h||"Logo and name fill in on their own";tip.innerHTML=""}
+  tip.style.display=tip.innerHTML?"":"none";
+  icons()}
 function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
-  document.getElementById("lnkTitle").textContent=l?"Edit Link":"Add Link";
-  document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";document.getElementById("lnkIcon").value=l?(l.icon||""):"";
-  lnkNameAuto=!l;lnkFolderPick=l?(l.group||""):(group||"");lnkDarkPick=l?(l.dark===true?true:(l.dark===false?false:null)):null;
+  var code=l?isCode(normUrl(l.url)):/^vs ?code$/i.test(String(group||""));
+  document.getElementById("lnkTitle").textContent=l?"Edit App":(code?"Add VS Code Project":"Add Website");
+  var u=l?normUrl(l.url):"";
+  document.getElementById("lnkUrl").value=l?(isCode(u)?shortPath(codePath(u)):u):"";
+  document.getElementById("lnkName").value=l?l.name:"";document.getElementById("lnkIcon").value=l?(l.icon||""):"";
+  document.getElementById("lnkMore").classList.toggle("open",!!(l&&(l.icon||l.dark!=null)));
+  lnkNameAuto=!l;lnkNewFolder=false;lnkFolderPick=l?(l.group||""):(group||"");lnkDarkPick=l?(l.dark===true?true:(l.dark===false?false:null)):null;
   document.getElementById("lnkDel").style.display=l?"":"none";
-  renderLnkFolders();updateLnkPreview();openModal("lnkModal");
+  lnkMode=code?"code":"web";renderLnkFolders();setLnkMode(lnkMode,true);openModal("lnkModal");
   setTimeout(function(){try{document.getElementById(l?"lnkName":"lnkUrl").focus()}catch(e){}},100)}
-function saveLink(){var u=normUrl(document.getElementById("lnkUrl").value);var name=document.getElementById("lnkName").value.trim();
-  if(!linkHost(u)){toast(/^(\/|~\/|vscode:)/i.test(document.getElementById("lnkUrl").value.trim())?"That folder path looks incomplete":"Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
+function saveLink(){var raw=document.getElementById("lnkUrl").value.trim(),u=raw?lnkCurrentUrl():"";var name=document.getElementById("lnkName").value.trim();
+  var nf=document.getElementById("lfNew");if(nf&&nf.value.trim()){lnkFolderPick=nf.value.trim();lnkNewFolder=false}
+  if(lnkMode==="code"){if(!codePath(u)){toast("Paste the project folder first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}}
+  else{var h=linkHost(u);if(!h||!(h.indexOf(".")>0||/^localhost/i.test(h))){toast(raw?"That isn't a web address. For a project, switch to VS Code Project.":"Paste a web address first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}}
   if(!name)name=niceName(u);
-  var icon=(document.getElementById("lnkIcon").value||"").trim();if(icon&&!/^https?:\/\//i.test(icon))icon="https://"+icon;
-  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;l.icon=icon;l.dark=(lnkDarkPick===null||lnkDarkPick===logoInvert({url:u}))?null:lnkDarkPick;touch(l);save(l.id)}}
-  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,icon:icon,opens:0,dark:(lnkDarkPick===null||lnkDarkPick===logoInvert({url:u}))?null:lnkDarkPick,ts:now,mtime:now,del:false});save(id)}
-  editingLinkId=null;closeModal("lnkModal");renderLaunchpad();lastSig=stateSignature();toast(lnkFolderPick?("Saved to "+lnkFolderPick):"Link saved","check")}
+  var icon=lnkMode==="code"?"":(document.getElementById("lnkIcon").value||"").trim();if(icon&&!/^https?:\/\//i.test(icon))icon="https://"+icon;
+  var dark=lnkMode==="code"?null:((lnkDarkPick===null||lnkDarkPick===logoInvert({url:u}))?null:lnkDarkPick);
+  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;l.icon=icon;l.dark=dark;touch(l);save(l.id)}}
+  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,icon:icon,opens:0,dark:dark,ts:now,mtime:now,del:false});save(id)}
+  var moved=(lnkMode==="code"&&isPathish(raw))?learnCodeHome(/^~\//.test(raw)?homeDir()+raw.slice(1):raw):0;
+  editingLinkId=null;closeModal("lnkModal");renderLaunchpad();lastSig=stateSignature();
+  toast(moved?("Saved. Pointed "+moved+" other VS Code project"+(moved===1?"":"s")+" at the same folder"):(lnkFolderPick?("Saved to "+lnkFolderPick):"Saved"),"check")}
 function deleteLink(){var id=editingLinkId;if(!id)return;closeModal("lnkModal");editingLinkId=null;quickDeleteLink(id)}
 function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)return;tomb(id);renderLaunchpad();lastSig=stateSignature();
   toast("Removed "+(l.name||"link")+" · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderLaunchpad();lastSig=stateSignature()}})}
 (function(){var u=document.getElementById("lnkUrl"),n=document.getElementById("lnkName"),ic=document.getElementById("lnkIcon");
+  document.querySelectorAll("#lnkSeg button").forEach(function(b){b.onclick=function(){setLnkMode(b.getAttribute("data-t"));try{u.focus()}catch(e){}}});
   if(ic)ic.addEventListener("input",updateLnkPreview);
   if(u)u.addEventListener("input",updateLnkPreview);
-  if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();updateLnkPreview()});
+  if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();if(lnkNameAuto)updateLnkPreview()});
   [u,n].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveLink()}})})})();
 
 /* ===== CHATS =====
@@ -2442,9 +2532,13 @@ function renderChats(){var box=document.getElementById("chatList");if(!box)retur
       '<button class="chat-edit" data-edit="'+esc(c.id)+'" title="Edit" aria-label="Edit"><i data-lucide="pencil"></i></button></a>'}).join("");
   icons()}
 document.addEventListener("click",function(ev){var e=ev.target.closest&&ev.target.closest(".chat-edit");if(!e)return;ev.preventDefault();ev.stopPropagation();openChatModal(e.getAttribute("data-edit"))},true);
-function updateChatPreview(){var u=normUrl(document.getElementById("chatUrl").value)||"";var t=document.getElementById("chatTitle");
-  var ic=document.getElementById("chatPrevIc");if(ic)ic.outerHTML=appIcon({url:u,name:t.value||"?"}).replace('<span class="app-ic','<span id="chatPrevIc" class="app-ic');
-  t.placeholder=u?chatDefaultTitle(u):"Label, e.g. Claude: SESH build"}
+/* the preview is the exact row it will be in the Chats list, updating as he types */
+function updateChatPreview(){var raw=document.getElementById("chatUrl").value.trim(),u=raw?(normUrl(raw)||""):"";var t=document.getElementById("chatTitle"),d=document.getElementById("chatDesc");
+  t.placeholder=u?chatDefaultTitle(u):"Label, e.g. Claude: SESH build";
+  var title=t.value.trim()||(u?chatDefaultTitle(u):"Your chat"),desc=d.value.trim();
+  var box=document.getElementById("chatPrev");if(!box)return;
+  box.innerHTML='<div class="chat-row chat-row-prev">'+appIcon({url:u||"https://claude.ai",name:title},"chat-ic")+
+    '<span class="chat-body"><span class="chat-title">'+esc(title)+'</span><span class="chat-desc'+(desc?'':' ph')+'">'+esc(desc||"What it’s best at shows here")+'</span></span></div>'}
 function openChatModal(id){editingChatId=id||null;var c=id?S.chats.find(function(x){return x.id===id}):null;
   document.getElementById("chatModalTitle").textContent=c?"Edit Chat":"Add Chat";
   document.getElementById("chatUrl").value=c?c.url:"";document.getElementById("chatTitle").value=c?c.title:"";document.getElementById("chatDesc").value=c?c.desc:"";
@@ -2461,6 +2555,7 @@ function deleteChat(){var id=editingChatId;if(!id)return;var c=S.chats.find(func
   toast("Removed "+((c&&c.title)||"chat")+" · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderChats();lastSig=stateSignature()}})}
 (function(){var u=document.getElementById("chatUrl"),t=document.getElementById("chatTitle");
   if(u)u.addEventListener("input",updateChatPreview);if(t)t.addEventListener("input",updateChatPreview);
+  var dd=document.getElementById("chatDesc");if(dd)dd.addEventListener("input",updateChatPreview);
   [u,t].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveChat()}})});
   var d=document.getElementById("chatDesc");if(d)d.addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();saveChat()}})})();
 
@@ -2534,9 +2629,22 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
     var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
     c.appendChild(el)});icons()}
 var editingProjId=null,projOpen={};
-function addProjLinkRow(label,url,focus){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
-  row.innerHTML='<input class="pl-url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste link (required)" value="'+esc(url||"")+'"><input class="pl-label" placeholder="Name (optional)" value="'+esc(label||"")+'"><button type="button" class="pl-rm" title="Remove" onclick="this.parentNode.remove();updateLinkCount()">&times;</button>';
-  wrap.appendChild(row);updateLinkCount();
+/* Each project link row shows its logo live. A row is a website or a VS Code
+   project; pasting a folder path flips it to VS Code on its own. */
+function plUrl(row){var v=row.querySelector(".pl-url").value.trim();if(!v)return"";return row.getAttribute("data-t")==="code"?resolveCode(v):normUrl(v)}
+function plPreview(row){var inp=row.querySelector(".pl-url"),v=inp.value;
+  if(row.getAttribute("data-t")!=="code"&&isPathish(v))row.setAttribute("data-t","code");
+  var code=row.getAttribute("data-t")==="code",u=plUrl(row);
+  inp.placeholder=code?"Project folder, or just its name":"Paste a web address";
+  row.querySelector(".pl-label").placeholder=u?niceName(u):"Name (optional)";
+  row.querySelector(".pl-ic").innerHTML=appIcon({url:u||(code?"vscode://file/x":""),name:row.querySelector(".pl-label").value||niceName(u)||"?"},"mini");
+  row.title=code&&u?("Opens "+shortPath(codePath(u))+" in VS Code"):""}
+function addProjLinkRow(label,url,focus,type){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
+  var nu=url?normUrl(url):"";var code=type?type==="code":isCode(nu);row.setAttribute("data-t",code?"code":"web");
+  row.innerHTML='<span class="pl-ic"></span><input class="pl-url" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" value="'+esc(code&&nu?shortPath(codePath(nu)):(nu||""))+'"><input class="pl-label" value="'+esc(label||"")+'"><button type="button" class="pl-rm" title="Remove" onclick="this.parentNode.remove();updateLinkCount()">&times;</button>';
+  wrap.appendChild(row);plPreview(row);updateLinkCount();
+  row.querySelector(".pl-url").addEventListener("input",function(){plPreview(row)});
+  row.querySelector(".pl-label").addEventListener("input",function(){plPreview(row)});
   if(focus){var u=row.querySelector(".pl-url");try{u.focus();row.scrollIntoView({block:"nearest"})}catch(e){}}
   return row}
 function updateLinkCount(){var el=document.getElementById("projLinkCount");if(!el)return;var n=document.querySelectorAll("#projLinks .pl-row").length;el.textContent=n?"("+n+")":""}
@@ -2554,12 +2662,14 @@ function saveProj(){var t=document.getElementById("projTitle").value.trim();
   document.querySelectorAll("#projLinks .pl-row").forEach(function(row){
     var url=row.querySelector(".pl-url").value.trim();
     var label=row.querySelector(".pl-label").value.trim();
-    if(!url&&looksLikeUrl(label)){url=label;label=""}
+    if(!url&&looksLikeUrl(label)){row.querySelector(".pl-url").value=label;label=""}
+    url=plUrl(row);
     if(!url){ if(label&&!bad)bad=row; return }
-    if(!/^https?:\/\//i.test(url))url="https://"+url;
-    links.push({id:mid(),label:label||url.replace(/^https?:\/\//i,"").replace(/\/$/,""),url:url});
+    if(row.getAttribute("data-t")==="code"){if(!codePath(url)){if(!bad)bad=row;return}var rawv=row.querySelector(".pl-url").value.trim();if(isPathish(rawv))learnCodeHome(/^~\//.test(rawv)?homeDir()+rawv.slice(1):rawv)}
+    else{var hh=linkHost(url);if(!hh||!(hh.indexOf(".")>0||/^localhost/i.test(hh))){if(!bad)bad=row;return}}
+    links.push({id:mid(),label:label||niceName(url),url:url});
   });
-  if(bad){toast("That link needs a URL","alert-triangle");try{bad.querySelector(".pl-url").focus();bad.scrollIntoView({block:"nearest"})}catch(e){}return}
+  if(bad){toast(bad.getAttribute("data-t")==="code"?"That project needs its folder":"That isn't a web address. For a project, use Add VS Code Project.","alert-triangle");try{bad.querySelector(".pl-url").focus();bad.scrollIntoView({block:"nearest"})}catch(e){}return}
   if(editingProjId){var p=S.projects.find(function(x){return x.id===editingProjId});if(p){p.title=t;p.desc=desc;p.links=links;touch(p)}}
   else{var now=Date.now();var pid=mid();var first=projectsSorted()[0];S.projects.push({id:pid,title:t,desc:desc,links:links,order:(first?projKey(first)-10:0),del:false,ca:now,ts:now,mtime:now});editingProjId=pid}
   var savedPid=editingProjId;editingProjId=null;save(savedPid);closeModal("projModal");renderProjects();lastSig=stateSignature();icons()}
