@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v47"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v48"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -824,7 +824,7 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 .app-ic img.tiny{image-rendering:auto;width:50%;height:50%}
 .app-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:22px;color:#0a0a0a;background:linear-gradient(160deg,#ffffff,#e6e6e6)}
 .app-ic.has-img .app-letter{display:none}
-.app-name{font-size:11px;font-weight:500;color:var(--dim);max-width:76px;line-height:1.25;text-align:center;letter-spacing:.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.app-name{font-size:11px;font-weight:500;color:var(--dim);max-width:76px;line-height:1.25;text-align:center;letter-spacing:.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:normal;word-break:normal}
 .app:hover .app-name{color:var(--tx)}
 /* folder: frosted square with a 3x3 grid of mini icons, like iOS */
 .app-ic.fold{background:rgba(255,255,255,0.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:min-content;gap:3px;padding:6px;align-content:start;justify-items:center;border:1px solid rgba(255,255,255,0.10)}
@@ -1084,6 +1084,7 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   <div class="lnk-prev"><span class="app-ic" id="lnkPrevIc"></span><div><div class="lnk-prev-name" id="lnkPrevName">New link</div><div class="lnk-prev-host mono" id="lnkPrevHost">paste a website below</div></div></div>
   <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, or a VS Code folder path">
   <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
+  <input class="m-in" id="lnkIcon" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Custom icon image link (optional)">
   <div class="lnk-tip">For a VS Code project, paste its folder path. In Finder, right-click the folder while holding Option and choose Copy as Pathname.</div>
   <div class="m-label">Folder</div>
   <div class="lnk-folders" id="lnkFolders"></div>
@@ -1210,7 +1211,7 @@ function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
-function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
+function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",icon:l.icon||"",ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
 function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
@@ -1241,7 +1242,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v47"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v48"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2079,10 +2080,13 @@ function linkHost(u){if(isCode(u))return codePath(u)?"code.visualstudio.com":"";
 function normUrl(u){u=String(u||"").trim();if(!u)return"";if(/^(\/|~\/)/.test(u))return pathToCode(u);if(isCode(u))return u;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
 function favFor(h){return "https://www.google.com/s2/favicons?domain="+encodeURIComponent(h)+"&sz=128"}
 function favUrl(u){var h=linkHost(u);return h?favFor(h):""}
-function rootHost(h){var p=String(h||"").split(".");if(p.length<=2)return h;var two=p.slice(-2).join(".");if(/^(co|com|org|net|gov|ac)\.[a-z]{2}$/i.test(two))return p.slice(-3).join(".");return two}
+var SHARED_HOSTS=["vercel.app","netlify.app","github.io","pages.dev","ondigitalocean.app","herokuapp.com","web.app","firebaseapp.com","onrender.com","fly.dev","railway.app"];
+function rootHost(h){var p=String(h||"").split(".");if(p.length<=2)return h;var two=p.slice(-2).join(".");if(SHARED_HOSTS.indexOf(two.toLowerCase())>=0)return h;if(/^(co|com|org|net|gov|ac)\.[a-z]{2}$/i.test(two))return p.slice(-3).join(".");return two}
 /* Google answers an unknown site with a 16px globe: treat that as "no icon",
    try the main domain once (portal.telnyx.com -> telnyx.com), then fall back to
    the letter tile. */
+/* a custom icon that fails to load falls back to the site's favicon */
+function favFail(img){var h=img.getAttribute("data-h")||"";if(h&&!img.getAttribute("data-fav")&&img.src.indexOf("google.com/s2/favicons")<0){img.setAttribute("data-fav","1");img.src=favFor(h);return}img.remove()}
 function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-img");return}
   var h=img.getAttribute("data-h")||"",r=rootHost(h);
   if(!img.getAttribute("data-tried")&&r&&r!==h){img.setAttribute("data-tried","1");img.src=favFor(r);return}
@@ -2090,7 +2094,7 @@ function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-
 var NAME_SKIP=["www","app","apps","dashboard","console","admin","portal","my","login","account","accounts","web","go","cloud","studio","platform","manage"];
 function niceName(u){if(isCode(u)){var cp=codePath(u).split("/").filter(Boolean);return cp.length?cp.at(-1):"VS Code"}var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
 function letterOf(name){return esc(String(name||"?").trim().charAt(0).toUpperCase()||"?")}
-function appIcon(l,cls){var f=favUrl(l.url);return '<span class="app-ic'+(cls?" "+cls:"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="this.remove()">':'')+'</span>'}
+function appIcon(l,cls){var f=(l.icon&&/^https?:\/\//i.test(l.icon))?l.icon:favUrl(l.url);return '<span class="app-ic'+(cls?" "+cls:"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="favFail(this)">':'')+'</span>'}
 function linksSorted(){return live(S.qlinks).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function folderNames(){var seen={},out=[];linksSorted().forEach(function(l){var g=(l.group||"").trim();if(g&&!seen[g.toLowerCase()]){seen[g.toLowerCase()]=1;out.push(g)}});return out}
 function linksIn(g){return linksSorted().filter(function(l){return (l.group||"").trim().toLowerCase()===String(g).toLowerCase()})}
@@ -2109,9 +2113,42 @@ function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)re
   lp.innerHTML=(any?'<div class="lp-grid">'+h+'</div>':'<div class="lp-empty">Add the sites you keep open in tabs. Group each business’s tools into a folder.</div>')+ctl;
   if(lpOpenFolder!=null)renderFolder();
   icons()}
+/* One-time starter set of links, added after the cloud has loaded. Stable ids,
+   so every device agrees; a link is skipped if it already exists (even deleted)
+   or if he already saved the same site himself, so nothing is ever duplicated
+   and nothing he removed comes back. */
 var CODE_SEED=[["code_vac","VoiceAI Connect","voiceai-connect"],["code_vacb","VAC Backend","voiceai-connect-backend"],["code_sesh","SESH","hq"],["code_money","Money","money"],["code_rsa","Reliable Solutions","reliable-solutions-atlanta"],["code_jblawn","JB Lawn Care","jblawn"],["code_greenline","Greenline","greenline"]];
+var LINK_SEED=[
+  ["ql_claude","Claude","https://claude.ai",""],
+  ["ql_chatgpt","ChatGPT","https://chatgpt.com",""],
+  ["ql_github","GitHub","https://github.com/gibsonthompson",""],
+  ["ql_vercel","Vercel","https://vercel.com/dashboard",""],
+  ["ql_supabase","Supabase","https://supabase.com/dashboard/projects",""],
+  ["ql_do","Digital Ocean","https://cloud.digitalocean.com/apps",""],
+  ["ql_vapi","Vapi","https://dashboard.vapi.ai",""],
+  ["ql_telnyx","Telnyx","https://portal.telnyx.com",""],
+  ["ql_gmail","Gmail","https://mail.google.com",""],
+  ["ql_money","Money","https://money-seven-liart.vercel.app","","https://money-seven-liart.vercel.app/icons/icon-192.png"],
+  ["ql_vacadmin","VAC Admin","https://myvoiceaiconnect.com/admin","VoiceAI Connect"],
+  ["ql_vacsite","VAC Site","https://myvoiceaiconnect.com","VoiceAI Connect"],
+  ["ql_stripe","Stripe","https://dashboard.stripe.com","VoiceAI Connect"],
+  ["ql_eleven","ElevenLabs","https://elevenlabs.io/app","VoiceAI Connect"],
+  ["ql_brevo","Brevo","https://app.brevo.com","VoiceAI Connect"],
+  ["ql_anthropic","Anthropic Console","https://console.anthropic.com","VoiceAI Connect"],
+  ["ql_cbagency","CallBird Agency","https://myvoiceaiconnect.com/agency/dashboard","CallBird"],
+  ["ql_cbclient","CallBird Client","https://app.callbirdai.com/client/dashboard","CallBird"],
+  ["ql_cbsite","CallBird Site","https://callbirdai.com","CallBird"],
+  ["ql_meta","Meta Business Suite","https://business.facebook.com/latest/home","Marketing"],
+  ["ql_ytstudio","YouTube Studio","https://studio.youtube.com","Marketing","https://www.gstatic.com/images/branding/product/2x/youtube_studio_48dp.png"],
+  ["ql_gsc","Search Console","https://search.google.com/search-console","Marketing","https://www.gstatic.com/images/branding/product/2x/search_console_48dp.png"],
+  ["ql_ga","Google Analytics","https://analytics.google.com","Marketing","https://www.gstatic.com/images/branding/product/2x/analytics_48dp.png"]
+];
+function sameSite(a,b){return normUrl(a).replace(/\/+$/,"").toLowerCase()===normUrl(b).replace(/\/+$/,"").toLowerCase()}
 function seedCodeLinks(){if(!remoteLoaded)return;var t=Date.now(),n=0;
-  CODE_SEED.forEach(function(r,i){if(findAny(r[0]))return;S.qlinks.push({id:r.at(0),name:r.at(1),url:pathToCode(HOME_DIR+"/Downloads/"+r.at(2)),group:"VS Code",ts:t+i,mtime:t+i,del:false});pushItem(r.at(0));n++});
+  var rows=CODE_SEED.map(function(r){return [r.at(0),r.at(1),pathToCode(HOME_DIR+"/Downloads/"+r.at(2)),"VS Code"]}).concat(LINK_SEED);
+  rows.forEach(function(r,i){var id=r.at(0),url=r.at(2);if(findAny(id))return;
+    if(live(S.qlinks).some(function(l){return sameSite(l.url,url)}))return;
+    S.qlinks.push({id:id,name:r.at(1),url:url,group:r.at(3),icon:r.at(4)||"",ts:t+i,mtime:t+i,del:false});pushItem(id);n++});
   if(n){saveLocal();lastSig=stateSignature()}}
 function toggleLpEdit(){lpEdit=!lpEdit;renderLaunchpad()}
 /* one click handler for every tile, on the bar and inside a folder */
@@ -2153,13 +2190,13 @@ function renderLnkFolders(){var box=document.getElementById("lnkFolders");var na
 var lnkNameAuto=true;
 function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
   var nu=normUrl(u)||u;if(lnkNameAuto)nm.value=u.trim()?niceName(nu):"";
-  var l={url:nu,name:nm.value||niceName(nu)};
+  var ic=(document.getElementById("lnkIcon").value||"").trim();var l={url:nu,name:nm.value||niceName(nu),icon:ic};
   var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic"','<span class="app-ic" id="lnkPrevIc"');
   document.getElementById("lnkPrevName").textContent=l.name||"New link";
   var nu=normUrl(u);document.getElementById("lnkPrevHost").textContent=(nu&&isCode(nu))?("VS Code \u00b7 "+shortPath(codePath(nu))):(linkHost(u)||"paste a website or a folder path")}
 function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
   document.getElementById("lnkTitle").textContent=l?"Edit Link":"Add Link";
-  document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";
+  document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";document.getElementById("lnkIcon").value=l?(l.icon||""):"";
   lnkNameAuto=!l;lnkFolderPick=l?(l.group||""):(group||"");
   document.getElementById("lnkDel").style.display=l?"":"none";
   renderLnkFolders();updateLnkPreview();openModal("lnkModal");
@@ -2167,13 +2204,15 @@ function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(f
 function saveLink(){var u=normUrl(document.getElementById("lnkUrl").value);var name=document.getElementById("lnkName").value.trim();
   if(!linkHost(u)){toast(/^(\/|~\/|vscode:)/i.test(document.getElementById("lnkUrl").value.trim())?"That folder path looks incomplete":"Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
   if(!name)name=niceName(u);
-  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;touch(l);save(l.id)}}
-  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,ts:now,mtime:now,del:false});save(id)}
+  var icon=(document.getElementById("lnkIcon").value||"").trim();if(icon&&!/^https?:\/\//i.test(icon))icon="https://"+icon;
+  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;l.icon=icon;touch(l);save(l.id)}}
+  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,icon:icon,ts:now,mtime:now,del:false});save(id)}
   editingLinkId=null;closeModal("lnkModal");renderLaunchpad();lastSig=stateSignature();toast(lnkFolderPick?("Saved to "+lnkFolderPick):"Link saved","check")}
 function deleteLink(){var id=editingLinkId;if(!id)return;closeModal("lnkModal");editingLinkId=null;quickDeleteLink(id)}
 function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)return;tomb(id);renderLaunchpad();lastSig=stateSignature();
   toast("Removed "+(l.name||"link")+" · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderLaunchpad();lastSig=stateSignature()}})}
-(function(){var u=document.getElementById("lnkUrl"),n=document.getElementById("lnkName");
+(function(){var u=document.getElementById("lnkUrl"),n=document.getElementById("lnkName"),ic=document.getElementById("lnkIcon");
+  if(ic)ic.addEventListener("input",updateLnkPreview);
   if(u)u.addEventListener("input",updateLnkPreview);
   if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();updateLnkPreview()});
   [u,n].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveLink()}})})})();
