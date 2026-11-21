@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v52"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v53"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -976,6 +976,31 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 .chat-row:hover .chat-edit{opacity:.8}.chat-edit:hover{color:var(--tx);opacity:1}
 @media(hover:none){.chat-edit{opacity:.55}}
 .chat-empty{font-size:12.5px;color:var(--dim2);line-height:1.45;padding:2px 6px 6px}
+
+/* reminders live in the top bar */
+.topbar .reminder-strip{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;margin:0 14px 0 10px;overflow:hidden}
+.topbar .reminder-strip>:first-child{margin-left:auto}
+.topbar .rem-chip{flex:0 0 auto;max-width:220px;padding:5px 9px;font-size:12px;border-radius:7px;white-space:nowrap}
+.topbar .rem-chip .rem-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.topbar .rem-add,.topbar .rem-more{flex:0 0 auto;padding:5px 8px;font-size:12px;border-radius:7px;white-space:nowrap}
+.topbar .rem-add svg{width:13px;height:13px}
+.rem-more{background:rgba(180,83,9,0.10);border:1px solid rgba(180,83,9,0.32);color:var(--amb);font:inherit;font-weight:600;cursor:pointer}
+.rem-more:hover{background:rgba(180,83,9,0.18)}
+.topbar .tb-right{margin-left:0;flex-shrink:0}
+.topbar .brand,.topbar .tab-nav{flex-shrink:0}
+.topbar .tab-nav{flex:0 0 auto}
+.rem-menu{position:fixed;z-index:400;display:none;flex-direction:column;gap:2px;padding:6px;max-height:60vh;overflow:auto;background:var(--elev);border:1px solid var(--line2);border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,0.45)}
+.rem-menu.open{display:flex;animation:remin .16s ease}
+.rem-row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;font-size:13px;color:var(--tx);background:none;border:0;font-family:inherit;text-align:left;cursor:pointer;width:100%}
+.rem-row:hover{background:rgba(255,255,255,0.05)}
+.rem-row .rem-rtxt{flex:1;min-width:0;line-height:1.35}
+.rem-row .rem-x{opacity:.5}.rem-row:hover .rem-x{opacity:1}
+.rem-row-add{color:var(--dim)}
+.rem-row .rem-dot{width:6px;height:6px;border-radius:50%;background:var(--amb);flex-shrink:0}
+.rem-row .rem-x{background:none;border:0;color:var(--dim);font-size:16px;cursor:pointer;padding:0 4px}.rem-row-add svg{width:14px;height:14px}
+@keyframes remin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.rem-menu.open{animation:none}}
+@media(max-width:760px){.topbar .reminder-strip{margin:0 8px}.topbar .rem-chip{max-width:150px}.topbar .rem-chip .rem-x{display:none}}
 </style></head>
 <body>
 
@@ -986,6 +1011,7 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
   <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i> Notes</button>
   <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')"><i data-lucide="folder"></i> Projects</button>
 </div>
+  <div class="reminder-strip" id="reminderStrip"></div>
   <div class="tb-right">
     <button class="tb-icon" id="syncBtn" onclick="forceSync()" title="Sync now" style="position:relative"><i data-lucide="refresh-cw"></i><span id="syncDot" style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--dim2);border:1.5px solid var(--elev)"></span></button>
     <button class="tb-icon" onclick="openSbSettings()" title="Sync settings"><i data-lucide="settings"></i></button>
@@ -1017,7 +1043,6 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
         </div>
       </div>
 
-      <div class="reminder-strip" id="reminderStrip"></div>
 
       <div class="sec-head tb-head">
         <div class="sec-title"><i data-lucide="list-checks"></i> Tasks <span class="count" id="taskCount"></span></div>
@@ -1352,7 +1377,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v52"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v53"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1854,7 +1879,8 @@ function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMo
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderLaunchpad();renderChats();renderReminders();renderTags();renderBoard();renderDone();renderSNotes()}
+  renderReminders();
+  if(activeTab==="home"){renderLaunchpad();renderChats();renderTags();renderBoard();renderDone();renderSNotes()}
   else if(activeTab==="notes")renderNotes();
   else if(activeTab==="projects")renderProjects();
   icons();
@@ -1885,11 +1911,43 @@ function renderReminders(){
     strip.appendChild(chip);
   });
   var add=document.createElement("button");add.className="rem-add";
-  add.innerHTML='<i data-lucide="plus"></i>'+(live(S.reminders).length?"Reminder":"Add a reminder");
+  add.title="Add a reminder";add.setAttribute("aria-label","Add a reminder");
+  add.innerHTML='<i data-lucide="plus"></i>'+(live(S.reminders).length?'':'<span>Add a reminder</span>');
   add.onclick=addReminder;
-  strip.appendChild(add);
-  icons();
+  var more=document.createElement("button");more.className="rem-more";more.type="button";more.title="All reminders";
+  more.onclick=function(ev){ev.stopPropagation();remMenuToggle()};
+  strip.appendChild(more);strip.appendChild(add);
+  icons();remFit();
 }
+/* Show as many reminders as fit in the top bar; the rest sit behind a +N button. */
+function remFit(){var strip=document.getElementById("reminderStrip");if(!strip)return;
+  var chips=[].slice.call(strip.querySelectorAll(".rem-chip")),more=strip.querySelector(".rem-more");if(!more)return;
+  chips.forEach(function(c){c.style.display=""});more.style.display="none";
+  var hidden=0;
+  while(strip.scrollWidth>strip.clientWidth+1&&hidden<chips.length){
+    hidden++;chips[chips.length-hidden].style.display="none";
+    more.style.display="";more.textContent="+"+hidden;
+  }
+  if(hidden&&hidden===chips.length&&chips.length){more.textContent=chips.length+" reminders"}
+  var m=document.getElementById("remMenu");if(m&&m.classList.contains("open"))remMenuBuild();
+}
+function remMenuBuild(){var m=document.getElementById("remMenu");if(!m){m=document.createElement("div");m.id="remMenu";m.className="rem-menu";document.body.appendChild(m)}
+  m.innerHTML="";
+  remindersSorted().forEach(function(r){var row=document.createElement("div");row.className="rem-row";
+    row.innerHTML='<span class="rem-dot"></span><span class="rem-rtxt">'+esc(r.text)+'</span><button class="rem-x" title="Remove">&times;</button>';
+    row.querySelector(".rem-rtxt").onclick=function(){remMenuClose();editReminder(r.id)};
+    row.querySelector(".rem-x").onclick=function(ev){ev.stopPropagation();rmReminder(r.id)};
+    m.appendChild(row)});
+  var add=document.createElement("button");add.className="rem-row rem-row-add";add.innerHTML='<i data-lucide="plus"></i><span>Add a reminder</span>';
+  add.onclick=function(){remMenuClose();addReminder()};m.appendChild(add);icons();
+  var btn=document.querySelector("#reminderStrip .rem-more"),bx=(btn&&btn.offsetWidth?btn:document.getElementById("reminderStrip")).getBoundingClientRect();
+  var w=Math.min(340,innerWidth-24);m.style.width=w+"px";m.style.top=(bx.bottom+8)+"px";m.style.left=Math.max(12,Math.min(bx.right-w,innerWidth-w-12))+"px";
+}
+function remMenuToggle(){var m=document.getElementById("remMenu");if(m&&m.classList.contains("open")){remMenuClose();return}remMenuBuild();document.getElementById("remMenu").classList.add("open")}
+function remMenuClose(){var m=document.getElementById("remMenu");if(m)m.classList.remove("open")}
+document.addEventListener("click",function(e){var m=document.getElementById("remMenu");if(m&&m.classList.contains("open")&&!m.contains(e.target))remMenuClose()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")remMenuClose()});
+var remFitT=null;window.addEventListener("resize",function(){clearTimeout(remFitT);remFitT=setTimeout(remFit,80)});
 function addReminder(){
   uiPrompt("Standing reminder","",{message:"A visible cue that stays at the top of Home, e.g. Posture, stand up straight."}).then(function(v){
     if(v==null)return;v=v.trim();if(!v)return;
