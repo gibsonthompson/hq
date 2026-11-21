@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v54"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v55"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -1235,19 +1235,6 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
     <button class="m-btn" onclick="closeModal('lnkModal')">Cancel</button>
     <button class="m-btn primary" onclick="saveLink()">Save</button>
   </div>
-</div></div></div>
-  <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, or a VS Code folder path">
-  <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
-  <input class="m-in" id="lnkIcon" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Custom icon image link (optional)">
-  <button type="button" class="lnk-dark" id="lnkDark" onclick="toggleLnkDark()"><i data-lucide="sun"></i><span>Show logo in white</span></button>
-  <div class="lnk-tip">For a VS Code project, paste its folder path. In Finder, right-click the folder while holding Option and choose Copy as Pathname.</div>
-  <div class="m-label">Folder</div>
-  <div class="lnk-folders" id="lnkFolders"></div>
-  <div class="m-actions">
-    <button class="m-btn danger" id="lnkDel" style="display:none;flex:0 0 auto" onclick="deleteLink()"><i data-lucide="trash-2"></i></button>
-    <button class="m-btn" onclick="closeModal('lnkModal')">Cancel</button>
-    <button class="m-btn primary" onclick="saveLink()">Save</button>
-  </div>
 </div></div>
 
 <!-- LAUNCHER: open folder (iPhone style) -->
@@ -1413,7 +1400,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v54"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v55"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1595,7 +1582,7 @@ function backfillTs(reupload){
    device is never re-added. */
 var cloudOk=false,setupRan=false;
 function afterCloudLoad(){if(setupRan)return;setupRan=true;
-  try{var before=stateSignature();migratePins();seedCodeLinks();repairLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
+  try{var before=stateSignature();migratePins();seedCodeLinks();migrateApps55();repairLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
   var PAGE=1000,acc=[];
   function page(from){
@@ -2284,10 +2271,10 @@ function resolveCode(v){v=String(v||"").trim().replace(/^["']|["']$/g,"");if(!v)
   if(isCode(v))return v;
   if(/^file:\/\//i.test(v)){v=v.replace(/^file:\/\//i,"");try{v=decodeURI(v)}catch(e){}}
   if(/^(\/|~\/)/.test(v))return pathToCode(v);
-  var gh=v.match(/github\.com[\/:]([^\/\s]+)\/([^\/\s#?]+)/i);
+  var gh=v.match(/vscode\.dev\/github\/([^\/\s]+)\/([^\/\s#?]+)/i)||v.match(/github\.com[\/:]([^\/\s]+)\/([^\/\s#?]+)/i);
   var name=gh?gh[2]:v.split("/").filter(Boolean).pop();name=String(name||"").replace(/\.git$/i,"").trim();
   if(!name)return"";return pathToCode(codeRoot()+"/"+name)}
-function isPathish(v){return /^\s*["']?(\/|~\/|vscode(-insiders)?:|file:\/\/)/i.test(String(v||""))}
+function isPathish(v){return /^\s*["']?(\/|~\/|vscode(-insiders)?:|file:\/\/|(https?:\/\/)?(insiders\.)?vscode\.dev\/github\/)/i.test(String(v||""))}
 /* When he pastes a real folder path, learn where his projects live, and point
    the starter VS Code links (which were a guess) at the same place. */
 function learnCodeHome(raw){raw=String(raw||"").trim().replace(/^["']|["']$/g,"").replace(/^file:\/\//i,"");
@@ -2298,7 +2285,7 @@ function learnCodeHome(raw){raw=String(raw||"").trim().replace(/^["']|["']$/g,""
     var guess="vscode://file"+encodeURI(HOME_DIR+"/Downloads/"+r.at(2)),now=pathToCode(root+"/"+r.at(2));
     if(l.url===guess&&now!==guess){l.url=now;touch(l);save(l.id);n++}});
   return n}
-function fixLinkUrl(u){u=String(u||"").trim();if(/^https?:\/\/(vscode(-insiders)?:|\/|~\/|file:)/i.test(u))return resolveCode(u);return u}
+function fixLinkUrl(u){u=String(u||"").trim();if(/^https?:\/\/(vscode(-insiders)?:|\/|~\/|file:)/i.test(u)||/^(https?:\/\/)?(insiders\.)?vscode\.dev\/github\//i.test(u))return resolveCode(u);return u}
 /* one-time repair: older versions saved folder paths as broken web addresses */
 function repairLinks(){var n=0;
   live(S.qlinks).forEach(function(l){var f=fixLinkUrl(l.url);if(f&&f!==l.url){l.url=f;touch(l);save(l.id);n++}});
@@ -2332,7 +2319,7 @@ function linkWhere(u){return isCode(u)?("VS Code \u00b7 "+shortPath(codePath(u))
    rank, and each open nudges it up, so the bar slowly learns what he actually
    uses without reshuffling on every click. A folder ranks by its best link
    plus the opens of everything inside it. */
-var APP_RANK={ql_claude:1,code_vac:2,code_vacb:3,code_sesh:4,code_money:5,code_rsa:6,code_jblawn:7,code_greenline:8,ql_github:10,ql_vercel:11,ql_supabase:12,ql_chatgpt:13,ql_vacadmin:14,ql_vacsite:15,ql_stripe:16,ql_anthropic:17,ql_eleven:18,ql_brevo:19,ql_vapi:20,ql_do:21,ql_telnyx:22,ql_cbagency:23,ql_cbclient:24,ql_cbsite:25,ql_gmail:26,ql_meta:27,ql_ytstudio:28,ql_gsc:29,ql_ga:30,ql_money:31};
+var APP_RANK={ql_claude:1,code_vac:2,code_vacb:3,code_sesh:4,code_money:5,code_rsa:6,code_jblawn:7,code_greenline:8,code_blogfarm:9,ql_github:10,ql_vercel:11,ql_supabase:12,ql_chatgpt:13,ql_vacadmin:9.5,ql_vacsite:15,ql_stripe:12.5,ql_anthropic:17,ql_eleven:18,ql_brevo:19,ql_vapi:20,ql_do:21,ql_telnyx:22,ql_cbagency:23,ql_cbclient:24,ql_cbsite:25,ql_gmail:26,ql_meta:27,ql_ytstudio:28,ql_gsc:29,ql_ga:30,ql_money:31};
 function linkRank(l){return APP_RANK[l.id]!=null?APP_RANK[l.id]:100}
 function prior(rank){return Math.max(0,40-rank)/10}
 function likelyCmp(a,b){return (b.score-a.score)||(a.rank-b.rank)||((a.ts||0)-(b.ts||0))||String(a.key).localeCompare(String(b.key))}
@@ -2348,7 +2335,7 @@ function bumpOpen(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)r
    they are shown in white. Known ones are automatic; any link can override it. */
 /* Real transparent brand logos (Simple Icons) for sites whose tab icon is a
    solid square; everything else uses its own favicon. */
-var BRAND_LOGOS={"claude.ai":"claude/D97757","github.com":"github/ffffff","vercel.com":"vercel/ffffff","supabase.com":"supabase/3FCF8E","digitalocean.com":"digitalocean/0080FF","stripe.com":"stripe/635BFF","elevenlabs.io":"elevenlabs/ffffff","brevo.com":"brevo/0B996E","anthropic.com":"anthropic/F0EEE6","x.com":"x/ffffff","notion.so":"notion/ffffff","apple.com":"apple/ffffff","threads.net":"threads/ffffff","medium.com":"medium/ffffff","money-seven-liart.vercel.app":"@https://money-seven-liart.vercel.app/icons/icon-192.png","mail.google.com":"@https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png","chatgpt.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg","openai.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg"};
+var BRAND_LOGOS={"myvoiceaiconnect.com":"@/vac-logo.png","claude.ai":"claude/D97757","github.com":"github/ffffff","vercel.com":"vercel/ffffff","supabase.com":"supabase/3FCF8E","digitalocean.com":"digitalocean/0080FF","stripe.com":"stripe/635BFF","elevenlabs.io":"elevenlabs/ffffff","brevo.com":"brevo/0B996E","anthropic.com":"anthropic/F0EEE6","x.com":"x/ffffff","notion.so":"notion/ffffff","apple.com":"apple/ffffff","threads.net":"threads/ffffff","medium.com":"medium/ffffff","money-seven-liart.vercel.app":"@https://money-seven-liart.vercel.app/icons/icon-192.png","mail.google.com":"@https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png","chatgpt.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg","openai.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg"};
 function brandLogo(u){if(isCode(u))return"";var h=linkHost(u),r=rootHost(h);var k=BRAND_LOGOS[h]||BRAND_LOGOS[r];if(!k)return"";return k.charAt(0)==="@"?k.slice(1):("https://cdn.simpleicons.org/"+k)}
 /* brand files that come in black get shown white */
 function brandNeedsWhite(u){var b=brandLogo(u);return b.indexOf("jsdelivr.net/npm/simple-icons")>=0}
@@ -2374,7 +2361,7 @@ function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)re
    so every device agrees; a link is skipped if it already exists (even deleted)
    or if he already saved the same site himself, so nothing is ever duplicated
    and nothing he removed comes back. */
-var CODE_SEED=[["code_vac","VoiceAI Connect","voiceai-connect"],["code_vacb","VAC Backend","voiceai-connect-backend"],["code_sesh","SESH","hq"],["code_money","Money","money"],["code_rsa","Reliable Solutions","reliable-solutions-atlanta"],["code_jblawn","JB Lawn Care","jblawn"],["code_greenline","Greenline","greenline"]];
+var CODE_SEED=[["code_vac","VoiceAI Connect","voiceai-connect"],["code_vacb","VAC Backend","voiceai-connect-backend"],["code_sesh","SESH","hq"],["code_money","Money","money"],["code_rsa","Reliable Solutions","reliable-solutions-atlanta"],["code_jblawn","JB Lawn Care","jblawn"],["code_greenline","Greenline","greenline"],["code_blogfarm","Content Farm","blog-farm"]];
 var LINK_SEED=[
   ["ql_claude","Claude","https://claude.ai",""],
   ["ql_chatgpt","ChatGPT","https://chatgpt.com",""],
@@ -2386,9 +2373,9 @@ var LINK_SEED=[
   ["ql_telnyx","Telnyx","https://portal.telnyx.com",""],
   ["ql_gmail","Gmail","https://mail.google.com",""],
   ["ql_money","Money","https://money-seven-liart.vercel.app","","https://money-seven-liart.vercel.app/icons/icon-192.png"],
-  ["ql_vacadmin","VAC Admin","https://myvoiceaiconnect.com/admin","VoiceAI Connect"],
+  ["ql_vacadmin","VAC Admin","https://myvoiceaiconnect.com/admin",""],
   ["ql_vacsite","VAC Site","https://myvoiceaiconnect.com","VoiceAI Connect"],
-  ["ql_stripe","Stripe","https://dashboard.stripe.com","VoiceAI Connect"],
+  ["ql_stripe","Stripe","https://dashboard.stripe.com",""],
   ["ql_eleven","ElevenLabs","https://elevenlabs.io/app","VoiceAI Connect"],
   ["ql_brevo","Brevo","https://app.brevo.com","VoiceAI Connect"],
   ["ql_anthropic","Anthropic Console","https://console.anthropic.com","VoiceAI Connect"],
@@ -2402,10 +2389,15 @@ var LINK_SEED=[
 ];
 function sameSite(a,b){return normUrl(a).replace(/\/+$/,"").toLowerCase()===normUrl(b).replace(/\/+$/,"").toLowerCase()}
 function seedCodeLinks(){if(!cloudOk)return;var t=Date.now(),n=0;
-  var rows=CODE_SEED.map(function(r){return [r.at(0),r.at(1),pathToCode(HOME_DIR+"/Downloads/"+r.at(2)),"VS Code"]}).concat(LINK_SEED);
+  var rows=CODE_SEED.map(function(r){return [r.at(0),r.at(1),pathToCode(codeRoot()+"/"+r.at(2)),"VS Code"]}).concat(LINK_SEED);
   rows.forEach(function(r,i){var id=r.at(0),url=r.at(2);if(findAny(id))return;
     if(live(S.qlinks).some(function(l){return sameSite(l.url,url)}))return;
     S.qlinks.push({id:id,name:r.at(1),url:url,group:r.at(3),icon:r.at(4)||"",ts:t+i,mtime:t+i,del:false});pushItem(id);n++});
+  if(n){saveLocal();lastSig=stateSignature()}}
+/* v55: VAC Admin and Stripe become standalone apps (once, on every device's data) */
+function migrateApps55(){if(!cloudOk||findAny("mig_apps55"))return;var n=0;
+  ["ql_vacadmin","ql_stripe"].forEach(function(id){var g=findAny(id);if(g&&!g.item.del&&/^voiceai connect$/i.test(g.item.group||"")){g.item.group="";touch(g.item);save(id);n++}});
+  var t=Date.now();S.qlinks.push({id:"mig_apps55",name:"",url:"",group:"",icon:"",opens:0,dark:null,ts:t,mtime:t,del:true});pushItem("mig_apps55");
   if(n){saveLocal();lastSig=stateSignature()}}
 function toggleLpEdit(){lpEdit=!lpEdit;renderLaunchpad()}
 /* one click handler for every tile, on the bar and inside a folder */
