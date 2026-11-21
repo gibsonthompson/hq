@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v51"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v52"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -957,6 +957,25 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 .proj.proj-drag{position:fixed;z-index:80;margin:0;pointer-events:none;transform:rotate(1.2deg) scale(1.02);box-shadow:0 24px 50px -18px rgba(0,0,0,.9);border-color:rgba(255,255,255,0.3);transition:none;cursor:grabbing}
 body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
 @media(hover:none){.proj .pgrip{opacity:.6}}
+
+/* chats panel (under the apps) */
+.chats{margin-top:14px;padding:12px 10px 8px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.008))}
+.lp-title .count{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--dim2);font-weight:500;margin-left:4px}
+.chat-list{display:flex;flex-direction:column;gap:2px}
+.chat-row{position:relative;display:flex;align-items:flex-start;gap:11px;padding:9px 34px 9px 6px;border-radius:10px;text-decoration:none;color:var(--tx)}
+.chat-row:hover{background:var(--elev)}
+.app-ic.chat-ic{width:30px;height:30px;border-radius:8px;flex-shrink:0;margin-top:1px}
+.app-ic.chat-ic img{border-radius:8px}
+.app-ic.chat-ic.glyph img{width:84%;height:84%;margin:8%}
+.app-ic.chat-ic .app-letter{font-size:13px;border-radius:8px}
+.chat-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.chat-title{font-size:13.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-desc{font-size:12.5px;color:var(--dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.chat-edit{position:absolute;top:8px;right:6px;background:none;border:0;color:var(--dim2);opacity:0;cursor:pointer;padding:4px;display:flex}
+.chat-edit svg{width:14px;height:14px}
+.chat-row:hover .chat-edit{opacity:.8}.chat-edit:hover{color:var(--tx);opacity:1}
+@media(hover:none){.chat-edit{opacity:.55}}
+.chat-empty{font-size:12.5px;color:var(--dim2);line-height:1.45;padding:2px 6px 6px}
 </style></head>
 <body>
 
@@ -1025,7 +1044,12 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
       </div>
       <div class="snote-list" id="snoteList"></div>
     </aside>
-    <aside class="home-apps"><div class="lp" id="launchpad"></div></aside>
+    <aside class="home-apps"><div class="lp" id="launchpad"></div>
+      <div class="chats">
+        <div class="lp-head"><span class="lp-title">Chats <span class="count" id="chatCount"></span></span><div class="lp-ctl"><button class="lp-btn" onclick="openChatModal()" title="Add a chat" aria-label="Add a chat"><i data-lucide="plus"></i></button></div></div>
+        <div class="chat-list" id="chatList"></div>
+      </div>
+    </aside>
    </div><!-- /home-cols -->
   </div>
 
@@ -1174,6 +1198,20 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
   </div>
 </div>
 
+<!-- CHAT editor -->
+<div class="modal" id="chatModal"><div class="modal-box" style="max-width:440px">
+  <div class="modal-title"><i data-lucide="message-square"></i> <span id="chatModalTitle">Add Chat</span></div>
+  <div class="lnk-prev"><span class="app-ic" id="chatPrevIc"></span><div><div class="lnk-prev-name">Chat link</div><div class="lnk-prev-host mono">Claude, ChatGPT or any other</div></div></div>
+  <input class="m-in" id="chatUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste the chat link">
+  <input class="m-in" id="chatTitle" placeholder="Label, e.g. Claude: SESH build">
+  <textarea class="m-ta" id="chatDesc" rows="3" placeholder="What this chat is best at right now"></textarea>
+  <div class="m-actions">
+    <button class="m-btn danger" id="chatDel" style="display:none;flex:0 0 auto" onclick="deleteChat()"><i data-lucide="trash-2"></i></button>
+    <button class="m-btn" onclick="closeModal('chatModal')">Cancel</button>
+    <button class="m-btn primary" onclick="saveChat()">Save</button>
+  </div>
+</div></div>
+
 <!-- CUSTOM LIST PICKER -->
 <div class="modal" id="uiPickModal"><div class="modal-box" style="max-width:400px">
   <div class="modal-title"><i data-lucide="list"></i> <span id="uiPickTitle">Choose</span></div>
@@ -1228,6 +1266,7 @@ var S={
   notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],visionAreas:[],ventures:[],
   sessionNotes:[],   // {id,text,status:'open'|'done',ts,mtime,del}
   qlinks:[],         // launcher links {id,name,url,group,ts,mtime,del}
+  chats:[],          // AI chat links {id,url,title,desc,ts,mtime,del}
   transactions:[],   // {id,amount,direction:'out'|'in',merchant,category,account,business,type:'personal'|'business',postedDate,note,raw,source,confidence,ts,mtime,del}
   lastReview:null,
   schedCats:null,nci:0,wcalWeekStart:null
@@ -1282,16 +1321,17 @@ function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(fun
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
 function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",icon:l.icon||"",opens:Number(l.opens)||0,dark:(l.dark===true?true:(l.dark===false?false:null)),ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
+function normalizeChats(arr){if(!Array.isArray(arr))return[];return arr.map(function(c){var ts=(c.ts!=null?c.ts:(c.mtime||1));return{id:c.id||mid(),url:c.url||"",title:c.title||"",desc:c.desc||"",ts:ts,mtime:(c.mtime!=null?c.mtime:ts),del:!!c.del}})}
 function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
-  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.sessionNotes=normalizeSNotes(p.sessionNotes);S.qlinks=normalizeQLinks(p.qlinks||[]);S.transactions=normalizeTxn(p.transactions||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.sessionNotes=normalizeSNotes(p.sessionNotes);S.qlinks=normalizeQLinks(p.qlinks||[]);S.chats=normalizeChats(p.chats||[]);S.transactions=normalizeTxn(p.transactions||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
 function pruneLocalBackups(keepN){try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();var drop=keys.slice(0,Math.max(0,keys.length-(keepN||1)));drop.forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});return drop.length}catch(e){return 0}}
 function saveLocal(){
-  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,sessionNotes:S.sessionNotes,qlinks:S.qlinks,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
+  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,sessionNotes:S.sessionNotes,qlinks:S.qlinks,chats:S.chats,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
   /* The task data MUST persist. If browser storage is full (photos or old
      snapshots), free space and retry so an edit can never be silently lost. */
   try{localStorage.setItem("hq_d",main)}
@@ -1312,7 +1352,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v51"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v52"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1325,7 +1365,7 @@ var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');
      - a local snapshot is kept automatically, once per day
    ============================================================ */
 function live(arr){return (arr||[]).filter(function(x){return x&&!x.del})}
-function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","qlinks"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
+function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","qlinks","chats"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var b=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(b.length>4)localStorage.removeItem(b.shift())}catch(e){}}
 /* automatic daily snapshot, so there is always a restore path */
 function autoBackup(){try{var k="hq_bak_day_"+todayStr();if(!localStorage.getItem(k)&&dataCount(S)>0){backupLocal("day_"+todayStr());pruneLocalBackups(2)}}catch(e){}}
@@ -1349,9 +1389,9 @@ function setSync(state){syncState=state;
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
-function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures",snote:"sessionNotes",txn:"transactions",qlink:"qlinks"}[kind]}
-function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture",sessionNotes:"snote",transactions:"txn",qlinks:"qlink"}[listName]}
-function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks","goals"];
+function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures",snote:"sessionNotes",txn:"transactions",qlink:"qlinks",chat:"chats"}[kind]}
+function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture",sessionNotes:"snote",transactions:"txn",qlinks:"qlink",chats:"chat"}[listName]}
+function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks","chats","goals"];
   for(var i=0;i<L.length;i++){var a=S[L[i]]||[];for(var j=0;j<a.length;j++){if(a[j]&&a[j].id===id)return{item:a[j],kind:kindOf(L[i]),parent:null}}}
   for(var g=0;g<(S.goals||[]).length;g++){var st=S.goals[g].steps||[];for(var k=0;k<st.length;k++){if(st[k].id===id)return{item:st[k],kind:"step",parent:S.goals[g].id}}}
   return null}
@@ -1390,7 +1430,7 @@ function pushNewer(remoteRows,cb){
     if(r&&!((item.mtime||0)>rm))return;      /* cloud is same or newer, leave it */
     rows.push({id:item.id,user_key:"gibson",kind:kind,parent:parent,deleted:!!item.del,data:JSON.parse(JSON.stringify(item))});
   }
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks","chats"].forEach(function(L){
     (S[L]||[]).forEach(function(x){consider(x,kindOf(L),null)})});
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;
     consider({id:g.id,title:g.title,why:g.why,cat:g.cat,target:g.target,created:g.created,archived:g.archived,mtime:g.mtime,del:g.del},"goal",null);
@@ -1416,7 +1456,7 @@ var lastSig="";
 function stateSignature(){
   var parts=[];
   function add(a){(a||[]).forEach(function(x){if(x&&x.id)parts.push(x.id+":"+(x.mtime||0)+":"+(x.del?1:0))})}
-  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);add(S.ventures);add(S.sessionNotes);add(S.transactions);add(S.qlinks);
+  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);add(S.ventures);add(S.sessionNotes);add(S.transactions);add(S.qlinks);add(S.chats);
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;parts.push(g.id+":"+(g.mtime||0)+":"+(g.del?1:0));add(g.steps)});
   parts.sort();
   return parts.join("|");
@@ -1428,10 +1468,10 @@ function applyRows(rows){
      2. local copy modified more recently -> keep the local copy
      3. item exists here but has no row   -> keep it and upload it */
   var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
-            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],sessionNotes:S.sessionNotes||[],transactions:S.transactions||[],qlinks:S.qlinks||[],goals:S.goals||[]};
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],sessionNotes:S.sessionNotes||[],transactions:S.transactions||[],qlinks:S.qlinks||[],chats:S.chats||[],goals:S.goals||[]};
   var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
   var goals={},goalOrder=[],steps=[],seen={};
-  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[],sessionNotes:[],transactions:[],qlinks:[]};
+  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[],sessionNotes:[],transactions:[],qlinks:[],chats:[]};
   function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
     var lh=findAny(r.id);
@@ -1446,7 +1486,7 @@ function applyRows(rows){
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
   var reupload=[];
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks","chats"].forEach(function(L){
     (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
   (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;goalOrder.push(g.id);reupload.push(g.id)}});
   Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
@@ -1462,6 +1502,7 @@ function applyRows(rows){
   S.sessionNotes=normalizeSNotes(next.sessionNotes);
   S.transactions=normalizeTxn(next.transactions);
   S.qlinks=normalizeQLinks(next.qlinks);
+  S.chats=normalizeChats(next.chats);
   S.images=normalizeImages(next.images);
   S.goals=normalizeGoals(goalOrder.map(function(k){return goals[k]}));
   /* backfill: anything that arrived without a ts now has one, and it is
@@ -1813,7 +1854,7 @@ function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMo
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderLaunchpad();renderReminders();renderTags();renderBoard();renderDone();renderSNotes()}
+  if(activeTab==="home"){renderLaunchpad();renderChats();renderReminders();renderTags();renderBoard();renderDone();renderSNotes()}
   else if(activeTab==="notes")renderNotes();
   else if(activeTab==="projects")renderProjects();
   icons();
@@ -2300,7 +2341,7 @@ function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=doc
   var nu=normUrl(u)||u;if(lnkNameAuto)nm.value=u.trim()?niceName(nu):"";
   var ic=(document.getElementById("lnkIcon").value||"").trim();var l={url:nu,name:nm.value||niceName(nu),icon:ic,dark:lnkDarkPick};
   var db=document.getElementById("lnkDark");if(db)db.classList.toggle("on",lnkDarkEffective());
-  var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic"','<span class="app-ic" id="lnkPrevIc"');
+  var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic','<span id="lnkPrevIc" class="app-ic');
   document.getElementById("lnkPrevName").textContent=l.name||"New link";
   var nu=normUrl(u);document.getElementById("lnkPrevHost").textContent=(nu&&isCode(nu))?("VS Code \u00b7 "+shortPath(codePath(nu))):(linkHost(u)||"paste a website or a folder path")}
 function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
@@ -2325,6 +2366,45 @@ function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});
   if(u)u.addEventListener("input",updateLnkPreview);
   if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();updateLnkPreview()});
   [u,n].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveLink()}})})})();
+
+/* ===== CHATS =====
+   The AI chats he is working in right now (Claude, ChatGPT, ...): each is just
+   a link with a label and a short note on what that chat is best at, shown
+   under the apps with the site's own logo. Synced like everything else
+   (kind "chat"). Newest first. */
+var editingChatId=null;
+function chatsSorted(){return live(S.chats).slice().sort(function(a,b){var d=(b.ts||0)-(a.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
+function chatDefaultTitle(u){var h=linkHost(u);if(/claude\.ai$/.test(h))return"Claude chat";if(/chatgpt\.com$|openai\.com$/.test(h))return"ChatGPT chat";if(/gemini\.google\.com$|aistudio\.google\.com$/.test(h))return"Gemini chat";if(/perplexity\.ai$/.test(h))return"Perplexity chat";if(/grok\.com$|x\.ai$/.test(h))return"Grok chat";return niceName(u)?niceName(u)+" chat":"Chat"}
+function renderChats(){var box=document.getElementById("chatList");if(!box)return;var list=chatsSorted();
+  var cnt=document.getElementById("chatCount");if(cnt)cnt.textContent=list.length?list.length:"";
+  if(!list.length){box.innerHTML='<div class="chat-empty">Paste a Claude or ChatGPT chat link and note what it’s best at, so you can jump straight back to the right one.</div>';return}
+  box.innerHTML=list.map(function(c){var u=normUrl(c.url);
+    return '<a class="chat-row" href="'+esc(u)+'" target="_blank" rel="noopener" data-cid="'+esc(c.id)+'" title="'+esc(c.title||chatDefaultTitle(u))+'">'+appIcon({url:u,name:c.title},"chat-ic")+
+      '<span class="chat-body"><span class="chat-title">'+esc(c.title||chatDefaultTitle(u))+'</span>'+(c.desc?'<span class="chat-desc">'+esc(c.desc)+'</span>':'')+'</span>'+
+      '<button class="chat-edit" data-edit="'+esc(c.id)+'" title="Edit" aria-label="Edit"><i data-lucide="pencil"></i></button></a>'}).join("");
+  icons()}
+document.addEventListener("click",function(ev){var e=ev.target.closest&&ev.target.closest(".chat-edit");if(!e)return;ev.preventDefault();ev.stopPropagation();openChatModal(e.getAttribute("data-edit"))},true);
+function updateChatPreview(){var u=normUrl(document.getElementById("chatUrl").value)||"";var t=document.getElementById("chatTitle");
+  var ic=document.getElementById("chatPrevIc");if(ic)ic.outerHTML=appIcon({url:u,name:t.value||"?"}).replace('<span class="app-ic','<span id="chatPrevIc" class="app-ic');
+  t.placeholder=u?chatDefaultTitle(u):"Label, e.g. Claude: SESH build"}
+function openChatModal(id){editingChatId=id||null;var c=id?S.chats.find(function(x){return x.id===id}):null;
+  document.getElementById("chatModalTitle").textContent=c?"Edit Chat":"Add Chat";
+  document.getElementById("chatUrl").value=c?c.url:"";document.getElementById("chatTitle").value=c?c.title:"";document.getElementById("chatDesc").value=c?c.desc:"";
+  document.getElementById("chatDel").style.display=c?"":"none";
+  updateChatPreview();openModal("chatModal");icons();
+  setTimeout(function(){try{document.getElementById(c?"chatDesc":"chatUrl").focus()}catch(e){}},100)}
+function saveChat(){var u=normUrl(document.getElementById("chatUrl").value);
+  if(!linkHost(u)){toast("Paste the chat link first","alert-triangle");try{document.getElementById("chatUrl").focus()}catch(e){}return}
+  var title=document.getElementById("chatTitle").value.trim()||chatDefaultTitle(u),desc=document.getElementById("chatDesc").value.trim();
+  if(editingChatId){var c=S.chats.find(function(x){return x.id===editingChatId});if(c){c.url=u;c.title=title;c.desc=desc;touch(c);save(c.id)}}
+  else{var now=Date.now(),id=mid();S.chats.push({id:id,url:u,title:title,desc:desc,ts:now,mtime:now,del:false});save(id)}
+  editingChatId=null;closeModal("chatModal");renderChats();lastSig=stateSignature();toast("Chat saved","message-square")}
+function deleteChat(){var id=editingChatId;if(!id)return;var c=S.chats.find(function(x){return x.id===id});closeModal("chatModal");editingChatId=null;tomb(id);renderChats();lastSig=stateSignature();
+  toast("Removed "+((c&&c.title)||"chat")+" · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderChats();lastSig=stateSignature()}})}
+(function(){var u=document.getElementById("chatUrl"),t=document.getElementById("chatTitle");
+  if(u)u.addEventListener("input",updateChatPreview);if(t)t.addEventListener("input",updateChatPreview);
+  [u,t].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveChat()}})});
+  var d=document.getElementById("chatDesc");if(d)d.addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();saveChat()}})})();
 
 /* ===== PROJECTS: order + drag to reorder =====
    A project's place comes from its saved "order" once he has dragged it.
