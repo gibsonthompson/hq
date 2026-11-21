@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v49"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v50"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -888,11 +888,75 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   .lpf-grid{grid-template-columns:repeat(3,1fr)}
 }
 .lnk-tip{font-size:12px;color:var(--dim2);line-height:1.4;margin:-2px 0 12px}
+/* ===== v50: tabs in the top bar, three columns, real logos ===== */
+.topbar{padding:calc(9px + env(safe-area-inset-top)) 22px 9px;justify-content:flex-start}
+.topbar .tab-nav{flex:1;display:flex;gap:4px;margin-left:18px;padding:0;border:0;background:none;overflow:visible}
+.topbar .tab-btn{border:0;border-radius:8px;padding:7px 12px;font-size:13px;color:var(--dim)}
+.topbar .tab-btn:hover{color:var(--tx);background:var(--elev)}
+.topbar .tab-btn.active{color:var(--tx);background:var(--hov);border:0}
+.topbar .tb-right{margin-left:auto}
+#tab-home.wrap{max-width:1560px}
+.content{padding-top:16px}
+.home-cols{display:grid;gap:22px;align-items:start;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);grid-template-areas:"main apps" "main notes"}
+.home-main{grid-area:main;min-width:0}
+.home-side{grid-area:notes;position:sticky;top:0}
+.home-apps{grid-area:apps;position:sticky;top:0;z-index:2}
+@media(min-width:1240px){.home-cols{grid-template-columns:minmax(0,1.55fr) minmax(270px,1fr) 340px;grid-template-areas:"main notes apps"}}
+@media(max-width:900px){.home-cols{grid-template-columns:1fr;gap:0;grid-template-areas:"apps" "main" "notes"}.home-side,.home-apps{position:static}.home-apps{margin-bottom:14px}.home-side{margin-top:22px}}
+.sn-head,.tb-head{margin-top:0}
+.cap{margin-bottom:12px}
+/* apps panel */
+.lp{position:relative;margin:0;padding:12px 10px 10px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.008))}
+.lp.empty{display:block;min-height:0;padding:12px}
+.lp-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+.lp-title{font-family:'Space Grotesk';font-weight:700;font-size:14px}
+.lp-ctl{position:static;display:flex;flex-direction:row;gap:6px}
+.lp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 4px}
+.lp-empty{padding:2px 4px 4px}
+/* real logos, no white tile */
+.app-ic{width:54px;height:54px;background:transparent;box-shadow:none;border-radius:13px;overflow:visible}
+.app-ic img{width:100%;height:100%;object-fit:contain;border-radius:13px}
+.app-ic.inv img{filter:invert(1) brightness(1.1)}
+.app-letter{background:var(--elev2);color:var(--tx);border:1px solid var(--line2);border-radius:13px;font-size:22px}
+.app:hover .app-ic{transform:translateY(-2px) scale(1.04)}
+.app-ic.fold{width:54px;height:54px;padding:6px;gap:3px;border-radius:14px;overflow:hidden}
+.app-ic.mini{width:12px;height:12px;border-radius:3px}
+.app-ic.mini img{border-radius:3px}
+.app-ic.mini .app-letter{font-size:7px;border-radius:3px;border:0}
+.app-name{font-size:11.5px;max-width:78px}
+.lpf-grid .app-ic{width:62px;height:62px}
+.lpf-grid .app-ic img,.lpf-grid .app-letter{border-radius:15px}
+.proj-apps .app-ic{width:42px;height:42px}
+.proj-apps .app-ic img,.proj-apps .app-letter{border-radius:10px}
+.lnk-prev .app-ic{width:50px;height:50px}
+/* editor: dark logo switch */
+.lnk-dark{display:inline-flex;align-items:center;gap:8px;margin:-2px 0 12px;padding:8px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--elev);color:var(--dim);font:600 12.5px/1 inherit;font-family:inherit;cursor:pointer}
+.lnk-dark svg{width:14px;height:14px}
+.lnk-dark.on{background:var(--vio);border-color:var(--vio);color:var(--on)}
+@media(max-width:760px){
+  .topbar{padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+  .lp{padding:10px 6px 8px}
+  .lp-grid{grid-template-columns:repeat(5,1fr);gap:12px 0}
+  .app-ic,.app-ic.fold{width:50px;height:50px}
+  .app-name{max-width:64px;font-size:11px}
+}
+
+/* logo styles: brand glyphs float with no tile; flipped / knocked-out logos */
+.app-ic.glyph img{width:74%;height:74%;margin:13%;border-radius:0;object-fit:contain}
+.app-ic.mini.glyph img{width:84%;height:84%;margin:8%}
+.app-ic.knock img{filter:invert(1);mix-blend-mode:screen;border-radius:0}
+@media(max-width:1439px){.cap-hint{display:none}}
+@media(max-width:760px){.topbar .tab-nav{display:none}}
 </style></head>
 <body>
 
 <div class="topbar">
   <div class="brand"><span class="logo" aria-label="SESH"><span class="logo-pr">&gt;</span>SESH<span class="logo-cur"></span></span><span class="tagline" id="buildTag">…</span></div>
+  <div class="tab-nav">
+  <button class="tab-btn active" data-tab="home" onclick="switchTab('home')"><i data-lucide="terminal"></i> Session</button>
+  <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i> Notes</button>
+  <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')"><i data-lucide="folder"></i> Projects</button>
+</div>
   <div class="tb-right">
     <button class="tb-icon" id="syncBtn" onclick="forceSync()" title="Sync now" style="position:relative"><i data-lucide="refresh-cw"></i><span id="syncDot" style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--dim2);border:1.5px solid var(--elev)"></span></button>
     <button class="tb-icon" onclick="openSbSettings()" title="Sync settings"><i data-lucide="settings"></i></button>
@@ -901,19 +965,13 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 </div>
 
 <div id="syncBanner" class="sync-banner hidden"></div>
-<div class="tab-nav">
-  <button class="tab-btn active" data-tab="home" onclick="switchTab('home')"><i data-lucide="terminal"></i> Session</button>
-  <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i data-lucide="sticky-note"></i> Notes</button>
-  <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')"><i data-lucide="folder"></i> Projects</button>
-</div>
+
 
 <div class="content">
   <!-- SESSION (home) -->
   <div class="tab active wrap" id="tab-home">
    <div class="home-cols">
     <div class="home-main">
-      <div class="lp" id="launchpad"></div>
-
       <div class="cap">
         <div class="add-prime cap-row">
           <textarea class="add-input" id="nmInput" rows="1" placeholder="Jot it down&hellip;" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
@@ -957,6 +1015,7 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
       </div>
       <div class="snote-list" id="snoteList"></div>
     </aside>
+    <aside class="home-apps"><div class="lp" id="launchpad"></div></aside>
    </div><!-- /home-cols -->
   </div>
 
@@ -1085,6 +1144,7 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, or a VS Code folder path">
   <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
   <input class="m-in" id="lnkIcon" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Custom icon image link (optional)">
+  <button type="button" class="lnk-dark" id="lnkDark" onclick="toggleLnkDark()"><i data-lucide="sun"></i><span>Show logo in white</span></button>
   <div class="lnk-tip">For a VS Code project, paste its folder path. In Finder, right-click the folder while holding Option and choose Copy as Pathname.</div>
   <div class="m-label">Folder</div>
   <div class="lnk-folders" id="lnkFolders"></div>
@@ -1211,7 +1271,7 @@ function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
-function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",icon:l.icon||"",ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
+function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",icon:l.icon||"",opens:Number(l.opens)||0,dark:(l.dark===true?true:(l.dark===false?false:null)),ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
 function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
@@ -1242,7 +1302,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v49"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v50"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2102,23 +2162,50 @@ function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-
 var NAME_SKIP=["www","app","apps","dashboard","console","admin","portal","my","login","account","accounts","web","go","cloud","studio","platform","manage"];
 function niceName(u){if(isCode(u)){var cp=codePath(u).split("/").filter(Boolean);return cp.length?cp.at(-1):"VS Code"}var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
 function letterOf(name){return esc(String(name||"?").trim().charAt(0).toUpperCase()||"?")}
-function appIcon(l,cls){var f=(l.icon&&/^https?:\/\//i.test(l.icon))?l.icon:favUrl(l.url);return '<span class="app-ic'+(cls?" "+cls:"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="favFail(this)">':'')+'</span>'}
+function appIcon(l,cls){var bl=(l.icon&&/^https?:\/\//i.test(l.icon))?"":brandLogo(l.url);var f=(l.icon&&/^https?:\/\//i.test(l.icon))?l.icon:(bl||favUrl(l.url));return '<span class="app-ic'+(cls?" "+cls:"")+(bl?" glyph":"")+(bl&&brandNeedsWhite(l.url)?" inv":"")+(!bl&&logoInvert(l)?" inv":"")+(!bl&&logoKnock(l)?" knock":"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="favFail(this)">':'')+'</span>'}
 function linksSorted(){return live(S.qlinks).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function folderNames(){var seen={},out=[];linksSorted().forEach(function(l){var g=(l.group||"").trim();if(g&&!seen[g.toLowerCase()]){seen[g.toLowerCase()]=1;out.push(g)}});return out}
-function linksIn(g){return linksSorted().filter(function(l){return (l.group||"").trim().toLowerCase()===String(g).toLowerCase()})}
 function linkWhere(u){return isCode(u)?("VS Code \u00b7 "+shortPath(codePath(u))):linkHost(u)}
+/* Order: most likely to open first. Every app starts from a sensible default
+   rank, and each open nudges it up, so the bar slowly learns what he actually
+   uses without reshuffling on every click. A folder ranks by its best link
+   plus the opens of everything inside it. */
+var APP_RANK={ql_claude:1,code_vac:2,code_vacb:3,code_sesh:4,code_money:5,code_rsa:6,code_jblawn:7,code_greenline:8,ql_github:10,ql_vercel:11,ql_supabase:12,ql_chatgpt:13,ql_vacadmin:14,ql_vacsite:15,ql_stripe:16,ql_anthropic:17,ql_eleven:18,ql_brevo:19,ql_vapi:20,ql_do:21,ql_telnyx:22,ql_cbagency:23,ql_cbclient:24,ql_cbsite:25,ql_gmail:26,ql_meta:27,ql_ytstudio:28,ql_gsc:29,ql_ga:30,ql_money:31};
+function linkRank(l){return APP_RANK[l.id]!=null?APP_RANK[l.id]:100}
+function prior(rank){return Math.max(0,40-rank)/10}
+function likelyCmp(a,b){return (b.score-a.score)||(a.rank-b.rank)||((a.ts||0)-(b.ts||0))||String(a.key).localeCompare(String(b.key))}
+function linkEntry(l){var r=linkRank(l);return {kind:"link",key:l.id,link:l,rank:r,ts:l.ts||0,score:(l.opens||0)+prior(r)}}
+function linksIn(g){return linksSorted().filter(function(l){return (l.group||"").trim().toLowerCase()===String(g).toLowerCase()}).map(linkEntry).sort(likelyCmp).map(function(e){return e.link})}
+function launchItems(){var out=[];
+  folderNames().forEach(function(g){var ls=linksIn(g);if(!ls.length)return;var best=Math.min.apply(null,ls.map(linkRank));var opens=ls.reduce(function(s,l){return s+(l.opens||0)},0);
+    out.push({kind:"folder",key:g,name:g,rank:best,ts:Math.min.apply(null,ls.map(function(l){return l.ts||0})),score:opens+prior(best)})});
+  linksSorted().filter(function(l){return !(l.group||"").trim()}).forEach(function(l){out.push(linkEntry(l))});
+  return out.sort(likelyCmp)}
+function bumpOpen(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)return;l.opens=(l.opens||0)+1;touch(l);save(id);lastSig=stateSignature()}
+/* Logos that are black on a clear background would vanish on SESH's black, so
+   they are shown in white. Known ones are automatic; any link can override it. */
+/* Real transparent brand logos (Simple Icons) for sites whose tab icon is a
+   solid square; everything else uses its own favicon. */
+var BRAND_LOGOS={"claude.ai":"claude/D97757","github.com":"github/ffffff","vercel.com":"vercel/ffffff","supabase.com":"supabase/3FCF8E","digitalocean.com":"digitalocean/0080FF","stripe.com":"stripe/635BFF","elevenlabs.io":"elevenlabs/ffffff","brevo.com":"brevo/0B996E","anthropic.com":"anthropic/F0EEE6","x.com":"x/ffffff","notion.so":"notion/ffffff","apple.com":"apple/ffffff","threads.net":"threads/ffffff","medium.com":"medium/ffffff","mail.google.com":"@https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png","chatgpt.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg","openai.com":"@https://cdn.jsdelivr.net/npm/simple-icons@11.0.0/icons/openai.svg"};
+function brandLogo(u){if(isCode(u))return"";var h=linkHost(u),r=rootHost(h);var k=BRAND_LOGOS[h]||BRAND_LOGOS[r];if(!k)return"";return k.charAt(0)==="@"?k.slice(1):("https://cdn.simpleicons.org/"+k)}
+/* brand files that come in black get shown white */
+function brandNeedsWhite(u){var b=brandLogo(u);return b.indexOf("jsdelivr.net/npm/simple-icons")>=0}
+/* dark logo on a clear background: show it in white */
+var DARK_LOGO_HOSTS=["cursor.com","v0.dev"];
+/* black logo on a white square (no clean logo available): flip it and blend the square away */
+var KNOCKOUT_HOSTS=[];
+function logoKnock(l){if(l.icon)return false;var h=linkHost(l.url);return KNOCKOUT_HOSTS.indexOf(rootHost(h))>=0||KNOCKOUT_HOSTS.indexOf(h)>=0}
+function logoInvert(l){if(l.dark===true)return true;if(l.dark===false)return false;if(isCode(l.url))return false;var h=linkHost(l.url);return DARK_LOGO_HOSTS.indexOf(rootHost(h))>=0||DARK_LOGO_HOSTS.indexOf(h)>=0}
 function appTile(l){var code=isCode(l.url);return '<a class="app'+(code?" code":"")+'" href="'+esc(normUrl(l.url))+'"'+(code?'':' target="_blank" rel="noopener"')+' data-lid="'+esc(l.id)+'" title="'+esc(l.name)+' · '+esc(linkWhere(l.url))+'">'+appIcon(l)+'<span class="app-name">'+esc(l.name||niceName(l.url))+'</span><span class="app-badge" aria-hidden="true">&minus;</span></a>'}
 function folderTile(g){var ls=linksIn(g);var mini=ls.slice(0,9).map(function(l){return appIcon(l,"mini")}).join("");
   return '<button class="app" data-folder="'+esc(g)+'" title="'+esc(g)+' · '+ls.length+' links"><span class="app-ic fold">'+mini+'</span><span class="app-name">'+esc(g)+'</span></button>'}
 function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)return;seedCodeLinks();
-  var folders=folderNames(),singles=linksSorted().filter(function(l){return !(l.group||"").trim()});
-  var any=folders.length||singles.length,h='';
-  folders.forEach(function(g){h+=folderTile(g)});
-  singles.forEach(function(l){h+=appTile(l)});
+  var items=launchItems(),any=items.length>0,h='';
+  items.forEach(function(it){h+=it.kind==="folder"?folderTile(it.name):appTile(it.link)});
   var ctl='<div class="lp-ctl"><button class="lp-btn" onclick="openLinkModal(null,\'\')" title="Add a link" aria-label="Add a link"><i data-lucide="plus"></i></button>'+
     (any?'<button class="lp-btn'+(lpEdit?" on":"")+'" onclick="toggleLpEdit()" title="'+(lpEdit?"Done editing":"Edit links")+'" aria-label="'+(lpEdit?"Done editing":"Edit links")+'"><i data-lucide="'+(lpEdit?"check":"pencil")+'"></i></button>':'')+'</div>';
   lp.className="lp"+(lpEdit?" editing":"")+(any?"":" empty");
-  lp.innerHTML=(any?'<div class="lp-grid">'+h+'</div>':'<div class="lp-empty">Add the sites you keep open in tabs. Group each business’s tools into a folder.</div>')+ctl;
+  lp.innerHTML='<div class="lp-head"><span class="lp-title">Apps</span>'+ctl+'</div>'+(any?'<div class="lp-grid">'+h+'</div>':'<div class="lp-empty">Add the sites you keep open in tabs. Group each business’s tools into a folder.</div>');
   if(lpOpenFolder!=null)renderFolder();
   icons()}
 /* One-time starter set of links, added after the cloud has loaded. Stable ids,
@@ -2168,6 +2255,7 @@ document.addEventListener("click",function(ev){
   if(fold!=null){ev.preventDefault();openFolder(fold);return}
   var lid=t.getAttribute("data-lid");if(!lid)return;
   if(lpEdit){ev.preventDefault();if(ev.target.closest(".app-badge")){quickDeleteLink(lid);return}openLinkModal(lid);return}
+  bumpOpen(lid);
 });
 /* press and hold a tile (touch) or right-click it (mouse) to edit, like iOS */
 (function(){var timer=null;
@@ -2195,17 +2283,20 @@ function renderLnkFolders(){var box=document.getElementById("lnkFolders");var na
   box.innerHTML=h;
   box.querySelectorAll(".lf-chip").forEach(function(b){b.onclick=function(){if(b.getAttribute("data-new")){uiPrompt("New folder","",{message:"Name it after the business, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=String(v).trim();if(!v)return;lnkFolderPick=v;renderLnkFolders()});return}lnkFolderPick=b.getAttribute("data-f")||"";renderLnkFolders()}});
   icons()}
-var lnkNameAuto=true;
+var lnkNameAuto=true,lnkDarkPick=null;
+function lnkDarkEffective(){var u=normUrl(document.getElementById("lnkUrl").value)||"";return lnkDarkPick===null?logoInvert({url:u}):lnkDarkPick}
+function toggleLnkDark(){lnkDarkPick=!lnkDarkEffective();updateLnkPreview()}
 function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
   var nu=normUrl(u)||u;if(lnkNameAuto)nm.value=u.trim()?niceName(nu):"";
-  var ic=(document.getElementById("lnkIcon").value||"").trim();var l={url:nu,name:nm.value||niceName(nu),icon:ic};
+  var ic=(document.getElementById("lnkIcon").value||"").trim();var l={url:nu,name:nm.value||niceName(nu),icon:ic,dark:lnkDarkPick};
+  var db=document.getElementById("lnkDark");if(db)db.classList.toggle("on",lnkDarkEffective());
   var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic"','<span class="app-ic" id="lnkPrevIc"');
   document.getElementById("lnkPrevName").textContent=l.name||"New link";
   var nu=normUrl(u);document.getElementById("lnkPrevHost").textContent=(nu&&isCode(nu))?("VS Code \u00b7 "+shortPath(codePath(nu))):(linkHost(u)||"paste a website or a folder path")}
 function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
   document.getElementById("lnkTitle").textContent=l?"Edit Link":"Add Link";
   document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";document.getElementById("lnkIcon").value=l?(l.icon||""):"";
-  lnkNameAuto=!l;lnkFolderPick=l?(l.group||""):(group||"");
+  lnkNameAuto=!l;lnkFolderPick=l?(l.group||""):(group||"");lnkDarkPick=l?(l.dark===true?true:(l.dark===false?false:null)):null;
   document.getElementById("lnkDel").style.display=l?"":"none";
   renderLnkFolders();updateLnkPreview();openModal("lnkModal");
   setTimeout(function(){try{document.getElementById(l?"lnkName":"lnkUrl").focus()}catch(e){}},100)}
@@ -2213,8 +2304,8 @@ function saveLink(){var u=normUrl(document.getElementById("lnkUrl").value);var n
   if(!linkHost(u)){toast(/^(\/|~\/|vscode:)/i.test(document.getElementById("lnkUrl").value.trim())?"That folder path looks incomplete":"Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
   if(!name)name=niceName(u);
   var icon=(document.getElementById("lnkIcon").value||"").trim();if(icon&&!/^https?:\/\//i.test(icon))icon="https://"+icon;
-  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;l.icon=icon;touch(l);save(l.id)}}
-  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,icon:icon,ts:now,mtime:now,del:false});save(id)}
+  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;l.icon=icon;l.dark=(lnkDarkPick===null||lnkDarkPick===logoInvert({url:u}))?null:lnkDarkPick;touch(l);save(l.id)}}
+  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,icon:icon,opens:0,dark:(lnkDarkPick===null||lnkDarkPick===logoInvert({url:u}))?null:lnkDarkPick,ts:now,mtime:now,del:false});save(id)}
   editingLinkId=null;closeModal("lnkModal");renderLaunchpad();lastSig=stateSignature();toast(lnkFolderPick?("Saved to "+lnkFolderPick):"Link saved","check")}
 function deleteLink(){var id=editingLinkId;if(!id)return;closeModal("lnkModal");editingLinkId=null;quickDeleteLink(id)}
 function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)return;tomb(id);renderLaunchpad();lastSig=stateSignature();
