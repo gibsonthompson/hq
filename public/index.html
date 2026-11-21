@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v46"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v47"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -887,6 +887,7 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   .app-name{max-width:64px}
   .lpf-grid{grid-template-columns:repeat(3,1fr)}
 }
+.lnk-tip{font-size:12px;color:var(--dim2);line-height:1.4;margin:-2px 0 12px}
 </style></head>
 <body>
 
@@ -1081,8 +1082,9 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 <div class="modal" id="lnkModal"><div class="modal-box" style="max-width:440px">
   <div class="modal-title"><i data-lucide="app-window"></i> <span id="lnkTitle">Add Link</span></div>
   <div class="lnk-prev"><span class="app-ic" id="lnkPrevIc"></span><div><div class="lnk-prev-name" id="lnkPrevName">New link</div><div class="lnk-prev-host mono" id="lnkPrevHost">paste a website below</div></div></div>
-  <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, e.g. dashboard.stripe.com">
+  <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, or a VS Code folder path">
   <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
+  <div class="lnk-tip">For a VS Code project, paste its folder path. In Finder, right-click the folder while holding Option and choose Copy as Pathname.</div>
   <div class="m-label">Folder</div>
   <div class="lnk-folders" id="lnkFolders"></div>
   <div class="m-actions">
@@ -1239,7 +1241,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v46"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v47"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2065,8 +2067,16 @@ function rmNote(id){uiConfirm("Delete this note?",{title:"Delete note",okText:"D
    that share a folder name (a business) collapse into one folder icon that opens
    like an iPhone folder. Every link is its own synced item (kind "qlink"). */
 var lpEdit=false,lpOpenFolder=null,editingLinkId=null,lnkFolderPick="";
-function linkHost(u){try{return new URL(/^https?:\/\//i.test(u)?u:"https://"+u).hostname.replace(/^www\./i,"")}catch(e){return ""}}
-function normUrl(u){u=String(u||"").trim();if(!u)return"";if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
+/* VS Code folders: a vscode://file/... link opens that folder straight in VS
+   Code on his Mac. He can paste the link, or just the folder path
+   (/Users/..., or ~/Downloads/...), and it is converted for him. */
+var HOME_DIR="/Users/gibsonthompson";
+function isCode(u){return /^vscode(-insiders)?:/i.test(String(u||"").trim())}
+function codePath(u){var m=String(u||"").trim().match(/^vscode(?:-insiders)?:\/\/file(\/[^?#]*)/i);if(!m)return"";try{return decodeURI(m[1])}catch(e){return m[1]}}
+function pathToCode(p){p=String(p||"").trim().replace(/^["']|["']$/g,"");if(p.indexOf("~/")===0)p=HOME_DIR+p.slice(1);if(p.charAt(0)!=="/")return"";return "vscode://file"+encodeURI(p.replace(/\/+$/,""))}
+function shortPath(p){return String(p||"").replace(HOME_DIR,"~")}
+function linkHost(u){if(isCode(u))return codePath(u)?"code.visualstudio.com":"";try{return new URL(/^https?:\/\//i.test(u)?u:"https://"+u).hostname.replace(/^www\./i,"")}catch(e){return ""}}
+function normUrl(u){u=String(u||"").trim();if(!u)return"";if(/^(\/|~\/)/.test(u))return pathToCode(u);if(isCode(u))return u;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
 function favFor(h){return "https://www.google.com/s2/favicons?domain="+encodeURIComponent(h)+"&sz=128"}
 function favUrl(u){var h=linkHost(u);return h?favFor(h):""}
 function rootHost(h){var p=String(h||"").split(".");if(p.length<=2)return h;var two=p.slice(-2).join(".");if(/^(co|com|org|net|gov|ac)\.[a-z]{2}$/i.test(two))return p.slice(-3).join(".");return two}
@@ -2078,16 +2088,17 @@ function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-
   if(!img.getAttribute("data-tried")&&r&&r!==h){img.setAttribute("data-tried","1");img.src=favFor(r);return}
   img.remove()}
 var NAME_SKIP=["www","app","apps","dashboard","console","admin","portal","my","login","account","accounts","web","go","cloud","studio","platform","manage"];
-function niceName(u){var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
+function niceName(u){if(isCode(u)){var cp=codePath(u).split("/").filter(Boolean);return cp.length?cp.at(-1):"VS Code"}var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
 function letterOf(name){return esc(String(name||"?").trim().charAt(0).toUpperCase()||"?")}
 function appIcon(l,cls){var f=favUrl(l.url);return '<span class="app-ic'+(cls?" "+cls:"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="this.remove()">':'')+'</span>'}
 function linksSorted(){return live(S.qlinks).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function folderNames(){var seen={},out=[];linksSorted().forEach(function(l){var g=(l.group||"").trim();if(g&&!seen[g.toLowerCase()]){seen[g.toLowerCase()]=1;out.push(g)}});return out}
 function linksIn(g){return linksSorted().filter(function(l){return (l.group||"").trim().toLowerCase()===String(g).toLowerCase()})}
-function appTile(l){return '<a class="app" href="'+esc(normUrl(l.url))+'" target="_blank" rel="noopener" data-lid="'+esc(l.id)+'" title="'+esc(l.name)+' · '+esc(linkHost(l.url))+'">'+appIcon(l)+'<span class="app-name">'+esc(l.name||niceName(l.url))+'</span><span class="app-badge" aria-hidden="true">&minus;</span></a>'}
+function linkWhere(u){return isCode(u)?("VS Code \u00b7 "+shortPath(codePath(u))):linkHost(u)}
+function appTile(l){var code=isCode(l.url);return '<a class="app'+(code?" code":"")+'" href="'+esc(normUrl(l.url))+'"'+(code?'':' target="_blank" rel="noopener"')+' data-lid="'+esc(l.id)+'" title="'+esc(l.name)+' · '+esc(linkWhere(l.url))+'">'+appIcon(l)+'<span class="app-name">'+esc(l.name||niceName(l.url))+'</span><span class="app-badge" aria-hidden="true">&minus;</span></a>'}
 function folderTile(g){var ls=linksIn(g);var mini=ls.slice(0,9).map(function(l){return appIcon(l,"mini")}).join("");
   return '<button class="app" data-folder="'+esc(g)+'" title="'+esc(g)+' · '+ls.length+' links"><span class="app-ic fold">'+mini+'</span><span class="app-name">'+esc(g)+'</span></button>'}
-function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)return;
+function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)return;seedCodeLinks();
   var folders=folderNames(),singles=linksSorted().filter(function(l){return !(l.group||"").trim()});
   var any=folders.length||singles.length,h='';
   folders.forEach(function(g){h+=folderTile(g)});
@@ -2098,6 +2109,10 @@ function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)re
   lp.innerHTML=(any?'<div class="lp-grid">'+h+'</div>':'<div class="lp-empty">Add the sites you keep open in tabs. Group each business’s tools into a folder.</div>')+ctl;
   if(lpOpenFolder!=null)renderFolder();
   icons()}
+var CODE_SEED=[["code_vac","VoiceAI Connect","voiceai-connect"],["code_vacb","VAC Backend","voiceai-connect-backend"],["code_sesh","SESH","hq"],["code_money","Money","money"],["code_rsa","Reliable Solutions","reliable-solutions-atlanta"],["code_jblawn","JB Lawn Care","jblawn"],["code_greenline","Greenline","greenline"]];
+function seedCodeLinks(){if(!remoteLoaded)return;var t=Date.now(),n=0;
+  CODE_SEED.forEach(function(r,i){if(findAny(r[0]))return;S.qlinks.push({id:r.at(0),name:r.at(1),url:pathToCode(HOME_DIR+"/Downloads/"+r.at(2)),group:"VS Code",ts:t+i,mtime:t+i,del:false});pushItem(r.at(0));n++});
+  if(n){saveLocal();lastSig=stateSignature()}}
 function toggleLpEdit(){lpEdit=!lpEdit;renderLaunchpad()}
 /* one click handler for every tile, on the bar and inside a folder */
 document.addEventListener("click",function(ev){
@@ -2137,11 +2152,11 @@ function renderLnkFolders(){var box=document.getElementById("lnkFolders");var na
   icons()}
 var lnkNameAuto=true;
 function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
-  if(lnkNameAuto)nm.value=u.trim()?niceName(u):"";
-  var l={url:u,name:nm.value||niceName(u)};
+  var nu=normUrl(u)||u;if(lnkNameAuto)nm.value=u.trim()?niceName(nu):"";
+  var l={url:nu,name:nm.value||niceName(nu)};
   var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic"','<span class="app-ic" id="lnkPrevIc"');
   document.getElementById("lnkPrevName").textContent=l.name||"New link";
-  document.getElementById("lnkPrevHost").textContent=linkHost(u)||"paste a website below"}
+  var nu=normUrl(u);document.getElementById("lnkPrevHost").textContent=(nu&&isCode(nu))?("VS Code \u00b7 "+shortPath(codePath(nu))):(linkHost(u)||"paste a website or a folder path")}
 function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
   document.getElementById("lnkTitle").textContent=l?"Edit Link":"Add Link";
   document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";
@@ -2150,7 +2165,7 @@ function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(f
   renderLnkFolders();updateLnkPreview();openModal("lnkModal");
   setTimeout(function(){try{document.getElementById(l?"lnkName":"lnkUrl").focus()}catch(e){}},100)}
 function saveLink(){var u=normUrl(document.getElementById("lnkUrl").value);var name=document.getElementById("lnkName").value.trim();
-  if(!linkHost(u)){toast("Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
+  if(!linkHost(u)){toast(/^(\/|~\/|vscode:)/i.test(document.getElementById("lnkUrl").value.trim())?"That folder path looks incomplete":"Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
   if(!name)name=niceName(u);
   if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;touch(l);save(l.id)}}
   else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,ts:now,mtime:now,del:false});save(id)}
@@ -2184,7 +2199,7 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
       el.appendChild(more);
     }
     if(pls.length){var lw=document.createElement("div");lw.className="proj-apps";
-      pls.forEach(function(l){var a=document.createElement("a");a.className="app";a.href=normUrl(l.url);a.target="_blank";a.rel="noopener";a.title=(l.label||"")+" \u00b7 "+linkHost(l.url);
+      pls.forEach(function(l){var a=document.createElement("a");a.className="app";a.href=normUrl(l.url);if(!isCode(l.url)){a.target="_blank";a.rel="noopener"}else a.className="app code";a.title=(l.label||"")+" \u00b7 "+linkWhere(l.url);
         a.innerHTML=appIcon({url:l.url,name:l.label||niceName(l.url)})+'<span class="app-name">'+esc(l.label||niceName(l.url))+'</span>';
         a.onclick=function(ev){ev.stopPropagation()};lw.appendChild(a)});
       el.appendChild(lw);}
