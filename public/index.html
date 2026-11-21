@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v45"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v46"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -35,7 +35,7 @@ button{font-family:inherit}input,textarea,select{font-family:inherit}
 /* TOP BAR */
 .topbar{position:relative;z-index:5;padding:calc(12px + env(safe-area-inset-top)) 22px 12px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-shrink:0;border-bottom:1px solid var(--line);background:rgba(10,10,10,0.82);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px)}
 .brand{display:flex;align-items:center;gap:11px}
-.logo{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:20px;letter-spacing:2px;color:var(--tx);display:inline-flex;align-items:center;line-height:1}.logo-pr{color:var(--dim2);font-weight:500;margin-right:7px;letter-spacing:0}.logo-cur{display:inline-block;width:9px;height:18px;background:var(--tx);margin-left:5px;animation:cur 1.1s steps(1) infinite}@keyframes cur{50%{opacity:0}}@media (prefers-reduced-motion:reduce){.logo-cur{animation:none}}
+.logo{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:20px;letter-spacing:2px;color:var(--tx);display:inline-flex;align-items:center;line-height:1}.logo-pr{color:var(--dim2);font-weight:500;margin-right:7px;letter-spacing:0}.logo-cur{display:inline-block;width:9px;height:18px;background:var(--tx);margin-left:5px;animation:none}body.cur-live .logo-cur{animation:cur 1.1s steps(1) infinite}@keyframes cur{50%{opacity:0}}@media (prefers-reduced-motion:reduce){.logo-cur{animation:none}}
 .tagline{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim2);letter-spacing:0.5px;font-weight:500;border:1px solid var(--line2);border-radius:4px;padding:2px 6px}
 .tb-right{display:flex;align-items:center;gap:10px}
 .tb-icon{width:36px;height:36px;border-radius:6px;background:var(--elev);border:1px solid var(--line2);color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -805,6 +805,88 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
 .reminder-strip{gap:6px}
 .rem-chip{padding:5px 9px;font-size:12px;border-radius:6px}
 .rem-add{padding:5px 9px;font-size:12px;border-radius:6px}
+
+/* ===== Launcher (iPhone-style app icons + folders) ===== */
+.lp{position:relative;margin:0 0 18px;padding:14px 46px 10px 10px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))}
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:12px 6px}
+.lp-ctl{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px}
+.lp-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:var(--elev);color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lp-btn:hover{color:var(--tx);border-color:rgba(255,255,255,0.35)}
+.lp-btn svg{width:15px;height:15px}
+.lp-btn.on{background:var(--vio);border-color:var(--vio);color:var(--on)}
+.lp.empty{display:flex;align-items:center;gap:14px;padding:14px 46px 14px 14px;min-height:56px}
+.lp-empty{font-size:13px;color:var(--dim2);line-height:1.4}
+.app{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;background:none;border:0;padding:0;color:var(--tx);text-decoration:none;cursor:pointer;font-family:inherit;position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.app-ic{position:relative;width:54px;height:54px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,0.10) inset,0 6px 14px -8px rgba(0,0,0,0.9);transition:transform .14s ease}
+.app:hover .app-ic{transform:translateY(-2px)}
+.app:active .app-ic{transform:scale(.94)}
+.app-ic img{width:62%;height:62%;object-fit:contain;position:relative;z-index:1}
+.app-ic img.tiny{image-rendering:auto;width:50%;height:50%}
+.app-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:22px;color:#0a0a0a;background:linear-gradient(160deg,#ffffff,#e6e6e6)}
+.app-ic.has-img .app-letter{display:none}
+.app-name{font-size:11px;font-weight:500;color:var(--dim);max-width:76px;line-height:1.25;text-align:center;letter-spacing:.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.app:hover .app-name{color:var(--tx)}
+/* folder: frosted square with a 3x3 grid of mini icons, like iOS */
+.app-ic.fold{background:rgba(255,255,255,0.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:min-content;gap:3px;padding:6px;align-content:start;justify-items:center;border:1px solid rgba(255,255,255,0.10)}
+.app-ic.mini{width:12px;height:12px;border-radius:3px;box-shadow:none}
+.app-ic.mini img{width:78%;height:78%}
+.app-ic.mini .app-letter{font-size:7px}
+.app-ic.fold.sm{width:36px;height:36px;border-radius:10px;padding:4px;gap:3px;flex-shrink:0;grid-template-columns:repeat(2,1fr)}
+.app-ic.fold.sm .app-ic.mini{width:12px;height:12px;border-radius:3px}
+.app-ic.fold.sm>.app-letter{position:static;grid-column:1/-1;grid-row:1/4;background:none;color:var(--tx);font-size:15px;align-self:center;height:24px}
+/* tools: add + edit */
+.app-ic.tool{background:transparent;border:1.5px dashed var(--line2);box-shadow:none;color:var(--dim)}
+.app-ic.tool svg{width:20px;height:20px}
+.app-ic.tool.on{background:var(--vio);border:0;color:var(--on)}
+.lp-tool:hover .app-ic.tool{border-color:rgba(255,255,255,0.4);color:var(--tx)}
+/* edit mode: tiles wiggle, a minus badge removes one */
+.app-badge{display:none;position:absolute;top:-6px;left:calc(50% - 33px);width:20px;height:20px;border-radius:50%;background:#3a3a3a;color:#fff;font-size:15px;font-weight:700;line-height:18px;text-align:center;border:1px solid rgba(255,255,255,0.25);z-index:3}
+.lp.editing .app:not(.lp-tool) .app-badge,.lpf-grid.editing .app:not(.lp-tool) .app-badge{display:block}
+.lp.editing .app:not(.lp-tool) .app-ic,.lpf-grid.editing .app:not(.lp-tool) .app-ic{animation:wiggle .28s ease-in-out infinite alternate}
+.lp.editing .app:nth-child(2n) .app-ic,.lpf-grid.editing .app:nth-child(2n) .app-ic{animation-delay:-.14s}
+@keyframes wiggle{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+@media (prefers-reduced-motion:reduce){.lp.editing .app-ic,.lpf-grid.editing .app-ic{animation:none}}
+.lp.editing .app-ic.fold .app-ic{animation:none}
+/* open folder overlay */
+.lp-folder{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.55);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);opacity:0;pointer-events:none;transition:opacity .2s ease}
+.lp-folder.show{opacity:1;pointer-events:auto}
+.lpf-inner{width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;gap:16px;transform:scale(.92);transition:transform .24s cubic-bezier(.2,.9,.3,1.2)}
+.lp-folder.show .lpf-inner{transform:scale(1)}
+.lpf-name{background:none;border:0;color:var(--tx);font-family:'Space Grotesk';font-weight:700;font-size:26px;letter-spacing:.2px;cursor:default;display:inline-flex;align-items:center;gap:8px;text-wrap:balance}
+.lpf-name.editable{cursor:pointer}
+.lpf-name svg{width:18px;height:18px;opacity:.6}
+.lpf-panel{width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.12);border-radius:30px;padding:22px 16px 16px}
+.lpf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}
+.lpf-grid .app-ic{width:60px;height:60px;border-radius:14px}
+.lpf-grid .app-name{max-width:84px;font-size:11.5px}
+.lpf-hint{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lpf-note{font-size:12.5px;color:var(--dim)}
+.lpf-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:260px}
+.lpf-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.10);color:var(--tx);font:600 13px inherit;font-family:inherit;cursor:pointer}
+.lpf-btn svg{width:15px;height:15px}
+.lpf-btn.on{background:var(--vio);border-color:var(--vio);color:var(--on)}
+/* link editor */
+.lnk-prev{display:flex;align-items:center;gap:14px;margin:2px 0 16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.lnk-prev-name{font-weight:600;font-size:15px}
+.lnk-prev-host{font-size:12px;color:var(--dim2);margin-top:2px}
+.lnk-folders{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.lf-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--elev);color:var(--dim);font:600 12.5px/1 inherit;font-family:inherit;cursor:pointer}
+.lf-chip svg{width:13px;height:13px}
+.lf-chip.on{background:var(--vio);border-color:var(--vio);color:var(--on)}
+.lf-chip.lf-new{border-style:dashed}
+/* projects as app groups */
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-right:44px}
+.proj .phead .ptitle{margin-bottom:0}
+.proj-apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px 4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.proj-apps .app-ic{width:44px;height:44px;border-radius:11px}
+.proj-apps .app-name{max-width:60px;font-size:10.5px}
+@media(max-width:760px){
+  .lp{padding:12px 42px 8px 6px}
+  .lp-grid{grid-template-columns:repeat(5,1fr);gap:12px 0}
+  .app-ic{width:52px;height:52px;border-radius:12px}
+  .app-name{max-width:64px}
+  .lpf-grid{grid-template-columns:repeat(3,1fr)}
+}
 </style></head>
 <body>
 
@@ -829,6 +911,8 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   <div class="tab active wrap" id="tab-home">
    <div class="home-cols">
     <div class="home-main">
+      <div class="lp" id="launchpad"></div>
+
       <div class="cap">
         <div class="add-prime cap-row">
           <textarea class="add-input" id="nmInput" rows="1" placeholder="Jot it down&hellip;" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-1p-ignore data-lpignore="true"></textarea>
@@ -993,6 +1077,30 @@ kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid var
   </div>
 </div></div>
 
+<!-- LAUNCHER: link editor -->
+<div class="modal" id="lnkModal"><div class="modal-box" style="max-width:440px">
+  <div class="modal-title"><i data-lucide="app-window"></i> <span id="lnkTitle">Add Link</span></div>
+  <div class="lnk-prev"><span class="app-ic" id="lnkPrevIc"></span><div><div class="lnk-prev-name" id="lnkPrevName">New link</div><div class="lnk-prev-host mono" id="lnkPrevHost">paste a website below</div></div></div>
+  <input class="m-in" id="lnkUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Website, e.g. dashboard.stripe.com">
+  <input class="m-in" id="lnkName" placeholder="Name (filled in for you)">
+  <div class="m-label">Folder</div>
+  <div class="lnk-folders" id="lnkFolders"></div>
+  <div class="m-actions">
+    <button class="m-btn danger" id="lnkDel" style="display:none;flex:0 0 auto" onclick="deleteLink()"><i data-lucide="trash-2"></i></button>
+    <button class="m-btn" onclick="closeModal('lnkModal')">Cancel</button>
+    <button class="m-btn primary" onclick="saveLink()">Save</button>
+  </div>
+</div></div>
+
+<!-- LAUNCHER: open folder (iPhone style) -->
+<div class="lp-folder" id="lpFolder" onclick="if(event.target===this)closeFolder()">
+  <div class="lpf-inner">
+    <button class="lpf-name" id="lpfName" onclick="renameFolder()"></button>
+    <div class="lpf-panel"><div class="lpf-grid" id="lpfGrid"></div></div>
+    <div class="lpf-hint" id="lpfHint"></div>
+  </div>
+</div>
+
 <!-- CUSTOM LIST PICKER -->
 <div class="modal" id="uiPickModal"><div class="modal-box" style="max-width:400px">
   <div class="modal-title"><i data-lucide="list"></i> <span id="uiPickTitle">Choose</span></div>
@@ -1046,6 +1154,7 @@ var S={
   needleMovers:[],   // standalone {id,text,done,ts,doneTs,date,startHour,duration}
   notes:[],images:[],projects:[],calendarEvents:[],captures:[],reminders:[],visionAreas:[],ventures:[],
   sessionNotes:[],   // {id,text,status:'open'|'done',ts,mtime,del}
+  qlinks:[],         // launcher links {id,name,url,group,ts,mtime,del}
   transactions:[],   // {id,amount,direction:'out'|'in',merchant,category,account,business,type:'personal'|'business',postedDate,note,raw,source,confidence,ts,mtime,del}
   lastReview:null,
   schedCats:null,nci:0,wcalWeekStart:null
@@ -1099,16 +1208,17 @@ function normalizeReminders(arr){if(!Array.isArray(arr))return[];return arr.map(
 function normalizeVAreas(arr){if(!Array.isArray(arr))return[];return arr.map(function(a){var ts=(a.ts!=null?a.ts:(a.mtime||1));return{id:a.id||mid(),name:a.name||"",ts:ts,mtime:(a.mtime!=null?a.mtime:ts),del:!!a.del}})}
 function normalizeVentures(arr){if(!Array.isArray(arr))return[];return arr.map(function(v){var ts=(v.ts!=null?v.ts:(v.mtime||1));return{id:v.id||mid(),name:v.name||"",ts:ts,mtime:(v.mtime!=null?v.mtime:ts),del:!!v.del}})}
 function normalizeSNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){var ts=(n.ts!=null?n.ts:(n.mtime||1));return{id:n.id||mid(),text:n.text||"",status:(n.status==="done"?"done":"open"),ts:ts,mtime:(n.mtime!=null?n.mtime:ts),del:!!n.del}})}
+function normalizeQLinks(arr){if(!Array.isArray(arr))return[];return arr.map(function(l){var ts=(l.ts!=null?l.ts:(l.mtime||1));return{id:l.id||mid(),name:l.name||"",url:l.url||"",group:l.group||"",ts:ts,mtime:(l.mtime!=null?l.mtime:ts),del:!!l.del}})}
 function normalizeTxn(arr){if(!Array.isArray(arr))return[];return arr.map(function(t){var ts=(t.ts!=null?t.ts:(t.mtime||1));return{id:t.id||mid(),amount:(Math.round((Number(t.amount)||0)*100)/100),direction:(t.direction==="in"?"in":"out"),merchant:t.merchant||"",category:t.category||"Other",account:t.account||"",sender:t.sender||"",business:(t.business||""),type:(/bus/i.test(String(t.type))?"business":"personal"),postedDate:(t.postedDate||null),note:t.note||"",raw:t.raw||"",source:(t.source==="manual"?"manual":"sms"),confidence:(t.confidence==null?null:Number(t.confidence)),del:!!t.del,ts:ts,mtime:(t.mtime!=null?t.mtime:ts)}})}
 
 function loadLocal(){try{var d=localStorage.getItem("hq_d");if(d){var p=JSON.parse(d);
   S.rhythm=p.rhythm||S.rhythm;S.goals=normalizeGoals(p.goals);S.needleMovers=normalizeNM(p.needleMovers);
   S.notes=normalizeNotes(p.notes);S.projects=normalizeProjects(p.projects);S.calendarEvents=normalizeEvents(p.calendarEvents);
-  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.sessionNotes=normalizeSNotes(p.sessionNotes);S.transactions=normalizeTxn(p.transactions||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
+  S.captures=normalizeCaptures(p.captures);S.reminders=normalizeReminders(p.reminders);S.visionAreas=normalizeVAreas(p.visionAreas);S.ventures=normalizeVentures(p.ventures||[]);S.sessionNotes=normalizeSNotes(p.sessionNotes);S.qlinks=normalizeQLinks(p.qlinks||[]);S.transactions=normalizeTxn(p.transactions||[]);S.lastReview=p.lastReview||null;S.schedCats=p.schedCats||null;S.nci=p.nci||0}
   var i=localStorage.getItem("hq_i");if(i)S.images=normalizeImages(JSON.parse(i))}catch(e){}}
 function pruneLocalBackups(keepN){try{var keys=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();var drop=keys.slice(0,Math.max(0,keys.length-(keepN||1)));drop.forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});return drop.length}catch(e){return 0}}
 function saveLocal(){
-  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,sessionNotes:S.sessionNotes,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
+  var main=JSON.stringify({rhythm:S.rhythm,goals:S.goals,needleMovers:S.needleMovers,notes:S.notes,projects:S.projects,calendarEvents:S.calendarEvents,captures:S.captures,reminders:S.reminders,visionAreas:S.visionAreas,ventures:S.ventures,sessionNotes:S.sessionNotes,qlinks:S.qlinks,lastReview:S.lastReview,schedCats:S.schedCats,nci:S.nci});
   /* The task data MUST persist. If browser storage is full (photos or old
      snapshots), free space and retry so an edit can never be silently lost. */
   try{localStorage.setItem("hq_d",main)}
@@ -1129,7 +1239,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v45"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v46"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1142,7 +1252,7 @@ var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');
      - a local snapshot is kept automatically, once per day
    ============================================================ */
 function live(arr){return (arr||[]).filter(function(x){return x&&!x.del})}
-function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
+function dataCount(o){var n=0;["goals","needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","qlinks"].forEach(function(k){if(Array.isArray(o[k]))n+=live(o[k]).length});return n}
 function backupLocal(tag){try{var snap=localStorage.getItem("hq_d");if(!snap)return;localStorage.setItem("hq_bak_"+(tag||Date.now()),snap);var b=Object.keys(localStorage).filter(function(k){return k.indexOf("hq_bak_")===0}).sort();while(b.length>4)localStorage.removeItem(b.shift())}catch(e){}}
 /* automatic daily snapshot, so there is always a restore path */
 function autoBackup(){try{var k="hq_bak_day_"+todayStr();if(!localStorage.getItem(k)&&dataCount(S)>0){backupLocal("day_"+todayStr());pruneLocalBackups(2)}}catch(e){}}
@@ -1166,9 +1276,9 @@ function setSync(state){syncState=state;
   var c={ok:"var(--grn)",saving:"var(--amb)",err:"var(--red)",local:"var(--red)"}[state]||"var(--dim2)";el.style.background=c;
   el.title={ok:"Synced"+(lastSynced?" · "+new Date(lastSynced).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""),saving:"Syncing…",err:"SYNC ERROR, tap to retry",local:"NOT SYNCING"}[state]||""}
 
-function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures",snote:"sessionNotes",txn:"transactions"}[kind]}
-function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture",sessionNotes:"snote",transactions:"txn"}[listName]}
-function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","goals"];
+function listFor(kind){return {mover:"needleMovers",note:"notes",project:"projects",event:"calendarEvents",capture:"captures",image:"images",goal:"goals",reminder:"reminders",varea:"visionAreas",venture:"ventures",snote:"sessionNotes",txn:"transactions",qlink:"qlinks"}[kind]}
+function kindOf(listName){return {needleMovers:"mover",notes:"note",projects:"project",calendarEvents:"event",captures:"capture",images:"image",goals:"goal",reminders:"reminder",visionAreas:"varea",ventures:"venture",sessionNotes:"snote",transactions:"txn",qlinks:"qlink"}[listName]}
+function findAny(id){var L=["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks","goals"];
   for(var i=0;i<L.length;i++){var a=S[L[i]]||[];for(var j=0;j<a.length;j++){if(a[j]&&a[j].id===id)return{item:a[j],kind:kindOf(L[i]),parent:null}}}
   for(var g=0;g<(S.goals||[]).length;g++){var st=S.goals[g].steps||[];for(var k=0;k<st.length;k++){if(st[k].id===id)return{item:st[k],kind:"step",parent:S.goals[g].id}}}
   return null}
@@ -1207,7 +1317,7 @@ function pushNewer(remoteRows,cb){
     if(r&&!((item.mtime||0)>rm))return;      /* cloud is same or newer, leave it */
     rows.push({id:item.id,user_key:"gibson",kind:kind,parent:parent,deleted:!!item.del,data:JSON.parse(JSON.stringify(item))});
   }
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks"].forEach(function(L){
     (S[L]||[]).forEach(function(x){consider(x,kindOf(L),null)})});
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;
     consider({id:g.id,title:g.title,why:g.why,cat:g.cat,target:g.target,created:g.created,archived:g.archived,mtime:g.mtime,del:g.del},"goal",null);
@@ -1233,7 +1343,7 @@ var lastSig="";
 function stateSignature(){
   var parts=[];
   function add(a){(a||[]).forEach(function(x){if(x&&x.id)parts.push(x.id+":"+(x.mtime||0)+":"+(x.del?1:0))})}
-  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);add(S.ventures);add(S.sessionNotes);add(S.transactions);
+  add(S.needleMovers);add(S.notes);add(S.projects);add(S.calendarEvents);add(S.captures);add(S.images);add(S.reminders);add(S.visionAreas);add(S.ventures);add(S.sessionNotes);add(S.transactions);add(S.qlinks);
   (S.goals||[]).forEach(function(g){if(!g||!g.id)return;parts.push(g.id+":"+(g.mtime||0)+":"+(g.del?1:0));add(g.steps)});
   parts.sort();
   return parts.join("|");
@@ -1245,10 +1355,10 @@ function applyRows(rows){
      2. local copy modified more recently -> keep the local copy
      3. item exists here but has no row   -> keep it and upload it */
   var prev={needleMovers:S.needleMovers||[],notes:S.notes||[],projects:S.projects||[],
-            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],sessionNotes:S.sessionNotes||[],transactions:S.transactions||[],goals:S.goals||[]};
+            calendarEvents:S.calendarEvents||[],captures:S.captures||[],images:S.images||[],reminders:S.reminders||[],visionAreas:S.visionAreas||[],ventures:S.ventures||[],sessionNotes:S.sessionNotes||[],transactions:S.transactions||[],qlinks:S.qlinks||[],goals:S.goals||[]};
   var prevSteps={};(prev.goals||[]).forEach(function(g){(g.steps||[]).forEach(function(st){prevSteps[st.id]={step:st,goalId:g.id}})});
   var goals={},goalOrder=[],steps=[],seen={};
-  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[],sessionNotes:[],transactions:[]};
+  var next={needleMovers:[],notes:[],projects:[],calendarEvents:[],captures:[],images:[],reminders:[],visionAreas:[],ventures:[],sessionNotes:[],transactions:[],qlinks:[]};
   function choose(r){
     var d=r.data||{};d.id=r.id;d.del=!!r.deleted;
     var lh=findAny(r.id);
@@ -1263,7 +1373,7 @@ function applyRows(rows){
     else{var L=listFor(r.kind);if(L&&next[L])next[L].push(d)}
   });
   var reupload=[];
-  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions"].forEach(function(L){
+  ["needleMovers","notes","projects","calendarEvents","captures","images","reminders","visionAreas","ventures","sessionNotes","transactions","qlinks"].forEach(function(L){
     (prev[L]||[]).forEach(function(x){if(x&&x.id&&!seen[x.id]){next[L].push(x);reupload.push(x.id)}})});
   (prev.goals||[]).forEach(function(g){if(g&&g.id&&!seen[g.id]){var c=g;c.steps=[];goals[g.id]=c;goalOrder.push(g.id);reupload.push(g.id)}});
   Object.keys(prevSteps).forEach(function(sid){if(!seen[sid]){var e=prevSteps[sid];e.step.__parent=e.goalId;steps.push(e.step);reupload.push(sid)}});
@@ -1278,6 +1388,7 @@ function applyRows(rows){
   S.visionAreas=normalizeVAreas(next.visionAreas);S.ventures=normalizeVentures(next.ventures);
   S.sessionNotes=normalizeSNotes(next.sessionNotes);
   S.transactions=normalizeTxn(next.transactions);
+  S.qlinks=normalizeQLinks(next.qlinks);
   S.images=normalizeImages(next.images);
   S.goals=normalizeGoals(goalOrder.map(function(k){return goals[k]}));
   /* backfill: anything that arrived without a ts now has one, and it is
@@ -1621,7 +1732,7 @@ function rmItem(id){var f=findRef(id);if(!f)return;if(f.kind==="mover"){deleteMo
    including hidden ones, which is work nobody could see. */
 function R(){
   renderSys();updateInboxCount();
-  if(activeTab==="home"){renderReminders();renderTags();renderBoard();renderDone();renderSNotes()}
+  if(activeTab==="home"){renderLaunchpad();renderReminders();renderTags();renderBoard();renderDone();renderSNotes()}
   else if(activeTab==="notes")renderNotes();
   else if(activeTab==="projects")renderProjects();
   icons();
@@ -1948,6 +2059,110 @@ function saveNoteModal(){
 function rmNote(id){uiConfirm("Delete this note?",{title:"Delete note",okText:"Delete",danger:true}).then(function(go){if(!go)return;tomb(id);renderNotes();lastSig=stateSignature();icons();
   toast("Deleted · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderNotes();lastSig=stateSignature();toast("Restored","rotate-ccw")}})})}
 
+/* ===== LAUNCHER =====
+   Quick links to the sites he keeps open in tabs, laid out like an iPhone home
+   screen: each link is an app icon (the site's own favicon + its name), and links
+   that share a folder name (a business) collapse into one folder icon that opens
+   like an iPhone folder. Every link is its own synced item (kind "qlink"). */
+var lpEdit=false,lpOpenFolder=null,editingLinkId=null,lnkFolderPick="";
+function linkHost(u){try{return new URL(/^https?:\/\//i.test(u)?u:"https://"+u).hostname.replace(/^www\./i,"")}catch(e){return ""}}
+function normUrl(u){u=String(u||"").trim();if(!u)return"";if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;return u}
+function favFor(h){return "https://www.google.com/s2/favicons?domain="+encodeURIComponent(h)+"&sz=128"}
+function favUrl(u){var h=linkHost(u);return h?favFor(h):""}
+function rootHost(h){var p=String(h||"").split(".");if(p.length<=2)return h;var two=p.slice(-2).join(".");if(/^(co|com|org|net|gov|ac)\.[a-z]{2}$/i.test(two))return p.slice(-3).join(".");return two}
+/* Google answers an unknown site with a 16px globe: treat that as "no icon",
+   try the main domain once (portal.telnyx.com -> telnyx.com), then fall back to
+   the letter tile. */
+function favLoad(img){if(img.naturalWidth>16){img.parentNode.classList.add("has-img");return}
+  var h=img.getAttribute("data-h")||"",r=rootHost(h);
+  if(!img.getAttribute("data-tried")&&r&&r!==h){img.setAttribute("data-tried","1");img.src=favFor(r);return}
+  img.remove()}
+var NAME_SKIP=["www","app","apps","dashboard","console","admin","portal","my","login","account","accounts","web","go","cloud","studio","platform","manage"];
+function niceName(u){var h=linkHost(u);if(!h)return"";var parts=h.split(".");if(parts.length>2){var keep=parts.filter(function(x,i){return i<parts.length-1&&NAME_SKIP.indexOf(x.toLowerCase())<0});if(keep.length)parts=[keep.at(-1),parts.at(-1)]}var base=parts.length>1?parts.at(-2):parts.at(0);return base.charAt(0).toUpperCase()+base.slice(1)}
+function letterOf(name){return esc(String(name||"?").trim().charAt(0).toUpperCase()||"?")}
+function appIcon(l,cls){var f=favUrl(l.url);return '<span class="app-ic'+(cls?" "+cls:"")+'"><span class="app-letter">'+letterOf(l.name||niceName(l.url))+'</span>'+(f?'<img src="'+esc(f)+'" data-h="'+esc(linkHost(l.url))+'" alt="" loading="lazy" referrerpolicy="no-referrer" onload="favLoad(this)" onerror="this.remove()">':'')+'</span>'}
+function linksSorted(){return live(S.qlinks).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
+function folderNames(){var seen={},out=[];linksSorted().forEach(function(l){var g=(l.group||"").trim();if(g&&!seen[g.toLowerCase()]){seen[g.toLowerCase()]=1;out.push(g)}});return out}
+function linksIn(g){return linksSorted().filter(function(l){return (l.group||"").trim().toLowerCase()===String(g).toLowerCase()})}
+function appTile(l){return '<a class="app" href="'+esc(normUrl(l.url))+'" target="_blank" rel="noopener" data-lid="'+esc(l.id)+'" title="'+esc(l.name)+' · '+esc(linkHost(l.url))+'">'+appIcon(l)+'<span class="app-name">'+esc(l.name||niceName(l.url))+'</span><span class="app-badge" aria-hidden="true">&minus;</span></a>'}
+function folderTile(g){var ls=linksIn(g);var mini=ls.slice(0,9).map(function(l){return appIcon(l,"mini")}).join("");
+  return '<button class="app" data-folder="'+esc(g)+'" title="'+esc(g)+' · '+ls.length+' links"><span class="app-ic fold">'+mini+'</span><span class="app-name">'+esc(g)+'</span></button>'}
+function renderLaunchpad(){var lp=document.getElementById("launchpad");if(!lp)return;
+  var folders=folderNames(),singles=linksSorted().filter(function(l){return !(l.group||"").trim()});
+  var any=folders.length||singles.length,h='';
+  folders.forEach(function(g){h+=folderTile(g)});
+  singles.forEach(function(l){h+=appTile(l)});
+  var ctl='<div class="lp-ctl"><button class="lp-btn" onclick="openLinkModal(null,\'\')" title="Add a link" aria-label="Add a link"><i data-lucide="plus"></i></button>'+
+    (any?'<button class="lp-btn'+(lpEdit?" on":"")+'" onclick="toggleLpEdit()" title="'+(lpEdit?"Done editing":"Edit links")+'" aria-label="'+(lpEdit?"Done editing":"Edit links")+'"><i data-lucide="'+(lpEdit?"check":"pencil")+'"></i></button>':'')+'</div>';
+  lp.className="lp"+(lpEdit?" editing":"")+(any?"":" empty");
+  lp.innerHTML=(any?'<div class="lp-grid">'+h+'</div>':'<div class="lp-empty">Add the sites you keep open in tabs. Group each business’s tools into a folder.</div>')+ctl;
+  if(lpOpenFolder!=null)renderFolder();
+  icons()}
+function toggleLpEdit(){lpEdit=!lpEdit;renderLaunchpad()}
+/* one click handler for every tile, on the bar and inside a folder */
+document.addEventListener("click",function(ev){
+  var t=ev.target.closest?ev.target.closest(".app"):null;if(!t)return;
+  if(!t.closest("#launchpad")&&!t.closest("#lpfGrid"))return;
+  if(t.classList.contains("lp-tool"))return;
+  var fold=t.getAttribute("data-folder");
+  if(fold!=null){ev.preventDefault();openFolder(fold);return}
+  var lid=t.getAttribute("data-lid");if(!lid)return;
+  if(lpEdit){ev.preventDefault();if(ev.target.closest(".app-badge")){quickDeleteLink(lid);return}openLinkModal(lid);return}
+});
+/* press and hold a tile (touch) or right-click it (mouse) to edit, like iOS */
+(function(){var timer=null;
+  document.addEventListener("touchstart",function(ev){var t=ev.target.closest&&ev.target.closest("#launchpad .app,#lpfGrid .app");if(!t||t.classList.contains("lp-tool"))return;timer=setTimeout(function(){timer=null;if(!lpEdit){lpEdit=true;renderLaunchpad();try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}},520)},{passive:true});
+  ["touchend","touchmove","touchcancel"].forEach(function(n){document.addEventListener(n,function(){if(timer){clearTimeout(timer);timer=null}},{passive:true})});
+  document.addEventListener("contextmenu",function(ev){var t=ev.target.closest&&ev.target.closest("#launchpad .app,#lpfGrid .app");if(!t||t.classList.contains("lp-tool"))return;ev.preventDefault();var lid=t.getAttribute("data-lid");if(lid){openLinkModal(lid);return}if(!lpEdit){lpEdit=true;renderLaunchpad()}});
+})();
+function openFolder(g){lpOpenFolder=g;renderFolder();document.getElementById("lpFolder").classList.add("show")}
+function closeFolder(){lpOpenFolder=null;document.getElementById("lpFolder").classList.remove("show");setTimeout(flushDeferred,120)}
+function renderFolder(){var g=lpOpenFolder;if(g==null)return;var ls=linksIn(g);
+  if(!ls.length){closeFolder();return}
+  var nm=document.getElementById("lpfName");nm.innerHTML=esc(g)+(lpEdit?' <i data-lucide="pencil"></i>':'');nm.classList.toggle("editable",lpEdit);
+  var grid=document.getElementById("lpfGrid");grid.className="lpf-grid"+(lpEdit?" editing":"");
+  grid.innerHTML=ls.map(appTile).join("");
+  document.getElementById("lpfHint").innerHTML='<span class="lpf-note">'+(lpEdit?"Tap a link to edit it, or the name to rename the folder":(ls.length+" link"+(ls.length===1?"":"s")))+'</span>'+
+    '<div class="lpf-acts"><button class="lpf-btn" onclick="openLinkModal(null,lpOpenFolder)"><i data-lucide="plus"></i> Add Link</button><button class="lpf-btn'+(lpEdit?" on":"")+'" onclick="toggleLpEdit()"><i data-lucide="'+(lpEdit?"check":"pencil")+'"></i> '+(lpEdit?"Done":"Edit")+'</button></div>';
+  icons()}
+function renameFolder(){var g=lpOpenFolder;if(g==null||!lpEdit)return;
+  uiPrompt("Rename folder",g,{message:"Every link in this folder moves to the new name."}).then(function(v){if(v==null)return;v=String(v).trim();if(!v||v===g)return;
+    linksIn(g).forEach(function(l){l.group=v;touch(l);save(l.id)});lpOpenFolder=v;renderLaunchpad();lastSig=stateSignature()})}
+function renderLnkFolders(){var box=document.getElementById("lnkFolders");var names=folderNames();if(lnkFolderPick&&names.map(function(x){return x.toLowerCase()}).indexOf(lnkFolderPick.toLowerCase())<0)names.push(lnkFolderPick);
+  var h='<button type="button" class="lf-chip'+(!lnkFolderPick?" on":"")+'" data-f="">No Folder</button>';
+  names.forEach(function(n){h+='<button type="button" class="lf-chip'+(lnkFolderPick.toLowerCase()===n.toLowerCase()?" on":"")+'" data-f="'+esc(n)+'"><i data-lucide="folder"></i>'+esc(n)+'</button>'});
+  h+='<button type="button" class="lf-chip lf-new" data-new="1"><i data-lucide="folder-plus"></i>New Folder</button>';
+  box.innerHTML=h;
+  box.querySelectorAll(".lf-chip").forEach(function(b){b.onclick=function(){if(b.getAttribute("data-new")){uiPrompt("New folder","",{message:"Name it after the business, e.g. VoiceAI Connect."}).then(function(v){if(v==null)return;v=String(v).trim();if(!v)return;lnkFolderPick=v;renderLnkFolders()});return}lnkFolderPick=b.getAttribute("data-f")||"";renderLnkFolders()}});
+  icons()}
+var lnkNameAuto=true;
+function updateLnkPreview(){var u=document.getElementById("lnkUrl").value,nm=document.getElementById("lnkName");
+  if(lnkNameAuto)nm.value=u.trim()?niceName(u):"";
+  var l={url:u,name:nm.value||niceName(u)};
+  var old=document.getElementById("lnkPrevIc");if(old)old.outerHTML=appIcon(l).replace('<span class="app-ic"','<span class="app-ic" id="lnkPrevIc"');
+  document.getElementById("lnkPrevName").textContent=l.name||"New link";
+  document.getElementById("lnkPrevHost").textContent=linkHost(u)||"paste a website below"}
+function openLinkModal(id,group){editingLinkId=id||null;var l=id?S.qlinks.find(function(x){return x.id===id}):null;
+  document.getElementById("lnkTitle").textContent=l?"Edit Link":"Add Link";
+  document.getElementById("lnkUrl").value=l?l.url:"";document.getElementById("lnkName").value=l?l.name:"";
+  lnkNameAuto=!l;lnkFolderPick=l?(l.group||""):(group||"");
+  document.getElementById("lnkDel").style.display=l?"":"none";
+  renderLnkFolders();updateLnkPreview();openModal("lnkModal");
+  setTimeout(function(){try{document.getElementById(l?"lnkName":"lnkUrl").focus()}catch(e){}},100)}
+function saveLink(){var u=normUrl(document.getElementById("lnkUrl").value);var name=document.getElementById("lnkName").value.trim();
+  if(!linkHost(u)){toast("Paste a website first","alert-triangle");try{document.getElementById("lnkUrl").focus()}catch(e){}return}
+  if(!name)name=niceName(u);
+  if(editingLinkId){var l=S.qlinks.find(function(x){return x.id===editingLinkId});if(l){l.url=u;l.name=name;l.group=lnkFolderPick;touch(l);save(l.id)}}
+  else{var now=Date.now(),id=mid();S.qlinks.push({id:id,name:name,url:u,group:lnkFolderPick,ts:now,mtime:now,del:false});save(id)}
+  editingLinkId=null;closeModal("lnkModal");renderLaunchpad();lastSig=stateSignature();toast(lnkFolderPick?("Saved to "+lnkFolderPick):"Link saved","check")}
+function deleteLink(){var id=editingLinkId;if(!id)return;closeModal("lnkModal");editingLinkId=null;quickDeleteLink(id)}
+function quickDeleteLink(id){var l=S.qlinks.find(function(x){return x.id===id});if(!l)return;tomb(id);renderLaunchpad();lastSig=stateSignature();
+  toast("Removed "+(l.name||"link")+" · tap to undo","trash-2",function(){var g=findAny(id);if(g){g.item.del=false;g.item.mtime=Date.now();saveLocal();pushItem(id);renderLaunchpad();lastSig=stateSignature()}})}
+(function(){var u=document.getElementById("lnkUrl"),n=document.getElementById("lnkName");
+  if(u)u.addEventListener("input",updateLnkPreview);
+  if(n)n.addEventListener("input",function(){lnkNameAuto=!n.value.trim();updateLnkPreview()});
+  [u,n].forEach(function(el){if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveLink()}})})})();
+
 /* ===== PROJECTS ===== */
 function projectsSorted(){return live(S.projects).slice().sort(function(a,b){var d=(a.ts||0)-(b.ts||0);if(d!==0)return d;return String(a.id).localeCompare(String(b.id))})}
 function renderProjects(){var c=document.getElementById("projGrid");if(!c)return;c.innerHTML="";
@@ -1958,7 +2173,9 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
     if(expanded)el.classList.add("open");
     el.onclick=function(){if(hasSelection()||projOpen[p.id])return;openProjModal(p.id)};
     var head=document.createElement("div");
-    head.innerHTML='<div class="ptitle">'+esc(p.title)+'</div>'+(p.desc?'<div class="pdesc'+(expanded?' expanded':'')+'">'+esc(p.desc)+'</div>':'');
+    var pls=(p.links||[]).filter(function(l){return l.url});
+    var mini=pls.slice(0,4).map(function(l){return appIcon({url:l.url,name:l.label},"mini")}).join("");
+    head.innerHTML='<div class="phead"><span class="app-ic fold sm">'+(mini||'<span class="app-letter">'+letterOf(p.title)+'</span>')+'</span><div class="ptitle">'+esc(p.title)+'</div></div>'+(p.desc?'<div class="pdesc'+(expanded?' expanded':'')+'">'+esc(p.desc)+'</div>':'');
     el.appendChild(head);
     if(p.desc&&(expanded||p.desc.length>110||p.desc.indexOf("\n")>=0)){
       var more=document.createElement("div");more.className="pmore";
@@ -1966,9 +2183,10 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
       more.onclick=function(ev){ev.stopPropagation();projOpen[p.id]=!projOpen[p.id];renderProjects()};
       el.appendChild(more);
     }
-    if(p.links&&p.links.length){var lw=document.createElement("div");lw.className="proj-links";
-      p.links.forEach(function(l){var b=document.createElement("button");b.className="proj-link";b.innerHTML='<i data-lucide="external-link"></i>'+esc(l.label||l.url);
-        b.onclick=function(ev){ev.stopPropagation();if(l.url)window.open(l.url,"_blank")};lw.appendChild(b)});
+    if(pls.length){var lw=document.createElement("div");lw.className="proj-apps";
+      pls.forEach(function(l){var a=document.createElement("a");a.className="app";a.href=normUrl(l.url);a.target="_blank";a.rel="noopener";a.title=(l.label||"")+" \u00b7 "+linkHost(l.url);
+        a.innerHTML=appIcon({url:l.url,name:l.label||niceName(l.url)})+'<span class="app-name">'+esc(l.label||niceName(l.url))+'</span>';
+        a.onclick=function(ev){ev.stopPropagation()};lw.appendChild(a)});
       el.appendChild(lw);}
     var ed=document.createElement("button");ed.className="pedit";ed.innerHTML='<i data-lucide="pencil"></i>';ed.onclick=function(ev){ev.stopPropagation();openProjModal(p.id)};el.appendChild(ed);
     var x=document.createElement("button");x.className="pjx";x.innerHTML="&times;";x.onclick=function(ev){ev.stopPropagation();rmProj(p.id)};el.appendChild(x);
@@ -2327,7 +2545,16 @@ document.addEventListener("keydown",function(e){
   var t=e.target,typing=t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable);
   if(e.key==="/"&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!document.querySelector(".modal.show")){e.preventDefault();if(activeTab!=="home")switchTab("home");var i=document.getElementById("nmInput");if(i)try{i.focus()}catch(x){}}
   else if(e.key==="Escape"&&typing&&(t.id==="nmInput"||t.id==="snoteInput")){t.blur()}
+  else if(e.key==="Escape"&&!document.querySelector(".modal.show")){if(lpOpenFolder!=null)closeFolder();else if(lpEdit){lpEdit=false;renderLaunchpad()}}
 });
+/* The logo cursor blinks only while the mouse is moving, and stops the moment
+   he types, so it never pulls the eye while he is writing. */
+(function(){var idle=null,typingUntil=0;
+  function stop(){document.body.classList.remove("cur-live")}
+  document.addEventListener("mousemove",function(){if(Date.now()<typingUntil)return;document.body.classList.add("cur-live");clearTimeout(idle);idle=setTimeout(stop,1400)},{passive:true});
+  document.addEventListener("keydown",function(){typingUntil=Date.now()+1500;clearTimeout(idle);stop()},true);
+  document.addEventListener("input",function(){typingUntil=Date.now()+1500;stop()},true);
+})();
 /* ===== BOOT ===== */
 load();
 window.addEventListener("load",function(){icons()});
