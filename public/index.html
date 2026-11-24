@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v56"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v57"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -1018,6 +1018,17 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 .pl-adds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .pl-adds .pl-add{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .pl-adds .pl-add svg{width:14px;height:14px}
+.pl-row{flex-direction:column;align-items:stretch;gap:6px;padding:8px;margin-bottom:8px;border:1px solid var(--line);border-radius:9px;background:var(--elev)}
+.pl-line{display:flex;align-items:center;gap:6px}
+.pl-line input{background:var(--surface);border:1px solid var(--line2);border-radius:6px;color:var(--tx);padding:9px 11px;font-size:14px;outline:none;min-width:0}
+.pl-line input.pl-url{flex:1 1 58%}.pl-line input.pl-label{flex:1 1 30%}
+.pl-line input:focus,.pl-desc:focus{border-color:var(--vio)}
+.pl-desc{display:block;width:100%;min-height:52px;max-height:180px;resize:vertical;background:var(--surface);border:1px solid var(--line2);border-radius:6px;color:var(--tx);padding:8px 11px;font:13.5px/1.45 inherit;font-family:inherit;outline:none;overflow:auto}
+.proj-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 8px;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
+.plink{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:9px;text-decoration:none;color:var(--tx);min-width:0}
+.plink:hover{background:var(--hov)}
+.plink .chat-desc{-webkit-line-clamp:3}
+.proj-links+.proj-apps{border-top:0;margin-top:4px;padding-top:4px}
 </style></head>
 <body>
 
@@ -1351,7 +1362,7 @@ initSb();
 function normalizeNM(arr){if(!Array.isArray(arr))return[];return arr.map(function(x){if(typeof x==="string")return{id:mid(),text:x,done:false,ts:Date.now(),pin:0,mtime:Date.now(),del:false,duration:1,venture:""};return{id:x.id||mid(),text:x.text||"",done:!!x.done,ts:x.ts||Date.now(),pin:(x.pin!=null?x.pin:0),mtime:(x.mtime!=null?x.mtime:(x.ts||1)),del:!!x.del,tags:(Array.isArray(x.tags)?x.tags:[]),doneTs:x.doneTs||null,date:x.date||null,startHour:(x.startHour!=null?x.startHour:null),duration:x.duration||1,venture:(x.venture||""),prio:(x.prio!=null?x.prio:0)}})}
 function normalizeGoals(arr){if(!Array.isArray(arr))return[];return arr.map(function(g){return{id:g.id||mid(),title:g.title||"",why:g.why||"",cat:g.cat||"business",target:g.target||null,created:g.created||Date.now(),mtime:(g.mtime!=null?g.mtime:(g.created||1)),del:!!g.del,archived:!!g.archived,steps:(Array.isArray(g.steps)?g.steps:[]).map(function(s){return{id:s.id||mid(),text:s.text||"",done:!!s.done,doneTs:s.doneTs||null,onToday:!!s.onToday,ts:(s.ts||s.ord||Date.now()),pin:(s.pin!=null?s.pin:0),mtime:(s.mtime!=null?s.mtime:(s.ts||1)),del:!!s.del,date:s.date||null,startHour:(s.startHour!=null?s.startHour:null),duration:s.duration||1,prio:(s.prio!=null?s.prio:0)}})}})}
 /* ts is preserved, never regenerated, so ordering is stable across pulls */
-function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];
+function normalizeProjects(arr){if(!Array.isArray(arr))return[];return arr.map(function(p){var links=[];if(Array.isArray(p.links))links=p.links.map(function(l){return{id:l.id||mid(),label:l.label||"",url:l.url||"",desc:l.desc||""}});else if(p.link)links=[{id:mid(),label:"Open",url:p.link}];
   var ca=(p.ca!=null?p.ca:null),ts=(p.ts!=null?p.ts:(ca!=null?ca:(p.mtime||1)));
   return{id:p.id||mid(),title:p.title||"",desc:p.desc||"",links:links,order:(typeof p.order==="number"?p.order:null),ca:(ca!=null?ca:ts),ts:ts,mtime:(p.mtime!=null?p.mtime:ts),del:!!p.del}})}
 function normalizeNotes(arr){if(!Array.isArray(arr))return[];return arr.map(function(n){
@@ -1400,7 +1411,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v56"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v57"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2611,8 +2622,15 @@ function renderProjects(){var c=document.getElementById("projGrid");if(!c)return
       more.onclick=function(ev){ev.stopPropagation();projOpen[p.id]=!projOpen[p.id];renderProjects()};
       el.appendChild(more);
     }
-    if(pls.length){var lw=document.createElement("div");lw.className="proj-apps";
-      pls.forEach(function(l){var a=document.createElement("a");a.className="app";a.href=normUrl(l.url);if(!isCode(l.url)){a.target="_blank";a.rel="noopener"}else a.className="app code";a.title=(l.label||"")+" \u00b7 "+linkWhere(l.url);
+    var described=pls.filter(function(l){return l.desc}),plain=pls.filter(function(l){return !l.desc});
+    if(described.length){var dl=document.createElement("div");dl.className="proj-links";
+      described.forEach(function(l){var a=document.createElement("a");a.className="plink"+(isCode(l.url)?" code":"");a.href=normUrl(l.url);if(!isCode(l.url)){a.target="_blank";a.rel="noopener"}
+        a.title=(l.label||niceName(l.url))+" \u00b7 "+linkWhere(l.url)+"\n\n"+l.desc;
+        a.innerHTML=appIcon({url:l.url,name:l.label||niceName(l.url)},"chat-ic")+'<span class="chat-body"><span class="chat-title">'+esc(l.label||niceName(l.url))+'</span><span class="chat-desc">'+esc(l.desc)+'</span></span>';
+        a.onclick=function(ev){ev.stopPropagation()};dl.appendChild(a)});
+      el.appendChild(dl)}
+    if(plain.length){var lw=document.createElement("div");lw.className="proj-apps";
+      plain.forEach(function(l){var a=document.createElement("a");a.className="app";a.href=normUrl(l.url);if(!isCode(l.url)){a.target="_blank";a.rel="noopener"}else a.className="app code";a.title=(l.label||"")+" \u00b7 "+linkWhere(l.url);
         a.innerHTML=appIcon({url:l.url,name:l.label||niceName(l.url)})+'<span class="app-name">'+esc(l.label||niceName(l.url))+'</span>';
         a.onclick=function(ev){ev.stopPropagation()};lw.appendChild(a)});
       el.appendChild(lw);}
@@ -2631,19 +2649,22 @@ function plPreview(row){var inp=row.querySelector(".pl-url"),v=inp.value;
   row.querySelector(".pl-label").placeholder=u?niceName(u):"Name (optional)";
   row.querySelector(".pl-ic").innerHTML=appIcon({url:u||(code?"vscode://file/x":""),name:row.querySelector(".pl-label").value||niceName(u)||"?"},"mini");
   row.title=code&&u?("Opens "+shortPath(codePath(u))+" in VS Code"):""}
-function addProjLinkRow(label,url,focus,type){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
+function addProjLinkRow(label,url,focus,type,desc){var wrap=document.getElementById("projLinks");var row=document.createElement("div");row.className="pl-row";
   var nu=url?normUrl(url):"";var code=type?type==="code":isCode(nu);row.setAttribute("data-t",code?"code":"web");
-  row.innerHTML='<span class="pl-ic"></span><input class="pl-url" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" value="'+esc(code&&nu?shortPath(codePath(nu)):(nu||""))+'"><input class="pl-label" value="'+esc(label||"")+'"><button type="button" class="pl-rm" title="Remove" onclick="this.parentNode.remove();updateLinkCount()">&times;</button>';
+  row.innerHTML='<div class="pl-line"><span class="pl-ic"></span><input class="pl-url" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" value="'+esc(code&&nu?shortPath(codePath(nu)):(nu||""))+'"><input class="pl-label" value="'+esc(label||"")+'"><button type="button" class="pl-rm" title="Remove" onclick="this.closest(\'.pl-row\').remove();updateLinkCount()">&times;</button></div>'+
+    '<textarea class="pl-desc" rows="2" placeholder="What this link is for (optional)">'+esc(desc||"")+'</textarea>';
   wrap.appendChild(row);plPreview(row);updateLinkCount();
   row.querySelector(".pl-url").addEventListener("input",function(){plPreview(row)});
   row.querySelector(".pl-label").addEventListener("input",function(){plPreview(row)});
+  var ta=row.querySelector(".pl-desc");ta.addEventListener("input",function(){plGrow(ta)});setTimeout(function(){plGrow(ta)},0);
   if(focus){var u=row.querySelector(".pl-url");try{u.focus();row.scrollIntoView({block:"nearest"})}catch(e){}}
   return row}
+function plGrow(ta){ta.style.height="auto";ta.style.height=Math.min(ta.scrollHeight+2,180)+"px"}
 function updateLinkCount(){var el=document.getElementById("projLinkCount");if(!el)return;var n=document.querySelectorAll("#projLinks .pl-row").length;el.textContent=n?"("+n+")":""}
 function openProjModal(id){editingProjId=id||null;
   document.getElementById("projModalTitle").textContent=id?"Edit Project":"New Project";
   document.getElementById("projLinks").innerHTML="";
-  if(id){var p=S.projects.find(function(x){return x.id===id});if(p){document.getElementById("projTitle").value=p.title||"";document.getElementById("projDesc").value=p.desc||"";(p.links||[]).forEach(function(l){addProjLinkRow(l.label,l.url)});if(!(p.links&&p.links.length))addProjLinkRow("","")}}
+  if(id){var p=S.projects.find(function(x){return x.id===id});if(p){document.getElementById("projTitle").value=p.title||"";document.getElementById("projDesc").value=p.desc||"";(p.links||[]).forEach(function(l){addProjLinkRow(l.label,l.url,false,null,l.desc)});if(!(p.links&&p.links.length))addProjLinkRow("","")}}
   else{document.getElementById("projTitle").value="";document.getElementById("projDesc").value="";addProjLinkRow("","")}
   updateLinkCount();
   openModal("projModal");setTimeout(function(){document.getElementById("projTitle").focus()},100)}
@@ -2653,13 +2674,13 @@ function saveProj(){var t=document.getElementById("projTitle").value.trim();
   var desc=document.getElementById("projDesc").value.trim();var links=[],bad=null;
   document.querySelectorAll("#projLinks .pl-row").forEach(function(row){
     var url=row.querySelector(".pl-url").value.trim();
-    var label=row.querySelector(".pl-label").value.trim();
+    var label=row.querySelector(".pl-label").value.trim(),ldesc=row.querySelector(".pl-desc").value.trim();
     if(!url&&looksLikeUrl(label)){row.querySelector(".pl-url").value=label;label=""}
     url=plUrl(row);
     if(!url){ if(label&&!bad)bad=row; return }
     if(row.getAttribute("data-t")==="code"){if(!codePath(url)){if(!bad)bad=row;return}var rawv=row.querySelector(".pl-url").value.trim();if(isPathish(rawv))learnCodeHome(/^~\//.test(rawv)?homeDir()+rawv.slice(1):rawv)}
     else{var hh=linkHost(url);if(!hh||!(hh.indexOf(".")>0||/^localhost/i.test(hh))){if(!bad)bad=row;return}}
-    links.push({id:mid(),label:label||niceName(url),url:url});
+    links.push({id:mid(),label:label||niceName(url),url:url,desc:ldesc});
   });
   if(bad){toast(bad.getAttribute("data-t")==="code"?"That project needs its folder":"That isn't a web address. For a project, use Add VS Code Project.","alert-triangle");try{bad.querySelector(".pl-url").focus();bad.scrollIntoView({block:"nearest"})}catch(e){}return}
   if(editingProjId){var p=S.projects.find(function(x){return x.id===editingProjId});if(p){p.title=t;p.desc=desc;p.links=links;touch(p)}}
