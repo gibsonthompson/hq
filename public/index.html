@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v57"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v58"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -1029,6 +1029,11 @@ body.dragging-proj,body.dragging-proj *{cursor:grabbing!important;user-select:no
 .plink:hover{background:var(--hov)}
 .plink .chat-desc{-webkit-line-clamp:3}
 .proj-links+.proj-apps{border-top:0;margin-top:4px;padding-top:4px}
+.snote-acts{display:flex;align-items:flex-start;gap:2px;flex-shrink:0}
+.snote-copy{background:none;border:none;color:var(--dim2);cursor:pointer;padding:2px;display:flex;opacity:.6}
+.snote-copy:hover{color:var(--tx);opacity:1}
+.snote-copy svg{width:14px;height:14px}
+.snote-copy.copied,.deck-item .dact.act-copy.copied{color:var(--grn);opacity:1}
 </style></head>
 <body>
 
@@ -1411,7 +1416,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v57"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v58"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -2000,6 +2005,13 @@ function addSNote(){
 }
 function toggleSNote(id){var n=(S.sessionNotes||[]).find(function(x){return x.id===id});if(!n)return;n.status=(n.status==="done"?"open":"done");touch(n);save(id);renderSNotes()}
 function delSNote(id){var n=(S.sessionNotes||[]).find(function(x){return x.id===id});if(!n)return;n.del=true;touch(n);save(id);renderSNotes()}
+/* Copy a task's or note's text; the button flashes a check so it's clear it worked. */
+function copyText(text,btn){
+  function done(){toast("Copied","copy");if(!btn)return;btn.classList.add("copied");btn.innerHTML='<i data-lucide="check"></i>';icons();
+    clearTimeout(btn._ct);btn._ct=setTimeout(function(){btn.classList.remove("copied");btn.innerHTML='<i data-lucide="copy"></i>';icons()},1400)}
+  function fallback(){var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy")}catch(e){}ta.remove();done()}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(done,fallback);else fallback()}
+function copySNote(id,btn){var n=S.sessionNotes.find(function(x){return x.id===id});if(n)copyText(n.text||"",btn)}
 function renderSNotes(){
   var c=document.getElementById("snoteList");if(!c)return;
   var list=live(S.sessionNotes).slice().sort(function(a,b){
@@ -2014,7 +2026,8 @@ function renderSNotes(){
     var el=document.createElement("div");el.className="snote-item"+(n.status==="done"?" done":"");
     el.innerHTML='<div class="snote-check" onclick="toggleSNote(\''+n.id+'\')" title="'+(n.status==="done"?"Mark open":"Mark tested")+'"><i data-lucide="check"></i></div>'+
       '<div class="snote-text">'+esc(n.text)+'</div>'+
-      '<button class="snote-x" onclick="delSNote(\''+n.id+'\')" title="Delete"><i data-lucide="x"></i></button>';
+      '<div class="snote-acts"><button class="snote-copy" onclick="copySNote(\''+n.id+'\',this)" title="Copy text"><i data-lucide="copy"></i></button>'+
+      '<button class="snote-x" onclick="delSNote(\''+n.id+'\')" title="Delete"><i data-lucide="x"></i></button></div>';
     c.appendChild(el);
   });
   icons();
@@ -2037,6 +2050,7 @@ function taskRowInner(it){
       '<button class="dact act-prio" title="Set priority" style="color:'+pcol+(p?';opacity:1':'')+'"><i data-lucide="flag"></i></button>'+
       '<button class="dact act-prompt" title="Claude prompt"><i data-lucide="sparkles"></i></button>'+
       '<button class="dact act-label" title="Labels"><i data-lucide="tag"></i></button>'+
+      '<button class="dact act-copy" title="Copy text"><i data-lucide="copy"></i></button>'+
       '<button class="dact act-edit" title="Edit"><i data-lucide="pencil"></i></button>'+
       '<button class="dact act-del" title="'+"Delete"+'"><i data-lucide="x"></i></button>'+
     '</div>';
@@ -3000,6 +3014,7 @@ document.addEventListener("click",function(ev){
   if(ev.target.closest(".act-prio")){openPrio(id);return}
   if(ev.target.closest(".act-label")){pickLabel(id);return}
   var _tf=ev.target.closest(".dtag-filter");if(_tf){taskFilter=_tf.getAttribute("data-tag")||"all";renderTaskViews();return}
+  var _cp=ev.target.closest(".act-copy");if(_cp){var g=findAny(id);if(g)copyText(g.item.text||"",_cp);return}
   if(ev.target.closest(".act-edit")){editTask(id);return}
   if(ev.target.closest(".act-prompt")){genPrompt(id);return}
   if(ev.target.closest(".act-del")){rmItem(id);return}
