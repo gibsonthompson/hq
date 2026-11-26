@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v58"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="hq-build" content="v59"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>SESH</title>
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0a0a0a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="SESH"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="/lucide.min.js"></script>
@@ -1353,14 +1353,83 @@ var sb=null,sbLibLoaded=false;
 /* Build the client from whatever Supabase library is present. Callable again
    after a fallback library loads, so a stale or missing local copy of the lib
    on a device can self-heal instead of leaving that device local-only. */
-function initSb(){
-  try{
-    if(typeof supabase!=="undefined"&&supabase&&typeof supabase.createClient==="function"){
-      sbLibLoaded=true;
-      if(!sb)sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+/* HQ talks to the database through its own server (/api/hq-db), which checks the HQ sign-in cookie and
+   uses the server key. The browser never holds database access. This object mirrors the few query calls
+   HQ makes (from/select/eq/order/range/limit/abortSignal/upsert). Live updates are covered by polling. */
+function hqBridge(){
+  var MAX_BATCH_BYTES=1500000;
+  function Q(table){this.t=table;this.q={action:"select",select:"*",filters:[],order:[],range:null,limit:null};this.sig=null}
+  Q.prototype.select=function(c){this.q.select=c||"*";return this};
+  Q.prototype.eq=function(c,v){this.q.filters.push({op:"eq",column:c,value:v});return this};
+  Q.prototype.order=function(c,o){this.q.order.push({column:c,ascending:!(o&&o.ascending===false)});return this};
+  Q.prototype.range=function(a,b){this.q.range=[a,b];return this};
+  Q.prototype.limit=function(n){this.q.limit=n;return this};
+  Q.prototype.abortSignal=function(sg){this.sig=sg;return this};
+  Q.prototype.upsert=function(rows){this.q.action="upsert";this.q.values=Array.isArray(rows)?rows:[rows];return this};
+  Q.prototype._send=function(body){
+    return fetch("/api/hq-db",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",cache:"no-store",body:JSON.stringify(body),signal:this.sig||undefined})
+      .then(function(r){
+        if(r.status===401){hqNeedSignIn();return{data:null,error:{message:"Sign in to HQ"}}}
+        return r.json().catch(function(){return{data:null,error:{message:"bad response ("+r.status+")"}}});
+      });
+  };
+  Q.prototype._run=function(){
+    var self=this;
+    if(self.q.action!=="upsert")return self._send(self.q);
+    /* split big saves (photos live in rows) so no single request is too large */
+    var batches=[],cur=[],size=0;
+    self.q.values.forEach(function(row){var n=JSON.stringify(row).length;if(cur.length&&size+n>MAX_BATCH_BYTES){batches.push(cur);cur=[];size=0}cur.push(row);size+=n});
+    if(cur.length)batches.push(cur);
+    var i=0;
+    function next(){
+      if(i>=batches.length)return Promise.resolve({data:null,error:null});
+      var b=batches[i++];
+      return self._send({action:"upsert",values:b}).then(function(r){return r&&r.error?r:next()});
     }
-  }catch(e){sb=null}
-  return !!sb;
+    return next();
+  };
+  Q.prototype.then=function(a,b){return this._run().then(a,b)};
+  Q.prototype["catch"]=function(b){return this._run()["catch"](b)};
+  return{
+    from:function(t){return new Q(t)},
+    channel:function(){var ch={on:function(){return ch},subscribe:function(){return ch}};return ch},
+    removeChannel:function(){}
+  };
+}
+var hqSignInShown=false;
+function hqNeedSignIn(){
+  if(hqSignInShown)return;hqSignInShown=true;
+  var o=document.createElement("div");
+  o.id="hqSignIn";
+  o.setAttribute("style","position:fixed;inset:0;z-index:2147483000;background:#0a0a0a;color:#f5f5f5;display:flex;align-items:center;justify-content:center;padding:24px;font:15px -apple-system,system-ui,sans-serif");
+  o.innerHTML='<form id="hqSignInForm" style="width:100%;max-width:300px;text-align:center">'+
+    '<div style="font-size:20px;font-weight:700;margin:0 0 6px">Sign in to HQ</div>'+
+    '<div style="color:#a3a3a3;margin:0 0 20px">Enter your PIN to sync</div>'+
+    '<input id="hqPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" '+
+      'style="width:100%;box-sizing:border-box;padding:14px;border-radius:10px;border:1px solid #2a2a2a;background:#141414;color:#f5f5f5;font-size:22px;letter-spacing:8px;text-align:center;outline:none">'+
+    '<div id="hqPinErr" style="color:#f87171;min-height:20px;margin:10px 0 6px;font-size:13px"></div>'+
+    '<button id="hqPinBtn" type="submit" style="width:100%;background:#fafafa;color:#0a0a0a;border:0;border-radius:10px;padding:13px;font-weight:700;font-size:15px">Unlock</button>'+
+    '</form>';
+  document.body.appendChild(o);
+  var inp=document.getElementById("hqPin"),err=document.getElementById("hqPinErr"),btn=document.getElementById("hqPinBtn");
+  setTimeout(function(){try{inp.focus()}catch(e){}},50);
+  inp.addEventListener("input",function(){inp.value=inp.value.replace(/\D/g,"");err.textContent=""});
+  document.getElementById("hqSignInForm").addEventListener("submit",function(e){
+    e.preventDefault();if(!inp.value||btn.disabled)return;
+    btn.disabled=true;btn.textContent="Checking...";
+    fetch("/api/hq-auth",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",cache:"no-store",body:JSON.stringify({pin:inp.value})})
+      .then(function(r){return r.json().catch(function(){return{}}).then(function(d){return{ok:r.ok,d:d}})})
+      .then(function(x){
+        if(x.ok){location.reload();return}
+        err.textContent=(x.d&&x.d.error)||"Wrong PIN";inp.value="";btn.disabled=false;btn.textContent="Unlock";try{inp.focus()}catch(e){}
+      })
+      .catch(function(){err.textContent="Could not reach the server. Try again.";btn.disabled=false;btn.textContent="Unlock"});
+  });
+}
+function initSb(){
+  sbLibLoaded=true;
+  if(!sb)sb=hqBridge();
+  return true;
 }
 initSb();
 
@@ -1416,7 +1485,7 @@ var remoteLoaded=false,lastSynced=0,syncState="idle";
 /* Single source of truth: the hq-build meta tag at the very top of this file.
    The in-app update check reads that same tag from the live server copy, so
    bumping it once per release is all it takes for every device to update. */
-var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v58"})();
+var BUILD=(function(){try{var m=document.querySelector('meta[name="hq-build"]');if(m&&m.content)return m.content}catch(e){}return "v59"})();
 /* ============================================================
    SYNC v21 — one database row per item.
    Changes over v20:
@@ -1600,7 +1669,7 @@ var cloudOk=false,setupRan=false;
 function afterCloudLoad(){if(setupRan)return;setupRan=true;
   try{var before=stateSignature();migratePins();seedCodeLinks();migrateApps55();repairLinks();if(stateSignature()!==before){if(uiBusy())deferredRender=true;else forceRender()}}catch(e){console.warn("setup step failed",e)}}
 function pullRemote(cb){if(!sb){remoteLoaded=true;setSync("local");if(cb)cb(false);return}
-  var PAGE=1000,acc=[];
+  var PAGE=250,acc=[];
   function page(from){
     /* Hard timeout on every page request. A suspended/hung fetch (phone locked
        mid-pull) would otherwise never settle, so the pull callback never fires

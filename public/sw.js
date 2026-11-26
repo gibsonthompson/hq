@@ -1,4 +1,4 @@
-/* SESH service worker (v58)
+/* SESH service worker (v59)
 
    RULES
    1. App pages (/, index.html) are ALWAYS fetched from the network
@@ -17,7 +17,7 @@
 
    Bump CACHE on every release. */
 
-const CACHE = 'hq-assets-v58';
+const CACHE = 'hq-assets-v59';
 const ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
@@ -100,6 +100,9 @@ self.addEventListener('fetch', function (e) {
   if (url.searchParams.has('__v')) return;
 
   var sameOrigin = url.origin === self.location.origin;
+
+  /* HQ's own API (sign-in and data) always goes straight to the network. */
+  if (sameOrigin && url.pathname.indexOf('/api/') === 0) return;
 
   if (sameOrigin) {
     var isPage = req.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html');
